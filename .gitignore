@@ -1,0 +1,32 @@
+## .NET / Visual Studio — .gitignore قياسي
+## (أعد تسميته إلى .gitignore عند وضعه في جذر المستودع)
+
+# مخرجات البناء
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# نتائج الاختبارات
+[Tt]est[Rr]esult*/
+*.trx
+
+# الحزم
+*.nupkg
+
+# السجلات المحلية
+[Ll]og/
+[Ll]ogs/
+*.log
+
+# نظام التشغيل
+Thumbs.db
+Desktop.ini
+.DS_Store
