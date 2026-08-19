@@ -1,0 +1,1 @@
+﻿public sealed record SetCurrentAcademicYearRequest(int Id);

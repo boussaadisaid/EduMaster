@@ -1,0 +1,8 @@
+﻿<UserControl x:Class="EduMaster.UI.HomeView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+        <TextBlock Text="مرحباً بك في SchoolSys" FontSize="28" FontWeight="Bold"/>
+        <TextBlock Text="اختر وجهتك من القائمة الجانبية" FontSize="14" Foreground="Gray" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+    </StackPanel>
+</UserControl>

@@ -1,5 +1,4 @@
-﻿using EduMaster.UI.AcademicYears.ViewModels;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,19 +10,19 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace EduMaster.UI.AcademicYears.Dialogs
-{
+namespace EduMaster.UI.AcademicYears
+{ //EduMaster.UI.AcademicYearEditorView
     /// <summary>
-    /// Interaction logic for CreateUpdateAcademicYearDialog.xaml
+    /// Interaction logic for AcademicYearEditorView.xaml
     /// </summary>
-    public partial class CreateUpdateAcademicYearDialog : Window
+    public partial class AcademicYearEditorView : UserControl
     {
-        public CreateUpdateAcademicYearDialog(CreateUpdateAcademicYearDialogViewModel viewModel)
+        public AcademicYearEditorView()
         {
             InitializeComponent();
-            DataContext = viewModel;
         }
     }
 }

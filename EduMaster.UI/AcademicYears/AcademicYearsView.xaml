@@ -1,0 +1,83 @@
+﻿<UserControl x:Class="EduMaster.UI.AcademicYears.AcademicYearsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        FlowDirection="RightToLeft">
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- الترويسة -->
+        <DockPanel Margin="0,0,0,16">
+            <Button Content="➕ سنة جديدة" Command="{Binding AddCommand}"
+                    DockPanel.Dock="Left" Padding="18,8" FontWeight="SemiBold"/>
+            <TextBlock Text="السنوات الدراسية" FontSize="24" FontWeight="SemiBold"/>
+        </DockPanel>
+
+        <!-- بطاقة السنة الحالية -->
+        <Border Grid.Row="1" Background="#EAF6EA" BorderBrush="#B7DFB7" BorderThickness="1"
+                CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="⭐ السنة الحالية: " FontSize="15"/>
+                <TextBlock Text="{Binding CurrentYearName}" FontSize="15" FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
+
+        <!-- الجدول -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Years}"
+                  SelectedItem="{Binding SelectedYear}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserAddRows="False" SelectionMode="Single"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="السنة" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="من" Binding="{Binding StartDate, StringFormat=yyyy-MM-dd}" Width="*"/>
+                <DataGridTextColumn Header="إلى" Binding="{Binding EndDate, StringFormat=yyyy-MM-dd}" Width="*"/>
+                <DataGridTemplateColumn Header="الحالة" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="فعّالة"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                <Setter Property="Text" Value="⭐ الحالية"/>
+                                                <Setter Property="Foreground" Value="DarkGreen"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                <Setter Property="Text" Value="معطّلة"/>
+                                                <Setter Property="Foreground" Value="Gray"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- الحالة الفارغة + التحميل -->
+        <TextBlock Grid.Row="2" Text="لا توجد سنوات دراسية بعد — اضغط «سنة جديدة» لإنشاء أول سنة"
+                   Foreground="Gray" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        <TextBlock Grid.Row="2" Text="جارٍ التحميل…" Foreground="Gray"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <!-- شريط الإجراءات على السنة المحددة — الإتاحة تعكس القواعد (CanExecute) -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,14,0,0">
+            <Button Content="⭐ تعيين كحالية"  Command="{Binding SetCurrentCommand}" Padding="14,6" Margin="0,0,8,0"/>
+            <Button Content="✏️ تعديل"        Command="{Binding EditCommand}"       Padding="14,6" Margin="0,0,8,0"/>
+            <Button Content="🚫 تعطيل"        Command="{Binding DeactivateCommand}" Padding="14,6" Margin="0,0,8,0"/>
+            <Button Content="✔ تفعيل"         Command="{Binding ActivateCommand}"   Padding="14,6"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

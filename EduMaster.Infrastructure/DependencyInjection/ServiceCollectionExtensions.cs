@@ -1,5 +1,6 @@
 ﻿using EduMaster.Application.Abstractions;
 using EduMaster.Application.Abstractions.Repositories;
+using EduMaster.Infrastructure.AcademicYears;
 using EduMaster.Infrastructure.People;
 using EduMaster.Infrastructure.Persistence;
 using EduMaster.Infrastructure.Security;
@@ -32,6 +33,7 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
             services.AddScoped<IUserAccountRepository, UserAccountRepository>();
             services.AddScoped<IPersonRepository,PersonRepository>();
+            services.AddScoped<IAcademicYearRepository, AcademicYearRepository>();
             services.AddTransient<DatabaseSeeder>();
             services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
             services.AddHostedService<DatabaseInitializationHostedService>();

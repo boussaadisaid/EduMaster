@@ -1,0 +1,1 @@
+﻿public sealed record CreateAcademicYearRequest(string? Name, DateOnly StartDate, DateOnly EndDate);

@@ -1,6 +1,8 @@
-﻿
-using MahApps.Metro.Controls;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -14,14 +16,13 @@ using System.Windows.Shapes;
 namespace EduMaster.UI
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for HomeView.xaml
     /// </summary>
-    public partial class MainWindow : MetroWindow
+    public partial class HomeView : UserControl
     {
-        public MainWindow(MainWindowViewModel vm)
+        public HomeView()
         {
             InitializeComponent();
-            DataContext = vm;
         }
     }
 }

@@ -31,21 +31,9 @@ namespace EduMaster.Domain.People
         private bool _idSet = false;
 
         //Constractor for add new
-        private Person(
-            FirstName firstName,
-            LastName lastName,
-            FirstName? fatherName,
-            BirthDate? birthDate,
-            GenderType? gender,
-            Phone? phone,
-            Email? email,
-            string? address,
-            string? photoPath,
-            bool isActive,
-            DateTime createdAtUtc,
-            int? createdByUserId,
-            DateTime? updatedAtUtc,
-            int? updatedByUserId)
+        private Person(FirstName firstName,LastName lastName,FirstName? fatherName, BirthDate? birthDate,
+            GenderType? gender, Phone? phone,Email? email, string? address, string? photoPath, bool isActive,
+            DateTime createdAtUtc,int? createdByUserId, DateTime? updatedAtUtc, int? updatedByUserId)
         {
             FirstName = firstName;
             LastName = lastName;
@@ -104,50 +92,20 @@ namespace EduMaster.Domain.People
 
 
         //Factory method
-        public static Person Create(
-            FirstName firstName,
-            LastName lastName,
-            FirstName? fatherName,
-            BirthDate? birthDate,
-            GenderType? gender,
-            Phone? phone,
-            Email? email,
-            string? address,
-            string? photoPath,
-            int? createdByUserId,
+        public static Person Create(FirstName firstName,LastName lastName, FirstName? fatherName,BirthDate? birthDate,
+            GenderType? gender,Phone? phone, Email? email, string? address, string? photoPath, int? createdByUserId,
             DateTime createdAtUtc)
         {
-            return new Person(
-                firstName,
-                lastName,
-                fatherName,
-                birthDate,
-                gender,
-                phone,
-                email,
-                address,
-                photoPath,
-                isActive: true,
-                createdAtUtc: createdAtUtc,
-                createdByUserId,
-                updatedAtUtc: null,
+            return new Person(firstName, lastName, fatherName, birthDate, gender, phone, email, address,
+                photoPath, isActive: true, createdAtUtc: createdAtUtc, createdByUserId, updatedAtUtc: null,
                 updatedByUserId: null);
         }
 
 
 
         // أضف دالة لتحديث الشخص
-        public void Update(
-            FirstName firstName,
-            LastName lastName,
-            FirstName? fatherName,
-            BirthDate? birthDate,
-            GenderType? gender,
-            Phone? phone,
-            Email? email,
-            string? address,
-            string? photoPath,
-            DateTime updatedAtUtc,
+        public void Update(FirstName firstName,LastName lastName, FirstName? fatherName, BirthDate? birthDate,
+            GenderType? gender, Phone? phone,Email? email, string? address,string? photoPath, DateTime updatedAtUtc,
             int updatedByUserId)
         {
             FirstName = firstName;

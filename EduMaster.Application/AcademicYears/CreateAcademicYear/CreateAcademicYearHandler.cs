@@ -1,40 +1,73 @@
-﻿using EduMaster.Application.AcademicYears.Repositories;
+﻿using EduMaster.Application.Abstractions;
+using EduMaster.Application.Abstractions.Repositories;
+using EduMaster.Application.Common;
 using EduMaster.Domain.AcademicYears;
 using EduMaster.Domain.AcademicYears.ValueObjects;
+using EduMaster.Domain.Common;
+using Microsoft.Extensions.Logging;
 
-namespace EduMaster.Application.AcademicYears.CreateAcademicYear
+namespace EduMaster.Application.AcademicYears.CreateAcademicYear;
+
+public sealed class CreateAcademicYearHandler
 {
-    public sealed class CreateAcademicYearHandler
+    private readonly IAcademicYearRepository _years;
+    private readonly IClock _clock;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CreateAcademicYearHandler> _logger;
+
+    public CreateAcademicYearHandler(
+        IAcademicYearRepository years,
+        IClock clock,
+        ICurrentUserService currentUser,
+        IUnitOfWork unitOfWork,
+        ILogger<CreateAcademicYearHandler> logger)
     {
-        private readonly IAcademicYearRepository _repository;
+        _years = years;
+        _clock = clock;
+        _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
 
-        public CreateAcademicYearHandler(IAcademicYearRepository repository)
+    public async Task<OperationResult<int>> ExecuteAsync(CreateAcademicYearRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return OperationResult<int>.Failure("أدخل اسم السنة الدراسية.", ErrorType.Validation);
+
+        try
         {
-            _repository = repository;
+            // ① بناء الكيان أولاً — قواعد الصيغة/التواريخ/المطابقة/التتابع تعيش في الدومين وترمي DomainException عربية
+            var name = new YearName(request.Name);
+            var year = AcademicYear.Create(name, request.StartDate, request.EndDate,
+                _clock.UtcNow, _currentUser.UserAccountId);
+
+            // ② فحوصات التعارض (قراءة) قبل فتح المعاملة — رسالة نظيفة بدل اصطدام قيود القاعدة (D-22/D-24)
+            if (await _years.AnyWithNameAsync(name.Value, excludeId: 0, cancellationToken))
+                return OperationResult<int>.Failure($"توجد سنة دراسية بالاسم «{name}» مسبقاً.", ErrorType.Conflict);
+
+            if (await _years.AnyOverlappingAsync(request.StartDate, request.EndDate, excludeId: 0, cancellationToken))
+                return OperationResult<int>.Failure("الفترة المدخلة تتداخل مع سنة دراسية موجودة.", ErrorType.Conflict);
+
+            // ③ معاملة حول الكتابة — Commit أو Rollback على كل مسار
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            await _years.AddAsync(year, cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
+
+            return OperationResult<int>.Success(year.Id);
         }
-
-        public async Task<CreateAcademicYearResult> Handle(
-            CreateAcademicYearCommand command,
-            CancellationToken cancellationToken = default)
+        catch (DomainException dex)
         {
-            var yearName = new YearName(command.Name);
-
-            if (await _repository.ExistsByNameAsync(yearName, cancellationToken))
-                throw new Exception("السنة الدراسية موجودة بالفعل.");
-
-            var academicYear = AcademicYear.Create(
-                yearName,
-                command.StartDate,
-                command.EndDate);
-
-            await _repository.AddAsync(academicYear, cancellationToken);
-
-            return new CreateAcademicYearResult(
-                academicYear.Id,
-                academicYear.Name.Value,
-                academicYear.StartDate,
-                academicYear.EndDate,
-                academicYear.IsCurrent);
+            await _unitOfWork.RollbackAsync(cancellationToken);   // آمنة حتى بلا معاملة مفتوحة
+            return OperationResult<int>.Failure(dex.Message, ErrorType.Validation);
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.RollbackAsync(cancellationToken);
+            _logger.LogError(ex, "Failed to create academic year {YearName}", request.Name);
+            return OperationResult<int>.Failure("حدث خطأ غير متوقع أثناء إنشاء السنة الدراسية.", ErrorType.Unexpected);
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using EduMaster.Application.Abstractions;
+using EduMaster.UI.AcademicYears;
 using EduMaster.UI.Common.Services;
+using EduMaster.UI.Dialogs;
 using EduMaster.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +20,14 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<MainWindowViewModel>();
             services.AddTransient<LoginViewModel>();
             services.AddSingleton<IUserNotifier, ToastUserNotifier>();
+
+
+            services.AddTransient<HomeViewModel>();
+            services.AddTransient<AcademicYearsViewModel>();
+            services.AddTransient<AcademicYearEditorViewModel>();
+            services.AddTransient<ConfirmDialogViewModel>();
+            services.AddTransient<DialogWindow>();
+            services.AddSingleton<IDialogService, DialogService>();   // عديمة الحالة = Singleton (قواعد الوصفة)
 
 
 

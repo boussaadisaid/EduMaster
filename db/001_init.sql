@@ -21,7 +21,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Persons')
 BEGIN
     CREATE TABLE Persons
     (
-        PersonId            INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Persons PRIMARY KEY,
+        Id            INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Persons PRIMARY KEY,
         FirstName           NVARCHAR(50)      NOT NULL,
         LastName            NVARCHAR(50)      NOT NULL,
         FatherName          NVARCHAR(50)      NULL,
@@ -54,7 +54,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'UserAccounts')
 BEGIN
     CREATE TABLE UserAccounts
     (
-        UserAccountId       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UserAccounts PRIMARY KEY,
+        Id       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UserAccounts PRIMARY KEY,
         PersonId            INT               NOT NULL CONSTRAINT UQ_UserAccounts_PersonId UNIQUE,
         Username            NVARCHAR(50)      NOT NULL CONSTRAINT UQ_UserAccounts_Username UNIQUE,
         PasswordHash        NVARCHAR(500)     NOT NULL,  -- بصمة BCrypt ($2a$11$...)
@@ -69,7 +69,7 @@ BEGIN
         UpdatedByUserId     INT               NULL,
         IsDeleted           BIT               NOT NULL CONSTRAINT DF_UserAccounts_IsDeleted DEFAULT (0),
 
-        CONSTRAINT FK_UserAccounts_Persons FOREIGN KEY (PersonId) REFERENCES Persons(PersonId)
+        CONSTRAINT FK_UserAccounts_Persons FOREIGN KEY (PersonId) REFERENCES Persons(Id)
     );
 END
 GO

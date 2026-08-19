@@ -1,37 +1,41 @@
-﻿using EduMaster.Domain.AcademicYears.Events;
-using EduMaster.Domain.AcademicYears.ValueObjects;
+﻿using EduMaster.Domain.AcademicYears.ValueObjects;
 using EduMaster.Domain.Common;
-
-
-
 
 namespace EduMaster.Domain.AcademicYears
 {
     public class AcademicYear
     {
-        private readonly List<IDomainEvent> _events = new();
-        public IReadOnlyList<IDomainEvent> Events => _events.AsReadOnly();
-
         public int Id { get; private set; }
         public YearName Name { get; private set; }
         public DateOnly StartDate { get; private set; }
         public DateOnly EndDate { get; private set; }
         public bool IsCurrent { get; private set; }
+        public bool IsActive { get; private set; }
+        public DateTime CreatedAtUtc { get; private set; }
+        public int? CreatedByUserId { get; private set; }
+        public DateTime? UpdatedAtUtc { get; private set; }
+        public int? UpdatedByUserId { get; private set; }
 
-        private bool _idSet = false;
+        private bool _idSet;
 
-        // for Create
-        private AcademicYear(YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent)
+        // Constructor for Create
+        private AcademicYear(YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent, bool isActive,
+            DateTime createdAtUtc, int? createdByUserId, DateTime? updatedAtUtc, int? updatedByUserId)
         {
             Name = name;
             StartDate = startDate;
             EndDate = endDate;
             IsCurrent = isCurrent;
+            IsActive = isActive;
+            CreatedAtUtc = createdAtUtc;
+            CreatedByUserId = createdByUserId;
+            UpdatedAtUtc = updatedAtUtc;
+            UpdatedByUserId = updatedByUserId;
         }
 
-
-        // for Load
-        private AcademicYear(int id, YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent)
+        // Constructor for Load
+        private AcademicYear(int id, YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent, bool isActive,
+            DateTime createdAtUtc, int? createdByUserId, DateTime? updatedAtUtc, int? updatedByUserId)
         {
             if (id <= 0)
                 throw new DomainException("الـ ID يجب أن يكون أكبر من صفر");
@@ -40,40 +44,42 @@ namespace EduMaster.Domain.AcademicYears
             StartDate = startDate;
             EndDate = endDate;
             IsCurrent = isCurrent;
+            IsActive = isActive;
             Id = id;
+            CreatedAtUtc = createdAtUtc;
+            CreatedByUserId = createdByUserId;
+            UpdatedAtUtc = updatedAtUtc;
+            UpdatedByUserId = updatedByUserId;
+
             _idSet = true;
         }
 
-        public static AcademicYear Create(YearName name, DateOnly startDate, DateOnly endDate)
+        public static AcademicYear Create(YearName name, DateOnly startDate, DateOnly endDate,
+            DateTime createdAtUtc, int? createdByUserId)
         {
             Validate(name, startDate, endDate);
-            return new AcademicYear(name, startDate, endDate, false);
+            return new AcademicYear(name, startDate, endDate, false, true, createdAtUtc, createdByUserId, null, null);
         }
 
-        public static AcademicYear Load(int id, YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent)
+        public static AcademicYear Load(int id, YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent,
+            bool isActive, DateTime createdAtUtc, int? createdByUserId, DateTime? updatedAtUtc, int? updatedByUserId)
         {
             Validate(name, startDate, endDate);
-            return new AcademicYear(id, name, startDate, endDate, isCurrent);
+            return new AcademicYear(id, name, startDate, endDate, isCurrent, isActive, createdAtUtc,
+                createdByUserId, updatedAtUtc, updatedByUserId);
         }
 
-        public void Update(YearName name, DateOnly startDate, DateOnly endDate)
+        public void Update(YearName name, DateOnly startDate, DateOnly endDate,
+            DateTime updatedAtUtc, int? updatedByUserId)
         {
             Validate(name, startDate, endDate);
 
             Name = name;
             StartDate = startDate;
             EndDate = endDate;
-        }
 
-        private static void Validate(YearName name, DateOnly startDate, DateOnly endDate)
-        {
-            if (startDate >= endDate)
-                throw new DomainException("تاريخ بداية السنة يجب أن يكون أقل من تاريخ نهاية السنة");
-
-            var parts = name.Value.Split('-');
-
-            if (parts[0] != startDate.Year.ToString() || parts[1] != endDate.Year.ToString())
-                throw new DomainException("تاريخ البداية والنهاية يجب أن يوافقا اسم السنة الدراسية");
+            UpdatedAtUtc = updatedAtUtc;
+            UpdatedByUserId = updatedByUserId;
         }
 
         internal void SetId(int id)
@@ -88,21 +94,59 @@ namespace EduMaster.Domain.AcademicYears
             _idSet = true;
         }
 
-        public void SetAsCurrent()
+        public void SetAsCurrent(DateTime updatedAtUtc, int? updatedByUserId)
         {
+            if (!IsActive)
+                throw new DomainException("لا يمكن تعيين سنة معطّلة كحالية");
+
             if (IsCurrent)
                 return;
 
             IsCurrent = true;
-            _events.Add(new AcademicYearSetAsCurrentEvent(Id));
+            UpdatedAtUtc = updatedAtUtc;
+            UpdatedByUserId = updatedByUserId;
         }
 
-        public void SetAsNotCurrent()
+        public void SetAsNotCurrent(DateTime updatedAtUtc, int? updatedByUserId)
         {
             if (!IsCurrent)
                 return;
 
             IsCurrent = false;
+            UpdatedAtUtc = updatedAtUtc;
+            UpdatedByUserId = updatedByUserId;
+        }
+
+        public void Deactivate(DateTime updatedAtUtc, int? updatedByUserId)
+        {
+            if (IsCurrent)
+                throw new DomainException("لا يمكن تعطيل السنة الحالية — عيّن سنة أخرى أولاً");
+
+            if (!IsActive)
+                return;
+
+            IsActive = false;
+            UpdatedAtUtc = updatedAtUtc;
+            UpdatedByUserId = updatedByUserId;
+        }
+
+        public void Activate(DateTime updatedAtUtc, int? updatedByUserId)
+        {
+            if (IsActive)
+                return;
+
+            IsActive = true;
+            UpdatedAtUtc = updatedAtUtc;
+            UpdatedByUserId = updatedByUserId;
+        }
+
+        private static void Validate(YearName name, DateOnly startDate, DateOnly endDate)
+        {
+            if (startDate >= endDate)
+                throw new DomainException("تاريخ بداية السنة يجب أن يكون أقل من تاريخ نهاية السنة");
+
+            if (startDate.Year != name.StartYear || endDate.Year != name.EndYear)
+                throw new DomainException("تاريخ البداية والنهاية يجب أن يوافقا اسم السنة الدراسية");
         }
 
         public override string ToString() => Name.ToString();

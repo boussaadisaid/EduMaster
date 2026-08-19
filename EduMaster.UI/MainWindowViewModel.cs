@@ -1,33 +1,44 @@
-﻿using EduMaster.UI.AcademicYears.Services;
+﻿using EduMaster.UI.AcademicYears;
 using EduMaster.UI.Common.MVVM;
+using Microsoft.Extensions.DependencyInjection;
 
 
 
 
 namespace EduMaster.UI
 {
-    public class MainWindowViewModel : BaseViewModel
+    public sealed class MainWindowViewModel : BaseViewModel
     {
-        private readonly IAcademicYearDialogService _academicYearDialogService;
+        private readonly IServiceProvider _services;
 
-
-        
-
-       
-
-
-        public RelayCommand OpenCreateAcademicYearDialogCommand { get;}
-
-        public MainWindowViewModel(/*IAcademicYearDialogService academicYearDialogService*/)
+        public MainWindowViewModel(IServiceProvider services)
         {
-            OpenCreateAcademicYearDialogCommand = new RelayCommand(OpenCreateAcademicYearDialog);
-            //_academicYearDialogService = academicYearDialogService;
+            _services = services;
+
+            NavigateToHomeCommand = new AsyncRelayCommand(() =>
+            {
+                CurrentViewModel = _services.GetRequiredService<HomeViewModel>();
+                return Task.CompletedTask;
+            });
+
+            NavigateToAcademicYearsCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<AcademicYearsViewModel>();   // نسخة طازجة = بيانات طازجة
+                CurrentViewModel = vm;
+                await vm.InitializeAsync();
+            });
+
+            CurrentViewModel = _services.GetRequiredService<HomeViewModel>();      // الشاشة الافتتاحية
         }
 
-        private void OpenCreateAcademicYearDialog()
+        private object? _currentViewModel;
+        public object? CurrentViewModel
         {
-           
-            //_academicYearDialogService.ShowCreateAcademicYearDialog();
+            get => _currentViewModel;
+            private set => SetProperty(ref _currentViewModel, value);
         }
+
+        public AsyncRelayCommand NavigateToHomeCommand { get; }
+        public AsyncRelayCommand NavigateToAcademicYearsCommand { get; }
     }
 }
