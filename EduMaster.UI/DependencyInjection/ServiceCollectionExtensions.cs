@@ -2,6 +2,7 @@
 using EduMaster.UI.AcademicYears;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Dialogs;
+using EduMaster.UI.People;
 using EduMaster.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,6 +29,12 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<ConfirmDialogViewModel>();
             services.AddTransient<DialogWindow>();
             services.AddSingleton<IDialogService, DialogService>();   // عديمة الحالة = Singleton (قواعد الوصفة)
+
+            services.AddTransient<PeopleViewModel>();
+            services.AddTransient<PersonEditorViewModel>();
+            services.AddTransient<CreateAccountViewModel>();
+            services.AddTransient<ResetPasswordViewModel>();
+            services.AddTransient<ChangePasswordViewModel>();
 
 
 

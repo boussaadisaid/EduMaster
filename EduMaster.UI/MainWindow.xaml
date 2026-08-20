@@ -28,6 +28,10 @@
                 <Button Content="🏠  الرئيسية" Style="{StaticResource NavButton}"
                         Command="{Binding NavigateToHomeCommand}"/>
 
+                <Button Content="👥  الأشخاص" Style="{StaticResource NavButton}"
+                        Command="{Binding NavigateToPeopleCommand}"/>
+                
+
                 <Separator Margin="8,14"/>
 
                 <TextBlock Text="⚙️ الإعدادات" Foreground="Gray" Margin="16,4,16,6"/>

@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:EduMaster.UI" 
              xmlns:years="clr-namespace:EduMaster.UI.AcademicYears"
-             xmlns:dialogs="clr-namespace:EduMaster.UI.Dialogs">
+             xmlns:dialogs="clr-namespace:EduMaster.UI.Dialogs"
+             xmlns:people="clr-namespace:EduMaster.UI.People">
  
     <Application.Resources>
         <ResourceDictionary>
@@ -30,6 +31,24 @@
             <DataTemplate DataType="{x:Type dialogs:ConfirmDialogViewModel}">
                 <dialogs:ConfirmDialogView/>
             </DataTemplate>
+
+            <DataTemplate DataType="{x:Type people:PeopleViewModel}">
+                <people:PeopleView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type people:PersonEditorViewModel}">
+                <people:PersonEditorView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type people:CreateAccountViewModel}">
+                <people:CreateAccountView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type people:ResetPasswordViewModel}">
+                <people:ResetPasswordView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type people:ChangePasswordViewModel}">
+                <people:ChangePasswordView/>
+            </DataTemplate>
+            
+            
 
             <!-- Custom Font (make sure Cairo.ttf is in /Fonts folder) -->
             <FontFamily x:Key="CairoFont">pack://application:,,,/Fonts/#Cairo</FontFamily>

@@ -149,7 +149,7 @@ public sealed class LoginViewModel : BaseViewModel
 
     /// <summary>تستمع له النافذة لتمسح صندوق كلمة المرور المرئي وتركّز عليه</summary>
     public event EventHandler? LoginFailed;
-
+    public event EventHandler? PasswordChangeRequired;
     public Task InitializeAsync() => CheckConnectionAsync();
 
     private async Task CheckConnectionAsync()
@@ -204,8 +204,17 @@ public sealed class LoginViewModel : BaseViewModel
             if (result.IsSuccess)
             {
                 _currentUser.SignIn(result.Value!.UserAccountId, result.Value!.Username);
-                _notifier.ShowSuccess($"مرحباً بك، {result.Value!.Username}");
-                LoginSucceeded?.Invoke(this, EventArgs.Empty);
+
+                if (result.Value!.MustChangePassword)
+                {
+                    // النافذة تعرض ديالوغ الإلزام قبل فتح MainWindow
+                    PasswordChangeRequired?.Invoke(this, EventArgs.Empty);
+                }
+                else
+                {
+                    _notifier.ShowSuccess($"مرحباً بك، {result.Value!.Username}");
+                    LoginSucceeded?.Invoke(this, EventArgs.Empty);
+                }
             }
             else
             {

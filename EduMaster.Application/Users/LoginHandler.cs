@@ -46,14 +46,18 @@ public sealed class LoginHandler
             if (!account.IsActive)
                 return OperationResult<LoggedInUser>.Failure("هذا الحساب معطّل. راجع الإدارة.", ErrorType.BusinessRule);
 
-            if (account.IsLockedOut)
-                return OperationResult<LoggedInUser>.Failure("الحساب مقفل مؤقتاً بعد محاولات فاشلة متكررة. راجع الإدارة.", ErrorType.BusinessRule);
+            if (account.IsLockedOut(_clock.UtcNow))
+            {
+                var minutes = (int)Math.Ceiling(account.RemainingLockout(_clock.UtcNow)!.Value.TotalMinutes);
+                return OperationResult<LoggedInUser>.Failure(
+                    $"الحساب مقفل مؤقتاً بعد محاولات فاشلة متكررة — حاول بعد {minutes} دقيقة.", ErrorType.BusinessRule);
+            }
 
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
             if (!_hasher.Verify(request.Password, account.PasswordHash))
             {
-                account.RegisterFailedLogin();
+                account.RegisterFailedLogin(_clock.UtcNow);
                 await _users.UpdateAsync(account, cancellationToken);
                 await _unitOfWork.CommitAsync(cancellationToken);   // ⭐ بدونه لا يُحفظ العداد أبداً
                 _logger.LogWarning("Failed login attempt for username {Username}", request.Username);
@@ -65,7 +69,7 @@ public sealed class LoginHandler
             await _unitOfWork.CommitAsync(cancellationToken);
 
             return OperationResult<LoggedInUser>.Success(
-                new LoggedInUser(account.Id, account.Username, account.PersonId));
+    new LoggedInUser(account.Id, account.Username, account.PersonId, account.MustChangePassword));
         }
         catch (Exception ex)
         {

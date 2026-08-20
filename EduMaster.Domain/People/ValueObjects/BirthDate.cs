@@ -10,16 +10,25 @@ namespace EduMaster.Domain.People.ValueObjects
     {
         public DateOnly Value { get; }
 
-        public BirthDate(DateOnly value, DateOnly today)
+        private BirthDate(DateOnly value)
         {
-            if(value >= today)
-                throw new DomainException("تاريخ الميلاد لا يمكن ان يكون في المستقبل");
-
-            if(today.Year - value.Year > 100)
-                throw new DomainException("تاريخ الميلاد غير منطقي");
-
             Value = value;
         }
+
+        /// <summary>إنشاء جديد — القواعد الزمنية تعمل هنا فقط (وقت الإدخال، واليوم يُمرَّر من IClock)</summary>
+        public static BirthDate Create(DateOnly value, DateOnly today)
+        {
+            if (value >= today)
+                throw new DomainException("تاريخ الميلاد لا يمكن ان يكون في المستقبل");
+
+            if (today.Year - value.Year > 100)
+                throw new DomainException("تاريخ الميلاد غير منطقي");
+
+            return new BirthDate(value);
+        }
+
+        /// <summary>تحميل من القاعدة — بلا إعادة تحقق زمني: القاعدة تحققت يوم الكتابة</summary>
+        public static BirthDate Load(DateOnly value) => new(value);
 
         public override bool Equals(object? obj)
         {

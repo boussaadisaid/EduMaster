@@ -41,9 +41,9 @@ public sealed class DatabaseSeeder
                 firstName: new FirstName("المدير"),
                 lastName: new LastName("العام"),
                 fatherName: null, birthDate: null, gender: null,
-                phone: null, email: null, address: null, photoPath: null,
-                createdByUserId: null,               // null = فعل نظام
-                createdAtUtc: _clock.UtcNow);        // ⬅️ الساعة تُمرَّر ولا تُقرأ
+                phone: null, phone2: null, email: null, address: null, photoPath: null,
+                createdAtUtc: _clock.UtcNow,
+                createdByUserId: null);       
             await _persons.AddAsync(person, cancellationToken);
 
             var passwordHash = _hasher.Hash("admin123");
@@ -51,8 +51,8 @@ public sealed class DatabaseSeeder
                 personId: person.Id,                 // ⬅️ SetId داخل AddAsync جعلته متاحاً هنا
                 username: "admin",
                 passwordHash: passwordHash,
-                createdByUserId: null,
                 createdAtUtc: _clock.UtcNow,
+                createdByUserId: null,                
                 mustChangePassword: false);          // TODO: true عندما نبني شاشة تغيير كلمة المرور
             await _users.AddAsync(account, cancellationToken);
 

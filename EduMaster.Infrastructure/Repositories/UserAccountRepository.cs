@@ -3,7 +3,6 @@ using EduMaster.Application.Abstractions.Repositories;
 using EduMaster.Domain.Users;
 using EduMaster.Infrastructure.Persistence;
 
-
 namespace EduMaster.Infrastructure.Users;
 
 public sealed class UserAccountRepository : IUserAccountRepository
@@ -24,30 +23,41 @@ public sealed class UserAccountRepository : IUserAccountRepository
         int FailedLoginCount,
         DateTime? LastLoginAtUtc,
         bool MustChangePassword,
+        DateTime? LockedUntilUtc,
         DateTime CreatedAtUtc,
         int? CreatedByUserId,
         DateTime? UpdatedAtUtc,
         int? UpdatedByUserId);
 
+    private const string SelectSql = @"
+SELECT Id, PersonId, Username, PasswordHash, IsActive,
+       FailedLoginCount, LastLoginAtUtc, MustChangePassword, LockedUntilUtc,
+       CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
+FROM UserAccounts";
 
     public async Task<UserAccount?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
-        const string sql = @"
-            SELECT Id, PersonId, Username, PasswordHash, IsActive,
-                   FailedLoginCount, LastLoginAtUtc, MustChangePassword,
-                   CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
-            FROM UserAccounts
-            WHERE Username = @Username AND IsDeleted = 0;";
-
-        // ② new { Username = ... } — Dapper يحوّلها لمعاملات آمنة: نفس حماية SQL Injection
         var row = await connection.QuerySingleOrDefaultAsync<UserAccountRow>(
-            new CommandDefinition(sql, new { Username = username.Trim() },
-                transaction: _session.CurrentTransaction,      // ③ نمرّر المعاملة دائماً
+            new CommandDefinition(SelectSql + "\nWHERE Username = @Username AND IsDeleted = 0;",
+                new { Username = username.Trim() },
+                transaction: _session.CurrentTransaction,
                 cancellationToken: cancellationToken));
 
-        // ④ الصف الخام يدخل مصنع Load — الدومين يبقى سيد قواعده
+        return row is null ? null : MapToDomain(row);
+    }
+
+    public async Task<UserAccount?> GetByPersonIdAsync(int personId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        var row = await connection.QuerySingleOrDefaultAsync<UserAccountRow>(
+            new CommandDefinition(SelectSql + "\nWHERE PersonId = @PersonId AND IsDeleted = 0;",
+                new { PersonId = personId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
         return row is null ? null : MapToDomain(row);
     }
 
@@ -55,10 +65,21 @@ public sealed class UserAccountRepository : IUserAccountRepository
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
-        const string sql = "SELECT COUNT(*) FROM UserAccounts WHERE IsDeleted = 0;";
+        var count = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition("SELECT COUNT(*) FROM UserAccounts WHERE IsDeleted = 0;",
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return count > 0;
+    }
+
+    public async Task<bool> AnyWithUsernameAsync(string username, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         var count = await connection.ExecuteScalarAsync<int>(
-            new CommandDefinition(sql,
+            new CommandDefinition("SELECT COUNT(*) FROM UserAccounts WHERE Username = @Username AND IsDeleted = 0;",
+                new { Username = username.Trim() },
                 transaction: _session.CurrentTransaction,
                 cancellationToken: cancellationToken));
 
@@ -70,15 +91,14 @@ public sealed class UserAccountRepository : IUserAccountRepository
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-            INSERT INTO UserAccounts
-                (PersonId, Username, PasswordHash, IsActive, FailedLoginCount,
-                 LastLoginAtUtc, MustChangePassword, CreatedAtUtc, CreatedByUserId)
-            OUTPUT INSERTED.Id
-            VALUES
-                (@PersonId, @Username, @PasswordHash, @IsActive, @FailedLoginCount,
-                 @LastLoginAtUtc, @MustChangePassword, @CreatedAtUtc, @CreatedByUserId);";
+INSERT INTO UserAccounts
+    (PersonId, Username, PasswordHash, IsActive, FailedLoginCount,
+     LastLoginAtUtc, MustChangePassword, LockedUntilUtc, CreatedAtUtc, CreatedByUserId)
+OUTPUT INSERTED.Id
+VALUES
+    (@PersonId, @Username, @PasswordHash, @IsActive, @FailedLoginCount,
+     @LastLoginAtUtc, @MustChangePassword, @LockedUntilUtc, @CreatedAtUtc, @CreatedByUserId);";
 
-        // نفس درس OUTPUT INSERTED — يستلم قيمة IDENTITY في نفس الرحلة
         var newId = await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, new
             {
@@ -89,6 +109,7 @@ public sealed class UserAccountRepository : IUserAccountRepository
                 account.FailedLoginCount,
                 account.LastLoginAtUtc,
                 account.MustChangePassword,
+                account.LockedUntilUtc,
                 account.CreatedAtUtc,
                 account.CreatedByUserId
             },
@@ -102,16 +123,18 @@ public sealed class UserAccountRepository : IUserAccountRepository
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
+        // D-20: قيم التدقيق تُؤخذ من الكيان (السلوكيات تملؤها بساعة ممررة) — لا SYSUTCDATETIME() ولا null ثابت
         const string sql = @"
-            UPDATE UserAccounts
-            SET PasswordHash       = @PasswordHash,
-                IsActive           = @IsActive,
-                FailedLoginCount   = @FailedLoginCount,
-                LastLoginAtUtc     = @LastLoginAtUtc,
-                MustChangePassword = @MustChangePassword,
-                UpdatedAtUtc       = SYSUTCDATETIME(),
-                UpdatedByUserId    = @UpdatedByUserId
-            WHERE Id = @Id AND IsDeleted = 0;";
+UPDATE UserAccounts
+SET PasswordHash       = @PasswordHash,
+    IsActive           = @IsActive,
+    FailedLoginCount   = @FailedLoginCount,
+    LastLoginAtUtc     = @LastLoginAtUtc,
+    MustChangePassword = @MustChangePassword,
+    LockedUntilUtc     = @LockedUntilUtc,
+    UpdatedAtUtc       = @UpdatedAtUtc,
+    UpdatedByUserId    = @UpdatedByUserId
+WHERE Id = @Id AND IsDeleted = 0;";
 
         var affected = await connection.ExecuteAsync(
             new CommandDefinition(sql, new
@@ -121,8 +144,10 @@ public sealed class UserAccountRepository : IUserAccountRepository
                 account.FailedLoginCount,
                 account.LastLoginAtUtc,
                 account.MustChangePassword,
-                UpdatedByUserId = (int?)null,   // في تدفق الدخول: لا مستخدم داخل بعد
-                Id = account.Id
+                account.LockedUntilUtc,
+                account.UpdatedAtUtc,
+                account.UpdatedByUserId,
+                account.Id
             },
             transaction: _session.CurrentTransaction,
             cancellationToken: cancellationToken));
@@ -141,12 +166,9 @@ public sealed class UserAccountRepository : IUserAccountRepository
             failedLoginCount: row.FailedLoginCount,
             lastLoginAtUtc: row.LastLoginAtUtc,
             mustChangePassword: row.MustChangePassword,
+            lockedUntilUtc: row.LockedUntilUtc,
             createdAtUtc: row.CreatedAtUtc,
             createdByUserId: row.CreatedByUserId,
             updatedAtUtc: row.UpdatedAtUtc,
             updatedByUserId: row.UpdatedByUserId);
-
-
-
-
 }

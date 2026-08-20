@@ -1,0 +1,1 @@
+﻿public sealed record SearchPersonsRequest(string? Term);
