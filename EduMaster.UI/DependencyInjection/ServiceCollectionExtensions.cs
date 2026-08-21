@@ -4,6 +4,8 @@ using EduMaster.UI.Common.Services;
 using EduMaster.UI.Dialogs;
 using EduMaster.UI.People;
 using EduMaster.UI.Services;
+using EduMaster.UI.Students;
+using EduMaster.UI.Teachers;
 using Microsoft.Extensions.DependencyInjection;
 
 
@@ -35,6 +37,14 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<CreateAccountViewModel>();
             services.AddTransient<ResetPasswordViewModel>();
             services.AddTransient<ChangePasswordViewModel>();
+
+            services.AddTransient<StudentsViewModel>();
+            services.AddTransient<StudentEditorViewModel>();
+
+            services.AddTransient<TeachersViewModel>();
+            services.AddTransient<TeacherEditorViewModel>();
+            services.AddTransient<AssignStudentRoleViewModel>();
+            services.AddTransient<AssignTeacherRoleViewModel>();
 
 
 

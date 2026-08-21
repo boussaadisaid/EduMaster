@@ -1,8 +1,10 @@
 ﻿using EduMaster.Domain.Enums;
 
+namespace EduMaster.Application.Teachers;
 
-public sealed record PersonListItem(
-    int Id,
+public sealed record TeacherListItem(
+    int Id,                     // معرف ملف الأستاذ (لا الشخص)
+    int PersonId,
     string FirstName,
     string LastName,
     string? FatherName,
@@ -12,9 +14,11 @@ public sealed record PersonListItem(
     string? Phone2,
     string? Email,
     string? Address,
+    string? PhotoPath,
+    string? Specialty,
+    string? Notes,
     bool IsActive)
 {
-    /// <summary>الاسم الثلاثي للعرض — بلا مسافات زائدة حتى مع غياب اسم الأب</summary>
     public string FullName =>
         string.Join(" ", new[] { FirstName, LastName, FatherName }.Where(p => !string.IsNullOrWhiteSpace(p)));
 }

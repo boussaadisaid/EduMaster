@@ -4,7 +4,9 @@
              xmlns:ui="clr-namespace:EduMaster.UI" 
              xmlns:years="clr-namespace:EduMaster.UI.AcademicYears"
              xmlns:dialogs="clr-namespace:EduMaster.UI.Dialogs"
-             xmlns:people="clr-namespace:EduMaster.UI.People">
+             xmlns:people="clr-namespace:EduMaster.UI.People"
+             xmlns:students="clr-namespace:EduMaster.UI.Students"
+             xmlns:teachers="clr-namespace:EduMaster.UI.Teachers">
  
     <Application.Resources>
         <ResourceDictionary>
@@ -47,8 +49,28 @@
             <DataTemplate DataType="{x:Type people:ChangePasswordViewModel}">
                 <people:ChangePasswordView/>
             </DataTemplate>
-            
-            
+
+            <DataTemplate DataType="{x:Type students:StudentsViewModel}">
+                <students:StudentsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type students:StudentEditorViewModel}">
+                <students:StudentEditorView/>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type teachers:TeachersViewModel}">
+                <teachers:TeachersView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type teachers:TeacherEditorViewModel}">
+                <teachers:TeacherEditorView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type students:AssignStudentRoleViewModel}">
+                <students:AssignStudentRoleView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type teachers:AssignTeacherRoleViewModel}">
+                <teachers:AssignTeacherRoleView/>
+            </DataTemplate>
+
+
 
             <!-- Custom Font (make sure Cairo.ttf is in /Fonts folder) -->
             <FontFamily x:Key="CairoFont">pack://application:,,,/Fonts/#Cairo</FontFamily>

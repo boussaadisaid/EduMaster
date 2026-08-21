@@ -30,7 +30,13 @@
 
                 <Button Content="👥  الأشخاص" Style="{StaticResource NavButton}"
                         Command="{Binding NavigateToPeopleCommand}"/>
-                
+
+                <Button Content="🎓  الطلاب" Style="{StaticResource NavButton}"
+                    Command="{Binding NavigateToStudentsCommand}"/>
+
+                <Button Content="👨‍🏫  الأساتذة" Style="{StaticResource NavButton}"
+                    Command="{Binding NavigateToTeachersCommand}"/>
+
 
                 <Separator Margin="8,14"/>
 

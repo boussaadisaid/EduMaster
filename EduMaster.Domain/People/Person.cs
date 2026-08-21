@@ -119,6 +119,14 @@ namespace EduMaster.Domain.People
             UpdatedByUserId = updatedByUserId;
         }
 
+        /// <summary>تغيير الصورة أو إزالتها (null) — ح-4: القناة التي كانت تمرّر null تُفعَّل الآن</summary>
+        public void ChangePhoto(string? photoPath, DateTime updatedAtUtc, int? updatedByUserId)
+        {
+            PhotoPath = photoPath;
+            UpdatedAtUtc = updatedAtUtc;
+            UpdatedByUserId = updatedByUserId;
+        }
+
         internal void SetId(int id)
         {
             if (_idSet) throw new DomainException("لا يمكن تغيير المعرف بعد تعيينه");
@@ -128,8 +136,9 @@ namespace EduMaster.Domain.People
             _idSet = true;
         }
 
+        
         private static string BuildNormalizedName(FirstName firstName, FirstName? fatherName, LastName lastName) =>
-            ArabicTextNormalizer.Normalize($"{firstName.Value} {fatherName?.Value} {lastName.Value}");
+            ArabicTextNormalizer.Normalize($"{firstName.Value} {lastName.Value} {fatherName?.Value}");
 
         public override string ToString() => $"{FirstName} {LastName}";
     }

@@ -1,9 +1,12 @@
 ﻿using EduMaster.Application.Abstractions;
 using EduMaster.Application.Abstractions.Repositories;
 using EduMaster.Infrastructure.AcademicYears;
+using EduMaster.Infrastructure.Files;
 using EduMaster.Infrastructure.People;
 using EduMaster.Infrastructure.Persistence;
 using EduMaster.Infrastructure.Security;
+using EduMaster.Infrastructure.Students;
+using EduMaster.Infrastructure.Teachers;
 using EduMaster.Infrastructure.Time;
 using EduMaster.Infrastructure.Users;
 using Microsoft.Data.SqlClient;
@@ -37,6 +40,10 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddTransient<DatabaseSeeder>();
             services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
             services.AddHostedService<DatabaseInitializationHostedService>();
+
+            services.AddScoped<IStudentRepository, StudentRepository>();
+            services.AddScoped<ITeacherRepository, TeacherRepository>();
+            services.AddSingleton<IImageStore, ImageStore>();   // عديمة الحالة = Singleton (قواعد الوصفة)
 
             return services;
         }

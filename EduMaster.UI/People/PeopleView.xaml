@@ -89,6 +89,8 @@
             <Button Content="✏️ تعديل"  Command="{Binding EditCommand}"       Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="🚫 تعطيل" Command="{Binding DeactivateCommand}" Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="✔ تفعيل"  Command="{Binding ActivateCommand}"   Padding="14,6"/>
+            <Button Content="🎓 أضف كطالب"   Command="{Binding AssignStudentRoleCommand}" Padding="14,6" Margin="0,0,8,0"/>
+            <Button Content="👨‍🏫 أضف كأستاذ" Command="{Binding AssignTeacherRoleCommand}" Padding="14,6"/>
         </StackPanel>
     </Grid>
 </UserControl>

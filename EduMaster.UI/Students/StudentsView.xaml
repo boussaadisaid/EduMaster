@@ -1,0 +1,71 @@
+﻿<UserControl x:Class="EduMaster.UI.Students.StudentsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+        FlowDirection="RightToLeft">
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Margin="0,0,0,14">
+            <Button Content="➕ طالب جديد" Command="{Binding AddCommand}"
+                    DockPanel.Dock="Left" Padding="18,8" FontWeight="SemiBold"/>
+            <TextBlock Text="الطلاب" FontSize="24" FontWeight="SemiBold"/>
+        </DockPanel>
+
+        <TextBox Grid.Row="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                 Controls:TextBoxHelper.Watermark="🔍 ابحث بالاسم أو الهاتف أو اسم ولي الأمر…"
+                 Padding="10,8" Margin="0,0,0,14"/>
+
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Students}"
+                  SelectedItem="{Binding SelectedStudent}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserAddRows="False" SelectionMode="Single"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="الاسم الكامل" Binding="{Binding FullName}" Width="2*"/>
+                <DataGridTextColumn Header="الصنف" Binding="{Binding CategoryText}" Width="*"/>
+                <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="*"/>
+                <DataGridTextColumn Header="ولي الأمر" Binding="{Binding GuardianFullName, TargetNullValue='—'}" Width="*"/>
+                <DataGridTemplateColumn Header="الحالة" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="فعّال"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                <Setter Property="Text" Value="معطّل"/>
+                                                <Setter Property="Foreground" Value="Gray"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="2" Text="لا يوجد طلاب بعد — اضغط «طالب جديد» لإضافة أول طالب"
+                   Foreground="Gray" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        <TextBlock Grid.Row="2" Text="جارٍ التحميل…" Foreground="Gray"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,14,0,0">
+            <Button Content="✏️ تعديل"        Command="{Binding EditCommand}"       Padding="14,6" Margin="0,0,8,0"/>
+            <Button Content="🚫 تعطيل"       Command="{Binding DeactivateCommand}" Padding="14,6" Margin="0,0,8,0"/>
+            <Button Content="✔ تفعيل"        Command="{Binding ActivateCommand}"   Padding="14,6" Margin="0,0,8,0"/>
+            <Button Content="🗑 إزالة الملف"  Command="{Binding RemoveFileCommand}" Padding="14,6"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="EduMaster.UI.Teachers.AssignTeacherRoleView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        FlowDirection="RightToLeft">
+    <StackPanel Margin="24" MinWidth="440">
+        <TextBlock Text="{Binding PersonName, StringFormat='إضافة ملف أستاذ لـ: {0}'}"
+                   FontWeight="SemiBold" Margin="0,0,0,14"/>
+
+        <TextBlock Text="التخصص" Margin="0,0,0,4"/>
+        <TextBox Text="{Binding Specialty, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+        <TextBlock Text="ملاحظات" Margin="0,0,0,4"/>
+        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                 AcceptsReturn="True" TextWrapping="Wrap" Height="56" Margin="0,0,0,12"/>
+
+        <Border Background="#FDE7E9" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="4"
+                Padding="10,8" Margin="0,0,0,12"
+                Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="#C42B1C" TextWrapping="Wrap"/>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+            <Button Content="💾 حفظ" Command="{Binding SaveCommand}" Padding="22,8" FontWeight="SemiBold" Margin="0,0,8,0"/>
+            <Button Content="إلغاء" Command="{Binding CancelCommand}" Padding="22,8"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

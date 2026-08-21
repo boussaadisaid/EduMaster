@@ -1,5 +1,4 @@
-﻿using MahApps.Metro.Controls;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,22 +10,19 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace EduMaster.UI
+namespace EduMaster.UI.Teachers
 {
     /// <summary>
-    /// Interaction logic for DialogWindow.xaml
+    /// Interaction logic for AssignTeacherRoleView.xaml
     /// </summary>
-    public partial class DialogWindow : MetroWindow
+    public partial class AssignTeacherRoleView : UserControl
     {
-        public DialogWindow()
+        public AssignTeacherRoleView()
         {
             InitializeComponent();
-
-
-            MaxHeight = SystemParameters.WorkArea.Height - 40;
-            MaxWidth = SystemParameters.WorkArea.Width - 80;
         }
     }
 }

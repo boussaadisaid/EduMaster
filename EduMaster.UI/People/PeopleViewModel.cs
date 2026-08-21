@@ -3,6 +3,8 @@ using EduMaster.Application.People;
 using EduMaster.Application.Users;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
+using EduMaster.UI.Students;
+using EduMaster.UI.Teachers;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 
@@ -37,6 +39,8 @@ public sealed class PeopleViewModel : BaseViewModel
         CreateAccountCommand = new AsyncRelayCommand(CreateAccountAsync, () => SelectedPerson is { IsActive: true } && SelectedAccount is null);
         UnlockAccountCommand = new AsyncRelayCommand(UnlockAccountAsync, () => SelectedAccount is { IsLockedOut: true });
         ResetPasswordCommand = new AsyncRelayCommand(ResetPasswordAsync, () => SelectedAccount is not null);
+        AssignStudentRoleCommand = new AsyncRelayCommand(AssignStudentRoleAsync, () => SelectedPerson is { IsActive: true });
+        AssignTeacherRoleCommand = new AsyncRelayCommand(AssignTeacherRoleAsync, () => SelectedPerson is { IsActive: true });
     }
 
     // ---------- البحث الفوري (ح-4: live مع مهلة 300ms) ----------
@@ -124,7 +128,8 @@ public sealed class PeopleViewModel : BaseViewModel
     public AsyncRelayCommand CreateAccountCommand { get; }
     public AsyncRelayCommand UnlockAccountCommand { get; }
     public AsyncRelayCommand ResetPasswordCommand { get; }
-
+    public AsyncRelayCommand AssignStudentRoleCommand { get; }
+    public AsyncRelayCommand AssignTeacherRoleCommand { get; }
     public Task InitializeAsync() => LoadAsync();
 
     private void RaiseActionCommandsCanExecute()
@@ -135,6 +140,8 @@ public sealed class PeopleViewModel : BaseViewModel
         CreateAccountCommand.RaiseCanExecuteChanged();
         UnlockAccountCommand.RaiseCanExecuteChanged();
         ResetPasswordCommand.RaiseCanExecuteChanged();
+        AssignStudentRoleCommand.RaiseCanExecuteChanged();
+        AssignTeacherRoleCommand.RaiseCanExecuteChanged();
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken = default)
@@ -296,4 +303,28 @@ public sealed class PeopleViewModel : BaseViewModel
         else
             _notifier.ShowWarning(errorMessage!);
     }
+
+    private async Task AssignStudentRoleAsync()
+    {
+        var person = SelectedPerson;
+        if (person is null) return;
+
+        var dialog = _services.GetRequiredService<AssignStudentRoleViewModel>();
+        dialog.Initialize(person);
+        await _dialogs.ShowDialogAsync(dialog, "إضافة ملف طالب");
+        // لا إعادة تحميل — الملف لا يغيّر صف الشخص في الشبكة
+    }
+
+    private async Task AssignTeacherRoleAsync()
+    {
+        var person = SelectedPerson;
+        if (person is null) return;
+
+        var dialog = _services.GetRequiredService<AssignTeacherRoleViewModel>();
+        dialog.Initialize(person);
+        await _dialogs.ShowDialogAsync(dialog, "إضافة ملف أستاذ");
+    }
+
+
+
 }
