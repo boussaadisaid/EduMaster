@@ -43,6 +43,9 @@
                 <TextBlock Text="⚙️ الإعدادات" Foreground="Gray" Margin="16,4,16,6"/>
                 <Button Content="📅  السنوات الدراسية" Style="{StaticResource NavButton}"
                         Command="{Binding NavigateToAcademicYearsCommand}"/>
+
+                <Button Content="📚  البنية الأكاديمية" Style="{StaticResource NavButton}"
+                    Command="{Binding NavigateToAcademicStructureCommand}"/>
             </StackPanel>
         </Border>
 

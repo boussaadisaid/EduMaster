@@ -1,4 +1,5 @@
 ﻿using EduMaster.Application.Abstractions;
+using EduMaster.UI.Academic;
 using EduMaster.UI.AcademicYears;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Dialogs;
@@ -45,6 +46,12 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<TeacherEditorViewModel>();
             services.AddTransient<AssignStudentRoleViewModel>();
             services.AddTransient<AssignTeacherRoleViewModel>();
+
+            services.AddTransient<AcademicStructureViewModel>();
+            services.AddTransient<LevelEditorViewModel>();
+            services.AddTransient<StreamEditorViewModel>();
+            services.AddTransient<SubjectEditorViewModel>();
+            services.AddTransient<RoomEditorViewModel>();
 
 
 

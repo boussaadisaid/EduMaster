@@ -1,5 +1,6 @@
 ﻿using EduMaster.Application.Abstractions;
 using EduMaster.Application.Abstractions.Repositories;
+using EduMaster.Infrastructure.Academic;
 using EduMaster.Infrastructure.AcademicYears;
 using EduMaster.Infrastructure.Files;
 using EduMaster.Infrastructure.People;
@@ -43,7 +44,12 @@ namespace EduMaster.Infrastructure.DependencyInjection
 
             services.AddScoped<IStudentRepository, StudentRepository>();
             services.AddScoped<ITeacherRepository, TeacherRepository>();
-            services.AddSingleton<IImageStore, ImageStore>();   // عديمة الحالة = Singleton (قواعد الوصفة)
+            services.AddSingleton<IImageStore, ImageStore>();
+
+            services.AddScoped<ILevelRepository, LevelRepository>();
+            services.AddScoped<IStreamRepository, StreamRepository>();
+            services.AddScoped<ISubjectRepository, SubjectRepository>();
+            services.AddScoped<IRoomRepository, RoomRepository>();
 
             return services;
         }

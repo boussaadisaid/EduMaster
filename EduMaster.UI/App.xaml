@@ -6,7 +6,8 @@
              xmlns:dialogs="clr-namespace:EduMaster.UI.Dialogs"
              xmlns:people="clr-namespace:EduMaster.UI.People"
              xmlns:students="clr-namespace:EduMaster.UI.Students"
-             xmlns:teachers="clr-namespace:EduMaster.UI.Teachers">
+             xmlns:teachers="clr-namespace:EduMaster.UI.Teachers"
+             xmlns:academic="clr-namespace:EduMaster.UI.Academic">
  
     <Application.Resources>
         <ResourceDictionary>
@@ -68,6 +69,22 @@
             </DataTemplate>
             <DataTemplate DataType="{x:Type teachers:AssignTeacherRoleViewModel}">
                 <teachers:AssignTeacherRoleView/>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type academic:AcademicStructureViewModel}">
+                <academic:AcademicStructureView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type academic:LevelEditorViewModel}">
+                <academic:LevelEditorView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type academic:StreamEditorViewModel}">
+                <academic:StreamEditorView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type academic:SubjectEditorViewModel}">
+                <academic:SubjectEditorView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type academic:RoomEditorViewModel}">
+                <academic:RoomEditorView/>
             </DataTemplate>
 
 

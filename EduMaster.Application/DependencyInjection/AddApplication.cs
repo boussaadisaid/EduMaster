@@ -1,4 +1,5 @@
-﻿using EduMaster.Application.AcademicYears;
+﻿using EduMaster.Application.Academic;
+using EduMaster.Application.AcademicYears;
 using EduMaster.Application.AcademicYears.ActivateAcademicYear;
 using EduMaster.Application.AcademicYears.CreateAcademicYear;
 using EduMaster.Application.AcademicYears.DeactivateAcademicYear;
@@ -51,6 +52,30 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<CreateTeacherFileHandler>();
             services.AddTransient<UpdateTeacherHandler>();
             services.AddTransient<SoftDeleteTeacherHandler>();
+
+            services.AddTransient<GetLevelsHandler>();
+            services.AddTransient<CreateLevelHandler>();
+            services.AddTransient<UpdateLevelHandler>();
+            services.AddTransient<DeactivateLevelHandler>();
+            services.AddTransient<ActivateLevelHandler>();
+
+            services.AddTransient<GetStreamsByLevelHandler>();
+            services.AddTransient<CreateStreamHandler>();
+            services.AddTransient<UpdateStreamHandler>();
+            services.AddTransient<DeactivateStreamHandler>();
+            services.AddTransient<ActivateStreamHandler>();
+
+            services.AddTransient<GetSubjectsHandler>();
+            services.AddTransient<CreateSubjectHandler>();
+            services.AddTransient<UpdateSubjectHandler>();
+            services.AddTransient<DeactivateSubjectHandler>();
+            services.AddTransient<ActivateSubjectHandler>();
+
+            services.AddTransient<GetRoomsHandler>();
+            services.AddTransient<CreateRoomHandler>();
+            services.AddTransient<UpdateRoomHandler>();
+            services.AddTransient<DeactivateRoomHandler>();
+            services.AddTransient<ActivateRoomHandler>();
 
             return services;
         }

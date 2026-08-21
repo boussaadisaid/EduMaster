@@ -1,4 +1,5 @@
-﻿using EduMaster.UI.AcademicYears;
+﻿using EduMaster.UI.Academic;
+using EduMaster.UI.AcademicYears;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.People;
 using EduMaster.UI.Students;
@@ -52,6 +53,14 @@ namespace EduMaster.UI
                 await vm.InitializeAsync();
             });
 
+            NavigateToAcademicStructureCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<AcademicStructureViewModel>();
+                CurrentViewModel = vm;
+                await vm.InitializeAsync();
+            });
+
+
 
             CurrentViewModel = _services.GetRequiredService<HomeViewModel>();      // الشاشة الافتتاحية
         }
@@ -68,6 +77,7 @@ namespace EduMaster.UI
         public AsyncRelayCommand NavigateToPeopleCommand { get; }
         public AsyncRelayCommand NavigateToStudentsCommand { get; }
         public AsyncRelayCommand NavigateToTeachersCommand { get; }
+        public AsyncRelayCommand NavigateToAcademicStructureCommand { get; }
 
     }
 }
