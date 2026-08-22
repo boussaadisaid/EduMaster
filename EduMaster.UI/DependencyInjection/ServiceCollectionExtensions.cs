@@ -1,6 +1,7 @@
 ﻿using EduMaster.Application.Abstractions;
 using EduMaster.UI.Academic;
 using EduMaster.UI.AcademicYears;
+using EduMaster.UI.ClassGroups;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Dialogs;
 using EduMaster.UI.People;
@@ -52,6 +53,10 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<StreamEditorViewModel>();
             services.AddTransient<SubjectEditorViewModel>();
             services.AddTransient<RoomEditorViewModel>();
+
+            // ClassGroups (F2 — الشريحة 2.1)
+            services.AddTransient<ClassGroupsViewModel>();
+            services.AddTransient<ClassGroupEditorViewModel>();
 
 
 

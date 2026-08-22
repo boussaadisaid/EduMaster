@@ -2,6 +2,7 @@
 using EduMaster.Application.Abstractions.Repositories;
 using EduMaster.Infrastructure.Academic;
 using EduMaster.Infrastructure.AcademicYears;
+using EduMaster.Infrastructure.ClassGroups;
 using EduMaster.Infrastructure.Files;
 using EduMaster.Infrastructure.People;
 using EduMaster.Infrastructure.Persistence;
@@ -50,6 +51,8 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddScoped<IStreamRepository, StreamRepository>();
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IRoomRepository, RoomRepository>();
+
+            services.AddScoped<IClassGroupRepository, ClassGroupRepository>();
 
             return services;
         }

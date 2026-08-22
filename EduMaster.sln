@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		db\002_academic_years.sql = db\002_academic_years.sql
 		db\003_slice13.sql = db\003_slice13.sql
 		db\004_slice14.sql = db\004_slice14.sql
+		db\005_slice15.sql = db\005_slice15.sql
+		db\006_slice21.sql = db\006_slice21.sql
 		README.md = README.md
 	EndProjectSection
 EndProject

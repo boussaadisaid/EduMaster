@@ -37,6 +37,9 @@
                 <Button Content="👨‍🏫  الأساتذة" Style="{StaticResource NavButton}"
                     Command="{Binding NavigateToTeachersCommand}"/>
 
+                <Button Content="🧑‍🤝‍🧑  الأفواج" Style="{StaticResource NavButton}"
+                        Command="{Binding NavigateToClassGroupsCommand}"/>
+
 
                 <Separator Margin="8,14"/>
 

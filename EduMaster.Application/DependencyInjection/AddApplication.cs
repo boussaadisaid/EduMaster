@@ -5,6 +5,7 @@ using EduMaster.Application.AcademicYears.CreateAcademicYear;
 using EduMaster.Application.AcademicYears.DeactivateAcademicYear;
 using EduMaster.Application.AcademicYears.SetCurrentAcademicYear;
 using EduMaster.Application.AcademicYears.UpdateAcademicYear;
+using EduMaster.Application.ClassGroups;
 using EduMaster.Application.People;
 using EduMaster.Application.Students;
 using EduMaster.Application.Teachers;
@@ -76,6 +77,13 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<UpdateRoomHandler>();
             services.AddTransient<DeactivateRoomHandler>();
             services.AddTransient<ActivateRoomHandler>();
+
+            services.AddTransient<GetClassGroupsHandler>();
+            services.AddTransient<GetClassGroupStreamIdsHandler>();
+            services.AddTransient<CreateClassGroupHandler>();
+            services.AddTransient<UpdateClassGroupHandler>();
+            services.AddTransient<DeactivateClassGroupHandler>();
+            services.AddTransient<ActivateClassGroupHandler>();
 
             return services;
         }
