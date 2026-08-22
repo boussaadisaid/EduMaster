@@ -37,11 +37,14 @@ public sealed class CreateAcademicYearHandler
         if (string.IsNullOrWhiteSpace(request.Name))
             return OperationResult<int>.Failure("أدخل اسم السنة الدراسية.", ErrorType.Validation);
 
+        if (request.RegistrationFeeCentimes < 0)
+            return OperationResult<int>.Failure("حقوق التسجيل لا يمكن أن تكون سالبة.", ErrorType.Validation);
+
         try
         {
             // ① بناء الكيان أولاً — قواعد الصيغة/التواريخ/المطابقة/التتابع تعيش في الدومين وترمي DomainException عربية
             var name = new YearName(request.Name);
-            var year = AcademicYear.Create(name, request.StartDate, request.EndDate,
+            var year = AcademicYear.Create(name, request.StartDate, request.EndDate, request.RegistrationFeeCentimes,
                 _clock.UtcNow, _currentUser.UserAccountId);
 
             // ② فحوصات التعارض (قراءة) قبل فتح المعاملة — رسالة نظيفة بدل اصطدام قيود القاعدة (D-22/D-24)

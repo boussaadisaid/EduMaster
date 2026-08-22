@@ -5,6 +5,7 @@ using EduMaster.UI.ClassGroups;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Dialogs;
 using EduMaster.UI.People;
+using EduMaster.UI.Pricing;
 using EduMaster.UI.Services;
 using EduMaster.UI.Students;
 using EduMaster.UI.Teachers;
@@ -58,7 +59,8 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<ClassGroupsViewModel>();
             services.AddTransient<ClassGroupEditorViewModel>();
 
-
+            // Pricing (F2 — الشريحة 2.2)
+            services.AddTransient<SubjectPriceEditorViewModel>();
 
             return services;
         }

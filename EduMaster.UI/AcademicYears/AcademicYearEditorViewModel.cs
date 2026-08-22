@@ -1,15 +1,17 @@
-﻿using EduMaster.Application.AcademicYears;
+﻿
+
+
+using EduMaster.Application.AcademicYears;
 using EduMaster.Application.AcademicYears.CreateAcademicYear;
 using EduMaster.Application.AcademicYears.UpdateAcademicYear;
 using EduMaster.Application.Common;
+using EduMaster.UI.Common;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+
 
 namespace EduMaster.UI.AcademicYears
 {
@@ -17,11 +19,14 @@ namespace EduMaster.UI.AcademicYears
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IUserNotifier _notifier;
+        private readonly ILogger<AcademicYearEditorViewModel> _logger;
 
-        public AcademicYearEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier)
+        public AcademicYearEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
+            ILogger<AcademicYearEditorViewModel> logger)
         {
             _scopeFactory = scopeFactory;
             _notifier = notifier;
+            _logger = logger;
 
             SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
             CancelCommand = new AsyncRelayCommand(() =>
@@ -66,6 +71,14 @@ namespace EduMaster.UI.AcademicYears
 
         public bool HasValidRange => EndDate > StartDate;
 
+        // D-66: حقوق التسجيل الافتراضية — تُدخَل بالدينار وتُحوَّل سنتيم عبر MoneyInput (D-51/D-67) — الفارغ = بلا حقوق
+        private string _registrationFeeText = string.Empty;
+        public string RegistrationFeeText
+        {
+            get => _registrationFeeText;
+            set => SetProperty(ref _registrationFeeText, value);
+        }
+
         private string? _errorMessage;
         public string? ErrorMessage
         {
@@ -99,6 +112,7 @@ namespace EduMaster.UI.AcademicYears
             var today = DateTime.Today;
             StartDate = new DateTime(today.Year, 9, 1);        // افتراضي: سبتمبر
             EndDate = new DateTime(today.Year + 1, 7, 1);      // إلى جويلية التالية
+            RegistrationFeeText = string.Empty;
         }
 
         public void InitializeForEdit(AcademicYearListItem year)
@@ -106,6 +120,31 @@ namespace EduMaster.UI.AcademicYears
             _editingId = year.Id;
             StartDate = year.StartDate.ToDateTime(TimeOnly.MinValue);
             EndDate = year.EndDate.ToDateTime(TimeOnly.MinValue);
+
+            // العنصر المسطّح لا يحمل الحقوق — تُجلب من القاعدة وتُملأ بعد لحظات (D-40 يبقى خفيفاً)
+            RegistrationFeeText = string.Empty;
+            _ = LoadRegistrationFeeAsync(year.Id);
+        }
+
+        private async Task LoadRegistrationFeeAsync(int yearId)
+        {
+            try
+            {
+                await using var scope = _scopeFactory.CreateAsyncScope();
+                var handler = scope.ServiceProvider.GetRequiredService<GetAcademicYearByIdHandler>();
+                var result = await handler.ExecuteAsync(yearId);
+
+                if (result.IsSuccess && result.Value is not null)
+                    RegistrationFeeText = MoneyInput.FormatDinars(result.Value.RegistrationFeeCentimes);
+                else if (!result.IsSuccess)
+                    _notifier.ShowError(result.ErrorMessage!);
+            }
+            catch (Exception ex)
+            {
+                // قناة fire-and-forget: الفشل يُسجَّل ويُعلَم — لا يضيع كاستثناء Task غير مُلاحَظ
+                _logger.LogError(ex, "Failed to load registration fee for academic year {AcademicYearId}", yearId);
+                _notifier.ShowError("تعذّر تحميل حقوق التسجيل الحالية — أغلق النافذة وأعد فتحها.");
+            }
         }
 
         private async Task SaveAsync()
@@ -115,6 +154,12 @@ namespace EduMaster.UI.AcademicYears
             if (!HasValidRange)
             {
                 ErrorMessage = "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.";
+                return;
+            }
+
+            if (!MoneyInput.TryParseDinars(RegistrationFeeText, out var registrationFeeCentimes))
+            {
+                ErrorMessage = "حقوق التسجيل يجب أن تكون مبلغاً صحيحاً بالدينار (مثل 0 أو 1500 أو 1500.50) — والفارغ = بلا حقوق.";
                 return;
             }
 
@@ -128,7 +173,7 @@ namespace EduMaster.UI.AcademicYears
                 if (_editingId is null)
                 {
                     var handler = scope.ServiceProvider.GetRequiredService<CreateAcademicYearHandler>();
-                    var result = await handler.ExecuteAsync(new CreateAcademicYearRequest(DerivedName, start, end));
+                    var result = await handler.ExecuteAsync(new CreateAcademicYearRequest(DerivedName, start, end, registrationFeeCentimes));
 
                     if (!HandleSaveResult(result.IsSuccess, result.ErrorMessage, result.ErrorType, "أُنشئت السنة الدراسية بنجاح ✔"))
                         return;
@@ -136,7 +181,7 @@ namespace EduMaster.UI.AcademicYears
                 else
                 {
                     var handler = scope.ServiceProvider.GetRequiredService<UpdateAcademicYearHandler>();
-                    var result = await handler.ExecuteAsync(new UpdateAcademicYearRequest(_editingId.Value, DerivedName, start, end));
+                    var result = await handler.ExecuteAsync(new UpdateAcademicYearRequest(_editingId.Value, DerivedName, start, end, registrationFeeCentimes));
 
                     if (!HandleSaveResult(result.IsSuccess, result.ErrorMessage, result.ErrorType, "حُفظت التعديلات بنجاح ✔"))
                         return;

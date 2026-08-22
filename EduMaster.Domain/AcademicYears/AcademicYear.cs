@@ -11,6 +11,8 @@ namespace EduMaster.Domain.AcademicYears
         public DateOnly EndDate { get; private set; }
         public bool IsCurrent { get; private set; }
         public bool IsActive { get; private set; }
+        /// <summary>حقوق التسجيل الافتراضية للسنة بالسنتيم (D-51/D-66) — تُقترح في التسجيل السنوي وتُعدَّل/تُعفى لكل طالب (D-52)</summary>
+        public long RegistrationFeeCentimes { get; private set; }
         public DateTime CreatedAtUtc { get; private set; }
         public int? CreatedByUserId { get; private set; }
         public DateTime? UpdatedAtUtc { get; private set; }
@@ -20,6 +22,7 @@ namespace EduMaster.Domain.AcademicYears
 
         // Constructor for Create
         private AcademicYear(YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent, bool isActive,
+            long registrationFeeCentimes,
             DateTime createdAtUtc, int? createdByUserId, DateTime? updatedAtUtc, int? updatedByUserId)
         {
             Name = name;
@@ -27,6 +30,7 @@ namespace EduMaster.Domain.AcademicYears
             EndDate = endDate;
             IsCurrent = isCurrent;
             IsActive = isActive;
+            RegistrationFeeCentimes = registrationFeeCentimes;
             CreatedAtUtc = createdAtUtc;
             CreatedByUserId = createdByUserId;
             UpdatedAtUtc = updatedAtUtc;
@@ -35,6 +39,7 @@ namespace EduMaster.Domain.AcademicYears
 
         // Constructor for Load
         private AcademicYear(int id, YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent, bool isActive,
+            long registrationFeeCentimes,
             DateTime createdAtUtc, int? createdByUserId, DateTime? updatedAtUtc, int? updatedByUserId)
         {
             if (id <= 0)
@@ -45,6 +50,7 @@ namespace EduMaster.Domain.AcademicYears
             EndDate = endDate;
             IsCurrent = isCurrent;
             IsActive = isActive;
+            RegistrationFeeCentimes = registrationFeeCentimes;
             Id = id;
             CreatedAtUtc = createdAtUtc;
             CreatedByUserId = createdByUserId;
@@ -54,29 +60,32 @@ namespace EduMaster.Domain.AcademicYears
             _idSet = true;
         }
 
-        public static AcademicYear Create(YearName name, DateOnly startDate, DateOnly endDate,
+        public static AcademicYear Create(YearName name, DateOnly startDate, DateOnly endDate, long registrationFeeCentimes,
             DateTime createdAtUtc, int? createdByUserId)
         {
-            Validate(name, startDate, endDate);
-            return new AcademicYear(name, startDate, endDate, false, true, createdAtUtc, createdByUserId, null, null);
+            Validate(name, startDate, endDate, registrationFeeCentimes);
+            return new AcademicYear(name, startDate, endDate, false, true, registrationFeeCentimes,
+                createdAtUtc, createdByUserId, null, null);
         }
 
         public static AcademicYear Load(int id, YearName name, DateOnly startDate, DateOnly endDate, bool isCurrent,
-            bool isActive, DateTime createdAtUtc, int? createdByUserId, DateTime? updatedAtUtc, int? updatedByUserId)
+            bool isActive, long registrationFeeCentimes, DateTime createdAtUtc, int? createdByUserId,
+            DateTime? updatedAtUtc, int? updatedByUserId)
         {
-            Validate(name, startDate, endDate);
-            return new AcademicYear(id, name, startDate, endDate, isCurrent, isActive, createdAtUtc,
-                createdByUserId, updatedAtUtc, updatedByUserId);
+            Validate(name, startDate, endDate, registrationFeeCentimes);
+            return new AcademicYear(id, name, startDate, endDate, isCurrent, isActive, registrationFeeCentimes,
+                createdAtUtc, createdByUserId, updatedAtUtc, updatedByUserId);
         }
 
-        public void Update(YearName name, DateOnly startDate, DateOnly endDate,
+        public void Update(YearName name, DateOnly startDate, DateOnly endDate, long registrationFeeCentimes,
             DateTime updatedAtUtc, int? updatedByUserId)
         {
-            Validate(name, startDate, endDate);
+            Validate(name, startDate, endDate, registrationFeeCentimes);
 
             Name = name;
             StartDate = startDate;
             EndDate = endDate;
+            RegistrationFeeCentimes = registrationFeeCentimes;
 
             UpdatedAtUtc = updatedAtUtc;
             UpdatedByUserId = updatedByUserId;
@@ -140,13 +149,16 @@ namespace EduMaster.Domain.AcademicYears
             UpdatedByUserId = updatedByUserId;
         }
 
-        private static void Validate(YearName name, DateOnly startDate, DateOnly endDate)
+        private static void Validate(YearName name, DateOnly startDate, DateOnly endDate, long registrationFeeCentimes)
         {
             if (startDate >= endDate)
                 throw new DomainException("تاريخ بداية السنة يجب أن يكون أقل من تاريخ نهاية السنة");
 
             if (startDate.Year != name.StartYear || endDate.Year != name.EndYear)
                 throw new DomainException("تاريخ البداية والنهاية يجب أن يوافقا اسم السنة الدراسية");
+
+            if (registrationFeeCentimes < 0)
+                throw new DomainException("حقوق التسجيل لا يمكن أن تكون سالبة.");
         }
 
         public override string ToString() => Name.ToString();

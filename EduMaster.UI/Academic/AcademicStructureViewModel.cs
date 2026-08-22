@@ -1,8 +1,11 @@
 ﻿using EduMaster.Application.Academic;
+using EduMaster.Application.AcademicYears;
 using EduMaster.Application.Common;
+using EduMaster.Application.Pricing;
 using EduMaster.Domain.Academic;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
+using EduMaster.UI.Pricing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 using Stream = EduMaster.Domain.Academic.Stream;   // احتياط ضد الغموض مع System.IO.Stream
@@ -15,6 +18,7 @@ public sealed class AcademicStructureViewModel : BaseViewModel
     private readonly IServiceProvider _services;
     private readonly IUserNotifier _notifier;
     private readonly IDialogService _dialogs;
+    private CancellationTokenSource? _priceLoadCts;
 
     public AcademicStructureViewModel(
         IServiceScopeFactory scopeFactory,
@@ -50,6 +54,11 @@ public sealed class AcademicStructureViewModel : BaseViewModel
         EditRoomCommand = new AsyncRelayCommand(EditRoomAsync, () => SelectedRoom is not null);
         DeactivateRoomCommand = new AsyncRelayCommand(DeactivateRoomAsync, () => SelectedRoom is { IsActive: true });
         ActivateRoomCommand = new AsyncRelayCommand(ActivateRoomAsync, () => SelectedRoom is { IsActive: false });
+
+        // أسعار (F2 — الشريحة 2.2)
+        AddPriceCommand = new AsyncRelayCommand(AddPriceAsync);
+        EditPriceCommand = new AsyncRelayCommand(EditPriceAsync, () => SelectedPrice is not null);
+        DeletePriceCommand = new AsyncRelayCommand(DeletePriceAsync, () => SelectedPrice is not null);
     }
 
     // ---------- الحالة ----------
@@ -95,7 +104,43 @@ public sealed class AcademicStructureViewModel : BaseViewModel
     private bool _isLoading;
     public bool IsLoading { get => _isLoading; private set => SetProperty(ref _isLoading, value); }
 
-    // ---------- الأوامر الستة عشر ----------
+    // ---------- الأسعار: فلتر السنة + القائمة (D-67) ----------
+    public sealed record PriceYearFilterOption(int? Id, string Label, bool IsCurrent);
+
+    public ObservableCollection<PriceYearFilterOption> PriceYearFilters { get; } = new();
+
+    private PriceYearFilterOption? _selectedPriceYearFilter;
+    public PriceYearFilterOption? SelectedPriceYearFilter
+    {
+        get => _selectedPriceYearFilter;
+        set
+        {
+            if (SetProperty(ref _selectedPriceYearFilter, value))
+            {
+                _priceLoadCts?.Cancel();   // D-64: تبديل الفلتر يلغي التحميل السابق
+                var cts = _priceLoadCts = new CancellationTokenSource();
+                _ = LoadPricesAsync(cts.Token);
+            }
+        }
+    }
+
+    public ObservableCollection<SubjectPriceListItem> Prices { get; } = new();
+
+    private SubjectPriceListItem? _selectedPrice;
+    public SubjectPriceListItem? SelectedPrice
+    {
+        get => _selectedPrice;
+        set
+        {
+            SetProperty(ref _selectedPrice, value);
+            EditPriceCommand.RaiseCanExecuteChanged();
+            DeletePriceCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public bool PricesEmpty => Prices.Count == 0;
+
+    // ---------- الأوامر التسعة عشر ----------
     public AsyncRelayCommand AddLevelCommand { get; }
     public AsyncRelayCommand EditLevelCommand { get; }
     public AsyncRelayCommand DeactivateLevelCommand { get; }
@@ -112,6 +157,9 @@ public sealed class AcademicStructureViewModel : BaseViewModel
     public AsyncRelayCommand EditRoomCommand { get; }
     public AsyncRelayCommand DeactivateRoomCommand { get; }
     public AsyncRelayCommand ActivateRoomCommand { get; }
+    public AsyncRelayCommand AddPriceCommand { get; }
+    public AsyncRelayCommand EditPriceCommand { get; }
+    public AsyncRelayCommand DeletePriceCommand { get; }
 
     // ---------- التحميل ----------
     public async Task InitializeAsync()
@@ -119,9 +167,10 @@ public sealed class AcademicStructureViewModel : BaseViewModel
         IsLoading = true;
         try
         {
-            await LoadLevelsAsync();     // ويجرّ الشعب تلقائياً عبر SelectedLevel
+            await LoadLevelsAsync();      // ويجرّ الشعب تلقائياً عبر SelectedLevel
             await LoadSubjectsAsync();
             await LoadRoomsAsync();
+            await LoadPriceYearsAsync();  // ويجرّ الأسعار تلقائياً عبر SelectedPriceYearFilter (السنة الحالية افتراضياً)
         }
         finally
         {
@@ -198,6 +247,47 @@ public sealed class AcademicStructureViewModel : BaseViewModel
             SelectedRoom = keepId is null ? null : Rooms.FirstOrDefault(r => r.Id == keepId);
         }
         else _notifier.ShowError(result.ErrorMessage!);
+    }
+
+    // ---------- الأسعار: التحميل ----------
+    private async Task LoadPriceYearsAsync()
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<GetAllAcademicYearsHandler>();
+        var result = await handler.ExecuteAsync();
+
+        if (result.IsSuccess)
+        {
+            PriceYearFilters.Clear();
+            PriceYearFilters.Add(new PriceYearFilterOption(null, "كل السنوات", false));
+            foreach (var year in result.Value!)
+                PriceYearFilters.Add(new PriceYearFilterOption(year.Id, year.Name.ToString(), year.IsCurrent));   // D-63: لا ToString للكيان
+
+            // الافتراضي: السنة الحالية (D-67) — والتعيين يطلق تحميل الأسعار تلقائياً
+            SelectedPriceYearFilter = PriceYearFilters.FirstOrDefault(y => y.IsCurrent) ?? PriceYearFilters.FirstOrDefault();
+        }
+        else _notifier.ShowError(result.ErrorMessage!);
+    }
+
+    private async Task LoadPricesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var handler = scope.ServiceProvider.GetRequiredService<GetSubjectPricesHandler>();
+            var result = await handler.ExecuteAsync(SelectedPriceYearFilter?.Id, cancellationToken);
+
+            if (result.IsSuccess)
+            {
+                var keepId = SelectedPrice?.Id;
+                Prices.Clear();
+                foreach (var item in result.Value!) Prices.Add(item);
+                SelectedPrice = keepId is null ? null : Prices.FirstOrDefault(p => p.Id == keepId);
+                OnPropertyChanged(nameof(PricesEmpty));
+            }
+            else _notifier.ShowError(result.ErrorMessage!);
+        }
+        catch (OperationCanceledException) { }   // D-64: إلغاء تحميل سابق أثناء تبديل الفلتر — ليس خطأ
     }
 
     // ---------- مستويات ----------
@@ -388,6 +478,45 @@ public sealed class AcademicStructureViewModel : BaseViewModel
         var handler = scope.ServiceProvider.GetRequiredService<ActivateRoomHandler>();
         var result = await handler.ExecuteAsync(new ActivateRoomRequest(room.Id));
         await HandleResultAsync(result.IsSuccess, result.ErrorMessage, result.ErrorType, $"فُعّلت القاعة «{room.Name}»", LoadRoomsAsync);
+    }
+
+    // ---------- أسعار ----------
+    private async Task AddPriceAsync()
+    {
+        var editor = _services.GetRequiredService<SubjectPriceEditorViewModel>();
+        await editor.InitializeForCreateAsync(SelectedPriceYearFilter?.Id);
+
+        if (await _dialogs.ShowDialogAsync(editor, editor.Title))
+            await LoadPricesAsync();
+    }
+
+    private async Task EditPriceAsync()
+    {
+        if (SelectedPrice is null) return;
+
+        var editor = _services.GetRequiredService<SubjectPriceEditorViewModel>();
+        await editor.InitializeForEditAsync(SelectedPrice);
+
+        if (await _dialogs.ShowDialogAsync(editor, editor.Title))
+            await LoadPricesAsync();
+    }
+
+    private async Task DeletePriceAsync()
+    {
+        var price = SelectedPrice;
+        if (price is null) return;
+
+        // D-65: حذف فيزيائي حر — النسخ اللحظية عند التسجيل (2.4) لا تتأثر
+        var confirmed = await _dialogs.ConfirmAsync(
+            "حذف السعر",
+            $"سيُحذف سعر «{price.SubjectName} — {price.LevelName}» لسنة {price.AcademicYearName} نهائياً من جدول الأسعار. أسعار التسجيلات المأخوذة سابقاً (النسخ) لا تتأثر.",
+            "حذف نهائي");
+        if (!confirmed) return;
+
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<DeleteSubjectPriceHandler>();
+        var result = await handler.ExecuteAsync(new DeleteSubjectPriceRequest(price.Id));
+        await HandleResultAsync(result.IsSuccess, result.ErrorMessage, result.ErrorType, "حُذف السعر ✔", () => LoadPricesAsync());
     }
 
     // ---------- مساعدات ----------

@@ -6,6 +6,7 @@ using EduMaster.Infrastructure.ClassGroups;
 using EduMaster.Infrastructure.Files;
 using EduMaster.Infrastructure.People;
 using EduMaster.Infrastructure.Persistence;
+using EduMaster.Infrastructure.Pricing;
 using EduMaster.Infrastructure.Security;
 using EduMaster.Infrastructure.Students;
 using EduMaster.Infrastructure.Teachers;
@@ -53,6 +54,9 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddScoped<IRoomRepository, RoomRepository>();
 
             services.AddScoped<IClassGroupRepository, ClassGroupRepository>();
+
+            // Pricing (F2 — الشريحة 2.2)
+            services.AddScoped<ISubjectPriceRepository, SubjectPriceRepository>();
 
             return services;
         }

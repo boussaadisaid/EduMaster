@@ -4,6 +4,8 @@ using EduMaster.Domain.AcademicYears;
 using EduMaster.Domain.AcademicYears.ValueObjects;
 using EduMaster.Infrastructure.Persistence;
 
+
+
 namespace EduMaster.Infrastructure.AcademicYears;
 
 public sealed class AcademicYearRepository : IAcademicYearRepository
@@ -22,6 +24,7 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
         DateTime EndDate,
         bool IsCurrent,
         bool IsActive,
+        long RegistrationFeeCentimes,
         DateTime CreatedAtUtc,
         int? CreatedByUserId,
         DateTime? UpdatedAtUtc,
@@ -32,11 +35,11 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-            INSERT INTO AcademicYears
-                (Name, StartDate, EndDate, IsCurrent, IsActive, CreatedAtUtc, CreatedByUserId)
-            OUTPUT INSERTED.Id
-            VALUES
-                (@Name, @StartDate, @EndDate, @IsCurrent, @IsActive, @CreatedAtUtc, @CreatedByUserId);";
+INSERT INTO AcademicYears
+    (Name, StartDate, EndDate, IsCurrent, IsActive, RegistrationFeeCentimes, CreatedAtUtc, CreatedByUserId)
+OUTPUT INSERTED.Id
+VALUES
+    (@Name, @StartDate, @EndDate, @IsCurrent, @IsActive, @RegistrationFeeCentimes, @CreatedAtUtc, @CreatedByUserId);";
 
         // كيان ← معاملات: نفكّك الـVO عند الحدود (Name.Value)
         var newId = await connection.ExecuteScalarAsync<int>(
@@ -50,6 +53,7 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
                     .ToDateTime(TimeOnly.MinValue),
                 academicYear.IsCurrent,
                 academicYear.IsActive,
+                academicYear.RegistrationFeeCentimes,
                 academicYear.CreatedAtUtc,
                 academicYear.CreatedByUserId
             },
@@ -65,15 +69,16 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
 
         // قيم التدقيق تُؤخذ من الكيان (ملأها الـHandler عبر IClock/ICurrentUserService — D-20)
         const string sql = @"
-            UPDATE AcademicYears
-            SET Name            = @Name,
-                StartDate       = @StartDate,
-                EndDate         = @EndDate,
-                IsCurrent       = @IsCurrent,
-                IsActive        = @IsActive,
-                UpdatedAtUtc    = @UpdatedAtUtc,
-                UpdatedByUserId = @UpdatedByUserId
-            WHERE Id = @Id;";
+UPDATE AcademicYears
+SET Name                    = @Name,
+    StartDate               = @StartDate,
+    EndDate                 = @EndDate,
+    IsCurrent               = @IsCurrent,
+    IsActive                = @IsActive,
+    RegistrationFeeCentimes = @RegistrationFeeCentimes,
+    UpdatedAtUtc            = @UpdatedAtUtc,
+    UpdatedByUserId         = @UpdatedByUserId
+WHERE Id = @Id;";
 
         var affected = await connection.ExecuteAsync(
             new CommandDefinition(sql, new
@@ -83,6 +88,7 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
                 EndDate = academicYear.EndDate.ToDateTime(TimeOnly.MinValue),
                 academicYear.IsCurrent,
                 academicYear.IsActive,
+                academicYear.RegistrationFeeCentimes,
                 academicYear.UpdatedAtUtc,
                 academicYear.UpdatedByUserId,
                 academicYear.Id
@@ -99,10 +105,10 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-            SELECT Id, Name, StartDate, EndDate, IsCurrent, IsActive,
-                   CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
-            FROM AcademicYears
-            WHERE Id = @Id;";
+SELECT Id, Name, StartDate, EndDate, IsCurrent, IsActive, RegistrationFeeCentimes,
+       CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
+FROM AcademicYears
+WHERE Id = @Id;";
 
         var row = await connection.QuerySingleOrDefaultAsync<AcademicYearRow>(
             new CommandDefinition(sql, new { Id = id },
@@ -118,10 +124,10 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
 
         // الفهرس المفلتر UX_AcademicYears_IsCurrent يضمن صفاً واحداً كحد أقصى — QuerySingle آمنة
         const string sql = @"
-            SELECT Id, Name, StartDate, EndDate, IsCurrent, IsActive,
-                   CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
-            FROM AcademicYears
-            WHERE IsCurrent = 1;";
+SELECT Id, Name, StartDate, EndDate, IsCurrent, IsActive, RegistrationFeeCentimes,
+       CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
+FROM AcademicYears
+WHERE IsCurrent = 1;";
 
         var row = await connection.QuerySingleOrDefaultAsync<AcademicYearRow>(
             new CommandDefinition(sql,
@@ -136,10 +142,10 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-            SELECT Id, Name, StartDate, EndDate, IsCurrent, IsActive,
-                   CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
-            FROM AcademicYears
-            ORDER BY StartDate DESC;";
+SELECT Id, Name, StartDate, EndDate, IsCurrent, IsActive, RegistrationFeeCentimes,
+       CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
+FROM AcademicYears
+ORDER BY StartDate DESC;";
 
         var rows = await connection.QueryAsync<AcademicYearRow>(
             new CommandDefinition(sql,
@@ -154,8 +160,8 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-            SELECT COUNT(*) FROM AcademicYears
-            WHERE Name = @Name AND Id <> @ExcludeId;";
+SELECT COUNT(*) FROM AcademicYears
+WHERE Name = @Name AND Id <> @ExcludeId;";
 
         var count = await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, new { Name = name, ExcludeId = excludeId },
@@ -171,26 +177,27 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
 
         // قاعدة التداخل المحسومة: StartDate < النهاية الجديدة AND EndDate > البداية الجديدة
         const string sql = @"
-            SELECT COUNT(*) FROM AcademicYears
-            WHERE Id <> @ExcludeId
-              AND StartDate < @EndDate
-              AND EndDate > @StartDate;";
+SELECT COUNT(*) FROM AcademicYears
+WHERE Id <> @ExcludeId
+  AND StartDate < @EndDate
+  AND EndDate > @StartDate;";
 
         var count = await connection.ExecuteScalarAsync<int>(
-            new CommandDefinition(sql, new { ExcludeId = excludeId,
+            new CommandDefinition(sql, new
+            {
+                ExcludeId = excludeId,
                 StartDate = startDate.ToDateTime(TimeOnly.MinValue),
                 EndDate = endDate.ToDateTime(TimeOnly.MinValue)
             },
-                transaction: _session.CurrentTransaction,
-                cancellationToken: cancellationToken));
+            transaction: _session.CurrentTransaction,
+            cancellationToken: cancellationToken));
 
         return count > 0;
     }
 
     public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
     {
-        // F2: لا جداول تشير إلى AcademicYears بعد — حين تُضاف (الأفواج، التسجيلات...) تُفحص هنا.
-        // الـHandler يستدعي هذا الحارس منذ اليوم؛ جسم الفحص وحده هو ما يكبر في F2.
+        // 2.4: تُفحص الأفواج الفعّالة والتسجيلات هنا — مع بقية حُراس D-55
         return Task.FromResult(false);
     }
 
@@ -202,6 +209,7 @@ public sealed class AcademicYearRepository : IAcademicYearRepository
             endDate: DateOnly.FromDateTime(row.EndDate),
             isCurrent: row.IsCurrent,
             isActive: row.IsActive,
+            registrationFeeCentimes: row.RegistrationFeeCentimes,
             createdAtUtc: row.CreatedAtUtc,
             createdByUserId: row.CreatedByUserId,
             updatedAtUtc: row.UpdatedAtUtc,
