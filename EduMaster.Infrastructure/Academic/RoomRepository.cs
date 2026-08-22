@@ -117,10 +117,18 @@ WHERE Id = @Id;";
         return count > 0;
     }
 
-    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
     {
-        // F2: حين تُضاف الأفواج (تشير إلى القاعات — اختيارياً دائماً) تُفحص هنا — اليوم لا جداول تشير إلى Rooms
-        return Task.FromResult(false);
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // D-55 (مفعَّل منذ 2.4): أفواج فعّالة مسندة لهذه القاعة (الاختيارية دائماً — D-44) تمنع تعطيلها — الفارغ لا يطابق أبداً
+        var count = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition("SELECT COUNT(*) FROM ClassGroups WHERE RoomId = @Id AND IsActive = 1;",
+                new { Id = id },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return count > 0;
     }
 
     private static Room MapToDomain(RoomRow row) =>

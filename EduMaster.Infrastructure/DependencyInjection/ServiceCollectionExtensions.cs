@@ -3,6 +3,7 @@ using EduMaster.Application.Abstractions.Repositories;
 using EduMaster.Infrastructure.Academic;
 using EduMaster.Infrastructure.AcademicYears;
 using EduMaster.Infrastructure.ClassGroups;
+using EduMaster.Infrastructure.Enrollments;
 using EduMaster.Infrastructure.Files;
 using EduMaster.Infrastructure.People;
 using EduMaster.Infrastructure.Persistence;
@@ -17,47 +18,42 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Data.Common;
 
-
-
 namespace EduMaster.Infrastructure.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddInfrastructure(
-            this IServiceCollection services,
-            string connectionString)
+        this IServiceCollection services,
+        string connectionString)
         {
-
             services.AddScoped<DbConnection>(_ => new SqlConnection(connectionString));
             services.AddScoped<AdoUnitOfWork>();
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AdoUnitOfWork>());
             services.AddScoped<IAdoDbSession>(sp => sp.GetRequiredService<AdoUnitOfWork>());
             services.AddSingleton<IClock, SystemClock>();
             services.AddSingleton<IDatabaseHealthCheck>(sp =>
-                new DatabaseHealthCheck(connectionString, sp.GetRequiredService<ILogger<DatabaseHealthCheck>>()));
-
+            new DatabaseHealthCheck(connectionString, sp.GetRequiredService<ILogger<DatabaseHealthCheck>>()));
             services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
             services.AddScoped<IUserAccountRepository, UserAccountRepository>();
-            services.AddScoped<IPersonRepository,PersonRepository>();
+            services.AddScoped<IPersonRepository, PersonRepository>();
             services.AddScoped<IAcademicYearRepository, AcademicYearRepository>();
             services.AddTransient<DatabaseSeeder>();
             services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
             services.AddHostedService<DatabaseInitializationHostedService>();
-
             services.AddScoped<IStudentRepository, StudentRepository>();
             services.AddScoped<ITeacherRepository, TeacherRepository>();
             services.AddSingleton<IImageStore, ImageStore>();
-
             services.AddScoped<ILevelRepository, LevelRepository>();
             services.AddScoped<IStreamRepository, StreamRepository>();
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IRoomRepository, RoomRepository>();
-
+            // ClassGroups (F2 — الشريحة 2.1)
             services.AddScoped<IClassGroupRepository, ClassGroupRepository>();
-
             // Pricing (F2 — الشريحة 2.2)
             services.AddScoped<ISubjectPriceRepository, SubjectPriceRepository>();
-
+            // Enrollments (F2 — الشريحتان 2.3/2.4)
+            services.AddScoped<IAnnualEnrollmentRepository, AnnualEnrollmentRepository>();
+            services.AddScoped<IClassGroupEnrollmentRepository, ClassGroupEnrollmentRepository>();   //  سطر التحقق
             return services;
         }
     }

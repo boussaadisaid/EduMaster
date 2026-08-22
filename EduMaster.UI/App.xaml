@@ -10,6 +10,7 @@
              xmlns:academic="clr-namespace:EduMaster.UI.Academic"
              xmlns:classgroups="clr-namespace:EduMaster.UI.ClassGroups"
              xmlns:pricing="clr-namespace:EduMaster.UI.Pricing"
+             xmlns:enrollments="clr-namespace:EduMaster.UI.Enrollments"
              xmlns:common="clr-namespace:EduMaster.UI.Common">
 
     <Application.Resources>
@@ -90,14 +91,26 @@
             <DataTemplate DataType="{x:Type classgroups:ClassGroupEditorViewModel}">
                 <classgroups:ClassGroupEditorView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type classgroups:ClassGroupRosterDialogViewModel}">
+                <classgroups:ClassGroupRosterDialogView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type classgroups:TransferGroupEnrollmentViewModel}">
+                <classgroups:TransferGroupEnrollmentView />
+            </DataTemplate>
             <DataTemplate DataType="{x:Type pricing:SubjectPriceEditorViewModel}">
                 <pricing:SubjectPriceEditorView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type enrollments:AnnualEnrollmentEditorViewModel}">
+                <enrollments:AnnualEnrollmentEditorView />
+            </DataTemplate>
+            <!--  سطر التحقق -->
+            <DataTemplate DataType="{x:Type enrollments:EnrollInGroupDialogViewModel}">
+                <enrollments:EnrollInGroupDialogView />
             </DataTemplate>
             <!-- Custom Font (make sure Cairo.ttf is in /Fonts folder) -->
             <FontFamily x:Key="CairoFont">pack://application:,,,/Fonts/#Cairo</FontFamily>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <common:CentimesToDinarsConverter x:Key="CentimesToDinarsConverter"/>
-            <!--  سطر التحقق — بدونه تنهار شاشة البنية الأكاديمية -->
         </ResourceDictionary>
     </Application.Resources>
 </Application>

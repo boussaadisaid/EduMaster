@@ -14,4 +14,6 @@ public interface ISubjectPriceRepository
     Task<bool> AnyExistsAsync(int academicYearId, int levelId, int subjectId, int? excludeId, CancellationToken cancellationToken = default);
     /// <summary>نموذج قراءة مسطّح بأسماء السنة/المستوى/المادة (D-40) — فلتر السنة اختياري (null = كل السنوات)</summary>
     Task<IEnumerable<SubjectPriceListItem>> GetByYearAsync(int? academicYearId, CancellationToken cancellationToken = default);
+    /// <summary>السعر المقترح لثلاثية (سنة/مستوى/مادة) — null = لا سعر في الجدول (D-77 · يُستهلك في الإلحاق 2.4)</summary>
+    Task<long?> TryGetPriceAsync(int academicYearId, int levelId, int subjectId, CancellationToken cancellationToken = default);
 }

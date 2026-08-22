@@ -18,7 +18,8 @@ public sealed record ClassGroupListItem(
     string Name,
     int? Capacity,
     string? StreamsText,
-    bool IsActive)
+    bool IsActive,
+    int EnrolledCount)
 {
     // الاسم ← اللقب ← اسم الأب (D-41)
     public string? TeacherFullName => TeacherId is null
@@ -30,4 +31,7 @@ public sealed record ClassGroupListItem(
     public string StreamsDisplay => string.IsNullOrWhiteSpace(StreamsText) ? "كل الشعب" : StreamsText;
 
     public string StatusText => IsActive ? "فعّال" : "معطّل";
+
+    // D-80: نشطون/السعة — وبلا سعة يُعرض العدد وحده
+    public string EnrolledDisplay => Capacity is null ? EnrolledCount.ToString() : $"{EnrolledCount} / {Capacity}";
 }

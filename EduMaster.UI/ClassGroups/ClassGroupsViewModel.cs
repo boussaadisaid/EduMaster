@@ -32,6 +32,7 @@ public sealed class ClassGroupsViewModel : BaseViewModel
         EditCommand = new AsyncRelayCommand(EditAsync, () => SelectedGroup is not null);
         DeactivateCommand = new AsyncRelayCommand(DeactivateAsync, () => SelectedGroup is { IsActive: true });
         ActivateCommand = new AsyncRelayCommand(ActivateAsync, () => SelectedGroup is { IsActive: false });
+        OpenRosterCommand = new AsyncRelayCommand(OpenRosterAsync, () => SelectedGroup is not null);
     }
 
     // ---------- فلتر السنة ----------
@@ -47,7 +48,7 @@ public sealed class ClassGroupsViewModel : BaseViewModel
         {
             if (SetProperty(ref _selectedYearFilter, value))
             {
-                _searchCts?.Cancel();   // إلغاء أي تحميل جارٍ — تبديل الفلتر فوري بلا مهلة
+                _searchCts?.Cancel();   // إلغاء أي تحميل جارٍ — تبديل الفلتر فوري بلا مهلة (D-64)
                 var cts = _searchCts = new CancellationTokenSource();
                 _ = LoadAsync(cts.Token);
             }
@@ -92,6 +93,7 @@ public sealed class ClassGroupsViewModel : BaseViewModel
             EditCommand.RaiseCanExecuteChanged();
             DeactivateCommand.RaiseCanExecuteChanged();
             ActivateCommand.RaiseCanExecuteChanged();
+            OpenRosterCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -110,6 +112,7 @@ public sealed class ClassGroupsViewModel : BaseViewModel
     public AsyncRelayCommand EditCommand { get; }
     public AsyncRelayCommand DeactivateCommand { get; }
     public AsyncRelayCommand ActivateCommand { get; }
+    public AsyncRelayCommand OpenRosterCommand { get; }
 
     public async Task InitializeAsync()
     {
@@ -133,7 +136,7 @@ public sealed class ClassGroupsViewModel : BaseViewModel
         YearFilters.Clear();
         YearFilters.Add(new YearFilterOption(null, "كل السنوات", false));
         foreach (var year in result.Value!)
-            YearFilters.Add(new YearFilterOption(year.Id, year.Name.ToString(), year.IsCurrent));   // التسمية من خاصية موسومة — لا ToString للكيان
+            YearFilters.Add(new YearFilterOption(year.Id, year.Name.ToString(), year.IsCurrent));   // D-63: لا ToString للكيان
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken = default)
@@ -160,7 +163,7 @@ public sealed class ClassGroupsViewModel : BaseViewModel
         }
         catch (OperationCanceledException)
         {
-            // إلغاء طلب سابق أثناء الكتابة أو تبديل الفلتر — يُبتلع بصمت، فليس خطأً
+            // D-64: إلغاء طلب سابق أثناء الكتابة أو تبديل الفلتر — يُبتلع بصمت
         }
         finally
         {
@@ -186,6 +189,18 @@ public sealed class ClassGroupsViewModel : BaseViewModel
         await editor.InitializeForEditAsync(SelectedGroup);
 
         if (await _dialogs.ShowDialogAsync(editor, editor.Title))
+            await LoadAsync();
+    }
+
+    // D-75: ديالوغ المسجَّلون — أي تغيير فيه يُعيد تحميل الشبكة (عداد المسجَّلين D-80)
+    private async Task OpenRosterAsync()
+    {
+        if (SelectedGroup is null) return;
+
+        var dialog = _services.GetRequiredService<ClassGroupRosterDialogViewModel>();
+        await dialog.InitializeAsync(SelectedGroup);
+
+        if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
             await LoadAsync();
     }
 
@@ -228,6 +243,6 @@ public sealed class ClassGroupsViewModel : BaseViewModel
         else if (errorType == ErrorType.Unexpected)
             _notifier.ShowError(errorMessage!);
         else
-            _notifier.ShowWarning(errorMessage!);
+            _notifier.ShowWarning(errorMessage!);   // D-55: تعطيل فوج عليه مسجَّلون نشطون يُرفَض هنا برسالة عربية
     }
 }

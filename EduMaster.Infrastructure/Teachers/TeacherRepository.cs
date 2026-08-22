@@ -151,10 +151,18 @@ ORDER BY p.FirstName, p.LastName;";
             row.IsActive));
     }
 
-    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
     {
-        // F2/F5: حين تُضاف التسجيلات/المستحقات تُفحص هنا — اليوم لا جداول تشير إلى Teachers
-        return Task.FromResult(false);
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // D-55 (مفعَّل منذ 2.4): أي فوج مسنَد — نشطاً كان أو تاريخياً — يمنع إزالة الملف · F5: تُضاف المستحقات هنا
+        var count = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition("SELECT COUNT(*) FROM ClassGroups WHERE TeacherId = @Id;",
+                new { Id = id },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return count > 0;
     }
 
     public async Task SoftDeleteAsync(int id, DateTime deletedAtUtc, int? deletedByUserId, CancellationToken cancellationToken = default)

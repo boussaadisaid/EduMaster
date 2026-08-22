@@ -113,10 +113,18 @@ WHERE Id = @Id;";
         return count > 0;
     }
 
-    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
     {
-        // F2: حين تُضاف الأفواج (تشير إلى المواد) تُفحص هنا — اليوم لا جداول تشير إلى Subjects
-        return Task.FromResult(false);
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // D-55 (مفعَّل منذ 2.4): أفواج فعّالة على هذه المادة تمنع تعطيلها — المعطّلة تاريخ فلا تمنع
+        var count = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition("SELECT COUNT(*) FROM ClassGroups WHERE SubjectId = @Id AND IsActive = 1;",
+                new { Id = id },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return count > 0;
     }
 
     private static Subject MapToDomain(SubjectRow row) =>

@@ -159,10 +159,18 @@ ORDER BY p.FirstName, p.LastName;";
             row.IsActive));
     }
 
-    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
     {
-        // F2: حين تُضاف التسجيلات تُفحص هنا — اليوم لا جداول تشير إلى Students
-        return Task.FromResult(false);
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // D-73 (تفعيل D-55 منذ 2.3): أي تسجيل سنوي — نشطاً كان أو تاريخياً — يمنع إزالة الملف، فالتاريخ يبقى مفهوماً
+        var count = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition("SELECT COUNT(*) FROM AnnualEnrollments WHERE StudentId = @StudentId;",
+                new { StudentId = id },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return count > 0;
     }
 
     public async Task SoftDeleteAsync(int id, DateTime deletedAtUtc, int? deletedByUserId, CancellationToken cancellationToken = default)

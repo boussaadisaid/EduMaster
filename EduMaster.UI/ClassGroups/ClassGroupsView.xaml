@@ -42,7 +42,7 @@
                 <DataGridTextColumn Header="الشعب" Binding="{Binding StreamsDisplay}" Width="*"/>
                 <DataGridTextColumn Header="الأستاذ" Binding="{Binding TeacherFullName, TargetNullValue='—'}" Width="*"/>
                 <DataGridTextColumn Header="القاعة" Binding="{Binding RoomName, TargetNullValue='—'}" Width="*"/>
-                <DataGridTextColumn Header="السعة" Binding="{Binding Capacity, TargetNullValue='—'}" Width="Auto"/>
+                <DataGridTextColumn Header="المسجَّلون" Binding="{Binding EnrolledDisplay}" Width="Auto"/>
                 <DataGridTemplateColumn Header="الحالة" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -73,6 +73,7 @@
                    Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,14,0,0">
+            <Button Content="👥 المسجَّلون"  Command="{Binding OpenRosterCommand}" Padding="14,6" Margin="0,0,8,0" FontWeight="SemiBold"/>
             <Button Content="✏️ تعديل"        Command="{Binding EditCommand}"       Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="🚫 تعطيل"       Command="{Binding DeactivateCommand}" Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="✔ تفعيل"        Command="{Binding ActivateCommand}"   Padding="14,6"/>

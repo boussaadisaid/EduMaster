@@ -27,6 +27,7 @@ public sealed class ClassGroupRepository : IClassGroupRepository
         DateTime? UpdatedAtUtc,
         int? UpdatedByUserId);
 
+    // ⚠ قاعدة D-81: ترتيب خصائص السجل = ترتيب أعمدة الـSELECT حرفياً (مطابقة Dapper اسمية-موضعية)
     private sealed record ClassGroupListRow(
         int Id,
         int AcademicYearId,
@@ -44,7 +45,8 @@ public sealed class ClassGroupRepository : IClassGroupRepository
         string Name,
         int? Capacity,
         bool IsActive,
-        string? StreamsText);
+        string? StreamsText,
+        int EnrolledCount);
 
     private const string SelectColumns = @"
 SELECT Id, AcademicYearId, LevelId, SubjectId, TeacherId, RoomId, Name, NameNormalized, Capacity, IsActive,
@@ -148,7 +150,7 @@ WHERE Id = @Id;";
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
-        // نموذج قراءة مسطّح (D-40) — الشعب تُجمَّع نصاً، والفارغ يعرض «كل الشعب» في الـDTO (D-48)
+        // نموذج قراءة مسطّح (D-40) — الشعب تُجمَّع نصاً والفارغ يعرض «كل الشعب» (D-48) · عداد النشطين (D-80)
         const string sql = @"
 SELECT cg.Id, cg.AcademicYearId, ay.Name AS AcademicYearName,
        cg.LevelId, l.Name AS LevelName,
@@ -159,7 +161,8 @@ SELECT cg.Id, cg.AcademicYearId, ay.Name AS AcademicYearName,
        (SELECT STRING_AGG(s.Name, N'، ')
         FROM ClassGroupStreams cgs
         JOIN Streams s ON s.Id = cgs.StreamId
-        WHERE cgs.ClassGroupId = cg.Id) AS StreamsText
+        WHERE cgs.ClassGroupId = cg.Id) AS StreamsText,
+       (SELECT COUNT(*) FROM ClassGroupEnrollments e WHERE e.ClassGroupId = cg.Id AND e.Status = 1) AS EnrolledCount
 FROM ClassGroups cg
 JOIN AcademicYears ay ON ay.Id = cg.AcademicYearId
 JOIN Levels l ON l.Id = cg.LevelId
@@ -187,7 +190,7 @@ ORDER BY ay.StartDate DESC, l.SortOrder, cg.Name;";
             row.SubjectId, row.SubjectName,
             row.TeacherId, row.TeacherFirstName, row.TeacherLastName, row.TeacherFatherName,
             row.RoomId, row.RoomName,
-            row.Name, row.Capacity, row.StreamsText, row.IsActive));
+            row.Name, row.Capacity, row.StreamsText, row.IsActive, row.EnrolledCount));
     }
 
     public async Task<IReadOnlyList<int>> GetStreamIdsAsync(int classGroupId, CancellationToken cancellationToken = default)
@@ -229,10 +232,18 @@ VALUES (@ClassGroupId, @LevelId, @StreamId);";
         }
     }
 
-    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
     {
-        // 2.4: حين تُضاف التسجيلات (ClassGroupEnrollments) تُفحص هنا — اليوم لا جداول تشير إلى ClassGroups
-        return Task.FromResult(false);
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // D-55 (مفعَّل منذ 2.4): تسجيلات نشطة تمنع تعطيل الفوج — المنسحبة تاريخ فلا تمنع
+        var count = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition("SELECT COUNT(*) FROM ClassGroupEnrollments WHERE ClassGroupId = @Id AND Status = 1;",
+                new { Id = id },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return count > 0;
     }
 
     private static Domain.ClassGroups.ClassGroup MapToDomain(ClassGroupRow row) =>

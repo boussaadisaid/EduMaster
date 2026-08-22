@@ -157,6 +157,20 @@ ORDER BY ay.StartDate DESC, l.SortOrder, s.Name;";
             row.UnitPriceCentimes));
     }
 
+    public async Task<long?> TryGetPriceAsync(int academicYearId, int levelId, int subjectId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // الفرادة المركّبة تضمن صفاً واحداً كحد أقصى — QuerySingleOrDefault آمنة · null = لا سعر (D-77)
+        return await connection.QuerySingleOrDefaultAsync<long?>(
+            new CommandDefinition(
+                @"SELECT UnitPriceCentimes FROM SubjectPrices
+                  WHERE AcademicYearId = @AcademicYearId AND LevelId = @LevelId AND SubjectId = @SubjectId;",
+                new { AcademicYearId = academicYearId, LevelId = levelId, SubjectId = subjectId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+    }
+
     private static Domain.Pricing.SubjectPrice MapToDomain(SubjectPriceRow row) =>
         Domain.Pricing.SubjectPrice.Load(
             id: row.Id,

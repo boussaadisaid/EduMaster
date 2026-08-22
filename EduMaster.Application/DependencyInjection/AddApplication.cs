@@ -6,6 +6,7 @@ using EduMaster.Application.AcademicYears.DeactivateAcademicYear;
 using EduMaster.Application.AcademicYears.SetCurrentAcademicYear;
 using EduMaster.Application.AcademicYears.UpdateAcademicYear;
 using EduMaster.Application.ClassGroups;
+using EduMaster.Application.Enrollments;
 using EduMaster.Application.People;
 using EduMaster.Application.Pricing;
 using EduMaster.Application.Students;
@@ -21,7 +22,7 @@ namespace EduMaster.Application.DependencyInjection
         {
             services.AddTransient<LoginHandler>();
             services.AddTransient<GetAllAcademicYearsHandler>();
-            services.AddTransient<GetAcademicYearByIdHandler>();   //  سطر التحقق — بدونه يبقى حقل الحقوق فارغاً
+            services.AddTransient<GetAcademicYearByIdHandler>();
             services.AddTransient<CreateAcademicYearHandler>();
             services.AddTransient<UpdateAcademicYearHandler>();
             services.AddTransient<SetCurrentAcademicYearHandler>();
@@ -77,11 +78,24 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<UpdateClassGroupHandler>();
             services.AddTransient<DeactivateClassGroupHandler>();
             services.AddTransient<ActivateClassGroupHandler>();
-            // Pricing (F2 — الشريحة 2.2)
+            // Pricing (F2 — الشريحتان 2.2/2.4)
             services.AddTransient<GetSubjectPricesHandler>();
             services.AddTransient<CreateSubjectPriceHandler>();
             services.AddTransient<UpdateSubjectPriceHandler>();
             services.AddTransient<DeleteSubjectPriceHandler>();
+            services.AddTransient<GetSubjectPriceHandler>();
+            // Enrollments (F2 — الشريحتان 2.3/2.4)   //  سطر التحقق: القسم كاملاً بقارئ المؤهَّلة
+            services.AddTransient<GetAnnualEnrollmentsForStudentHandler>();
+            services.AddTransient<RegisterAnnualEnrollmentHandler>();
+            services.AddTransient<UpdateAnnualEnrollmentHandler>();
+            services.AddTransient<WithdrawAnnualEnrollmentHandler>();
+            services.AddTransient<GetClassGroupRosterHandler>();
+            services.AddTransient<GetStudentGroupEnrollmentsHandler>();
+            services.AddTransient<EnrollStudentInGroupHandler>();
+            services.AddTransient<WithdrawGroupEnrollmentHandler>();
+            services.AddTransient<TransferGroupEnrollmentHandler>();
+            services.AddTransient<GetTransferTargetsHandler>();
+            services.AddTransient<GetEnrollableGroupsForStudentHandler>();
             return services;
         }
     }
