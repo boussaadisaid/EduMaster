@@ -211,14 +211,26 @@ public sealed class ClassGroupsViewModel : BaseViewModel
 
         var confirmed = await _dialogs.ConfirmAsync(
             "تعطيل الفوج",
-            $"سيُعطَّل الفوج «{group.Name}» فيتوقف عن استقبال تسجيلات جديدة دون حذف شيء. يمكن إعادة تفعيله في أي وقت.",
+            $"سيُعطَّل الفوج «{group.Name}» فيتوقف عن استقبال تسجيلات جديدة دون حذف شيء — وتُلغى حصصه المستقبلية المجدولة تلقائياً (D-90). يمكن إعادة تفعيله في أي وقت.",
             "تعطيل");
         if (!confirmed) return;
 
         await using var scope = _scopeFactory.CreateAsyncScope();
         var handler = scope.ServiceProvider.GetRequiredService<DeactivateClassGroupHandler>();
         var result = await handler.ExecuteAsync(new DeactivateClassGroupRequest(group.Id));
-        await HandleResultAsync(result.IsSuccess, result.ErrorMessage, result.ErrorType, $"عُطّل الفوج «{group.Name}»");
+
+        if (result.IsSuccess)
+        {
+            // D-90: يُذكر عدد الحصص الملغاة تلقائياً
+            _notifier.ShowSuccess(result.Value > 0
+                ? $"عُطّل الفوج «{group.Name}» — وأُلغيت {result.Value} حصة مستقبلية مجدولة"
+                : $"عُطّل الفوج «{group.Name}»");
+            await LoadAsync();
+        }
+        else if (result.ErrorType == ErrorType.Unexpected)
+            _notifier.ShowError(result.ErrorMessage!);
+        else
+            _notifier.ShowWarning(result.ErrorMessage!);   // D-55: فوج فيه مسجَّلون نشطون يُرفَض هنا
     }
 
     private async Task ActivateAsync()
@@ -243,6 +255,6 @@ public sealed class ClassGroupsViewModel : BaseViewModel
         else if (errorType == ErrorType.Unexpected)
             _notifier.ShowError(errorMessage!);
         else
-            _notifier.ShowWarning(errorMessage!);   // D-55: تعطيل فوج عليه مسجَّلون نشطون يُرفَض هنا برسالة عربية
+            _notifier.ShowWarning(errorMessage!);
     }
 }

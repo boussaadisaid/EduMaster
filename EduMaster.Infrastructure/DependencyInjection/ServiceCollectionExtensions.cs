@@ -8,6 +8,7 @@ using EduMaster.Infrastructure.Files;
 using EduMaster.Infrastructure.People;
 using EduMaster.Infrastructure.Persistence;
 using EduMaster.Infrastructure.Pricing;
+using EduMaster.Infrastructure.Scheduling;
 using EduMaster.Infrastructure.Security;
 using EduMaster.Infrastructure.Students;
 using EduMaster.Infrastructure.Teachers;
@@ -17,6 +18,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Data.Common;
+
 
 namespace EduMaster.Infrastructure.DependencyInjection
 {
@@ -53,7 +55,12 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddScoped<ISubjectPriceRepository, SubjectPriceRepository>();
             // Enrollments (F2 — الشريحتان 2.3/2.4)
             services.AddScoped<IAnnualEnrollmentRepository, AnnualEnrollmentRepository>();
-            services.AddScoped<IClassGroupEnrollmentRepository, ClassGroupEnrollmentRepository>();   //  سطر التحقق
+            services.AddScoped<IClassGroupEnrollmentRepository, ClassGroupEnrollmentRepository>();
+            // Scheduling (F3 — الشرائح 3.1/3.2/3.3)   //  سطر التحقق
+            services.AddScoped<IClassGroupScheduleRepository, ClassGroupScheduleRepository>();
+            services.AddScoped<IClassSessionRepository, ClassSessionRepository>();
+            services.AddScoped<IGroupSessionPurchaseRepository, GroupSessionPurchaseRepository>();
+            services.AddScoped<ISessionAttendanceRepository, SessionAttendanceRepository>();
             return services;
         }
     }

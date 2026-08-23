@@ -11,6 +11,7 @@
              xmlns:classgroups="clr-namespace:EduMaster.UI.ClassGroups"
              xmlns:pricing="clr-namespace:EduMaster.UI.Pricing"
              xmlns:enrollments="clr-namespace:EduMaster.UI.Enrollments"
+             xmlns:scheduling="clr-namespace:EduMaster.UI.Scheduling"
              xmlns:common="clr-namespace:EduMaster.UI.Common">
 
     <Application.Resources>
@@ -103,9 +104,30 @@
             <DataTemplate DataType="{x:Type enrollments:AnnualEnrollmentEditorViewModel}">
                 <enrollments:AnnualEnrollmentEditorView />
             </DataTemplate>
-            <!--  سطر التحقق -->
             <DataTemplate DataType="{x:Type enrollments:EnrollInGroupDialogViewModel}">
                 <enrollments:EnrollInGroupDialogView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type scheduling:TimetableViewModel}">
+                <scheduling:TimetableView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type scheduling:SessionsViewModel}">
+                <scheduling:SessionsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type scheduling:ScheduleSlotEditorViewModel}">
+                <scheduling:ScheduleSlotEditorView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type scheduling:GenerateSessionsDialogViewModel}">
+                <scheduling:GenerateSessionsDialogView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type scheduling:AdHocSessionViewModel}">
+                <scheduling:AdHocSessionView />
+            </DataTemplate>
+            <!--  سطر التحقق -->
+            <DataTemplate DataType="{x:Type scheduling:PurchaseSessionsDialogViewModel}">
+                <scheduling:PurchaseSessionsDialogView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type scheduling:SessionAttendanceDialogViewModel}">
+                <scheduling:SessionAttendanceDialogView />
             </DataTemplate>
             <!-- Custom Font (make sure Cairo.ttf is in /Fonts folder) -->
             <FontFamily x:Key="CairoFont">pack://application:,,,/Fonts/#Cairo</FontFamily>

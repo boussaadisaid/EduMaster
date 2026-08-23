@@ -32,26 +32,29 @@
                         Command="{Binding NavigateToPeopleCommand}"/>
 
                 <Button Content="🎓  الطلاب" Style="{StaticResource NavButton}"
-                    Command="{Binding NavigateToStudentsCommand}"/>
+                        Command="{Binding NavigateToStudentsCommand}"/>
 
                 <Button Content="👨‍🏫  الأساتذة" Style="{StaticResource NavButton}"
-                    Command="{Binding NavigateToTeachersCommand}"/>
+                        Command="{Binding NavigateToTeachersCommand}"/>
 
                 <Button Content="🧑‍🤝‍🧑  الأفواج" Style="{StaticResource NavButton}"
                         Command="{Binding NavigateToClassGroupsCommand}"/>
 
+                <Button Content="🗓  جدول استعمال الزمن" Style="{StaticResource NavButton}"
+                        Command="{Binding NavigateToTimetableCommand}"/>
 
+                <Button Content="✅  الحصص" Style="{StaticResource NavButton}"
+                        Command="{Binding NavigateToSessionsCommand}"/>
+                
+                
                 <Separator Margin="8,14"/>
-
-                <TextBlock Text="⚙️ الإعدادات" Foreground="Gray" Margin="16,4,16,6"/>
-                <Button Content="📅  السنوات الدراسية" Style="{StaticResource NavButton}"
-                        Command="{Binding NavigateToAcademicYearsCommand}"/>
-
-                <Button Content="📚  البنية الأكاديمية" Style="{StaticResource NavButton}"
-                    Command="{Binding NavigateToAcademicStructureCommand}"/>
+                <TextBlock Text=" الإعدادات" Foreground="Gray" Margin="16,4,16,6"/>
+                <Button Content="  السنوات الدراسية" Style="{StaticResource NavButton}"
+Command="{Binding NavigateToAcademicYearsCommand}"/>
+                <Button Content="  البنية الأكاديمية" Style="{StaticResource NavButton}"
+Command="{Binding NavigateToAcademicStructureCommand}"/>
             </StackPanel>
         </Border>
-
         <!-- منطقة المحتوى: الشاشة تُحسم بنوع الـVM عبر DataTemplates -->
         <ContentPresenter Grid.Column="1" Content="{Binding CurrentViewModel}"/>
     </Grid>

@@ -43,6 +43,7 @@ public sealed class ClassGroupEnrollmentRepository : IClassGroupEnrollmentReposi
         DateTime EnrolledAtUtc,
         DateTime? WithdrawnAtUtc);
 
+    // ⚠ D-81: ترتيب السجل = ترتيب أعمدة الـSELECT حرفياً (عمودا الرصيد في الذيل)
     private sealed record StudentGroupRow(
         int Id,
         int ClassGroupId,
@@ -51,7 +52,9 @@ public sealed class ClassGroupEnrollmentRepository : IClassGroupEnrollmentReposi
         string AcademicYearName,
         byte Status,
         long AgreedUnitPriceCentimes,
-        DateTime EnrolledAtUtc);
+        DateTime EnrolledAtUtc,
+        int PurchasedSessions,
+        int ConsumedSessions);
 
     // صف الفوج المسطّح الموحّد (أهداف النقل + المؤهَّلة) — ⚠ D-81: الترتيب = ترتيب أعمدة الـSELECT حرفياً
     private sealed record EligibleGroupRow(
@@ -238,10 +241,13 @@ ORDER BY cge.Status, p.FirstName, p.LastName;";
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
-        // «أفواجه» مسطّحة (D-40) — الأحدث أولاً
+        // «أفواجه» مسطّحة (D-40) — الأحدث أولاً · عمودا الرصيد في الذيل (D-81)
+        // D-93: المخصوم = عدد علامات الحاضر والغائب — المبرر (3) لا يخصم · تاريخ المنسحب يبقى محسوباً (D-102)
         const string sql = @"
 SELECT cge.Id, cge.ClassGroupId, cg.Name AS ClassGroupName, sb.Name AS SubjectName, ay.Name AS AcademicYearName,
-       cge.Status, cge.AgreedUnitPriceCentimes, cge.EnrolledAtUtc
+       cge.Status, cge.AgreedUnitPriceCentimes, cge.EnrolledAtUtc,
+       (SELECT ISNULL(SUM(p.SessionsCount), 0) FROM GroupSessionPurchases p WHERE p.ClassGroupEnrollmentId = cge.Id) AS PurchasedSessions,
+       (SELECT COUNT(*) FROM SessionAttendance sa WHERE sa.ClassGroupEnrollmentId = cge.Id AND sa.Status IN (1, 2)) AS ConsumedSessions
 FROM ClassGroupEnrollments cge
 JOIN ClassGroups cg ON cg.Id = cge.ClassGroupId
 JOIN Subjects sb ON sb.Id = cg.SubjectId
@@ -256,7 +262,8 @@ ORDER BY cge.EnrolledAtUtc DESC;";
 
         return rows.Select(row => new StudentGroupEnrollmentItem(
             row.Id, row.ClassGroupId, row.ClassGroupName, row.SubjectName, row.AcademicYearName,
-            (EnrollmentStatus)row.Status, row.AgreedUnitPriceCentimes, row.EnrolledAtUtc));
+            (EnrollmentStatus)row.Status, row.AgreedUnitPriceCentimes, row.EnrolledAtUtc,
+            row.PurchasedSessions, row.ConsumedSessions));
     }
 
     public async Task<IReadOnlyList<Domain.Enrollments.ClassGroupEnrollment>> GetActiveByAnnualEnrollmentIdAsync(

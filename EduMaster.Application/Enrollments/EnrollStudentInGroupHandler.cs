@@ -9,12 +9,14 @@ namespace EduMaster.Application.Enrollments;
 /// <summary>
 /// الإلحاق بالفوج — الحُراس (D-54/D-59/D-79): فوج فعّال · طالب فعّال (ملف وشخص) · تسجيل سنوي نشط مطابق
 /// (نفس السنة والمستوى، والشعبة ضمن شعب الفوج إن قُيّد) · لا نشط مكرر · السعة صارمة · والسعر يُنسخ من جدول الأسعار (D-50/D-77)
+/// · F3: الحصص المبدئية تُشترى في نفس المعاملة ذرّياً (D-97 — 0 = بلا شراء)
 /// </summary>
 public sealed record EnrollStudentInGroupRequest(
     int ClassGroupId,
     int StudentId,
     long? AgreedUnitPriceCentimes,   // null = خذ سعر الجدول كما هو
-    string? DiscountNote);
+    string? DiscountNote,
+    int InitialSessionsCount);       // D-97: حصص مبدئية (افتراض الواجهة 4) · 0 = بلا شراء الآن
 
 public sealed class EnrollStudentInGroupHandler
 {
@@ -24,6 +26,7 @@ public sealed class EnrollStudentInGroupHandler
     private readonly IStudentRepository _students;
     private readonly IPersonRepository _persons;
     private readonly ISubjectPriceRepository _prices;
+    private readonly IGroupSessionPurchaseRepository _purchases;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
@@ -31,8 +34,8 @@ public sealed class EnrollStudentInGroupHandler
 
     public EnrollStudentInGroupHandler(IClassGroupEnrollmentRepository groupEnrollments, IClassGroupRepository classGroups,
         IAnnualEnrollmentRepository annualEnrollments, IStudentRepository students, IPersonRepository persons,
-        ISubjectPriceRepository prices, IClock clock, ICurrentUserService currentUser,
-        IUnitOfWork unitOfWork, ILogger<EnrollStudentInGroupHandler> logger)
+        ISubjectPriceRepository prices, IGroupSessionPurchaseRepository purchases,
+        IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<EnrollStudentInGroupHandler> logger)
     {
         _groupEnrollments = groupEnrollments;
         _classGroups = classGroups;
@@ -40,6 +43,7 @@ public sealed class EnrollStudentInGroupHandler
         _students = students;
         _persons = persons;
         _prices = prices;
+        _purchases = purchases;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
@@ -52,6 +56,8 @@ public sealed class EnrollStudentInGroupHandler
 
         if (request.AgreedUnitPriceCentimes < 0)
             return OperationResult<int>.Failure("السعر لا يمكن أن يكون سالباً.", ErrorType.Validation);
+        if (request.InitialSessionsCount < 0)
+            return OperationResult<int>.Failure("الحصص المبدئية لا يمكن أن تكون سالبة.", ErrorType.Validation);
 
         try
         {
@@ -105,13 +111,25 @@ public sealed class EnrollStudentInGroupHandler
             if (agreedCentimes < 0)
                 return OperationResult<int>.Failure("السعر لا يمكن أن يكون سالباً.", ErrorType.Validation);
 
+            var utcNow = _clock.UtcNow;
+            var userId = _currentUser.UserAccountId;
+
             var enrollment = Domain.Enrollments.ClassGroupEnrollment.Create(
                 group.Id, request.StudentId, annual.Id,
                 snapshotCentimes ?? agreedCentimes, agreedCentimes, request.DiscountNote,
-                _clock.UtcNow, _currentUser.UserAccountId);
+                utcNow, userId);
 
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _groupEnrollments.AddAsync(enrollment, cancellationToken);
+
+            // D-97: الحصص المبدئية في نفس المعاملة — ذرّية مع الإلحاق (0 = بلا شراء الآن)
+            if (request.InitialSessionsCount > 0)
+            {
+                var initialPurchase = Domain.Scheduling.GroupSessionPurchase.Create(
+                    enrollment.Id, request.InitialSessionsCount, "حصص مبدئية عند الإلحاق", utcNow, userId);
+                await _purchases.AddAsync(initialPurchase, cancellationToken);
+            }
+
             await _unitOfWork.CommitAsync(cancellationToken);
 
             return OperationResult<int>.Success(enrollment.Id);

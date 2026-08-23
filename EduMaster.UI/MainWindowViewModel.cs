@@ -3,6 +3,7 @@ using EduMaster.UI.AcademicYears;
 using EduMaster.UI.ClassGroups;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.People;
+using EduMaster.UI.Scheduling;
 using EduMaster.UI.Students;
 using EduMaster.UI.Teachers;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,19 @@ namespace EduMaster.UI
                 CurrentViewModel = vm;
                 await vm.InitializeAsync();
             });
+            // F3 — الشريحة 3.1: جدول استعمال الزمن + الحصص (بندان رئيسيان — عمل يومي لا إعداد)
+            NavigateToTimetableCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<TimetableViewModel>();
+                CurrentViewModel = vm;
+                await vm.InitializeAsync();
+            });
+            NavigateToSessionsCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<SessionsViewModel>();
+                CurrentViewModel = vm;
+                await vm.InitializeAsync();
+            });
             NavigateToAcademicStructureCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<AcademicStructureViewModel>();
@@ -71,6 +85,8 @@ namespace EduMaster.UI
         public AsyncRelayCommand NavigateToStudentsCommand { get; }
         public AsyncRelayCommand NavigateToTeachersCommand { get; }
         public AsyncRelayCommand NavigateToClassGroupsCommand { get; }
+        public AsyncRelayCommand NavigateToTimetableCommand { get; }
+        public AsyncRelayCommand NavigateToSessionsCommand { get; }
         public AsyncRelayCommand NavigateToAcademicStructureCommand { get; }
     }
 }

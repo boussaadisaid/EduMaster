@@ -1,5 +1,4 @@
-﻿
-using EduMaster.Application.ClassGroups;
+﻿using EduMaster.Application.ClassGroups;
 using EduMaster.Application.Common;
 using EduMaster.Application.Enrollments;
 using EduMaster.Application.Pricing;
@@ -17,6 +16,7 @@ namespace EduMaster.UI.Enrollments;
 /// <summary>
 /// ديالوغ «إلحاق بفوج» الطالب-المحوري (D-83): الأفواج المؤهَّلة فقط + إلحاق متتالٍ بلا إغلاق
 /// (عدة مواد بجلسة واحدة) + تدفق سريع للتسجيل السنوي (D-76) + سعر مقترح من الجدول (D-77)
+/// + حصص مبدئية بافتراضي 4 في معاملة الإلحاق (D-97)
 /// </summary>
 public sealed class EnrollInGroupDialogViewModel : BaseViewModel, IDialogViewModel
 {
@@ -114,6 +114,14 @@ public sealed class EnrollInGroupDialogViewModel : BaseViewModel, IDialogViewMod
         set => SetProperty(ref _discountNote, value);
     }
 
+    // ---------- الحصص المبدئية (D-97: عرف الشهر = 4 · 0 = بلا شراء الآن) ----------
+    private string _initialSessionsText = "4";
+    public string InitialSessionsText
+    {
+        get => _initialSessionsText;
+        set => SetProperty(ref _initialSessionsText, value);
+    }
+
     // ---------- الخطأ والانشغال ----------
     private string? _errorMessage;
     public string? ErrorMessage
@@ -151,6 +159,7 @@ public sealed class EnrollInGroupDialogViewModel : BaseViewModel, IDialogViewMod
         SuggestedPriceText = string.Empty;
         AgreedPriceText = string.Empty;
         DiscountNote = string.Empty;
+        InitialSessionsText = "4";   // D-97: الافتراضي يعود مع كل إلحاق متتالٍ
         ErrorMessage = null;
 
         await using var scope = _scopeFactory.CreateAsyncScope();
@@ -258,6 +267,13 @@ public sealed class EnrollInGroupDialogViewModel : BaseViewModel, IDialogViewMod
             agreedCentimes = parsed;
         }
 
+        // D-97: الحصص المبدئية
+        if (!int.TryParse(InitialSessionsText.Trim(), out var initialSessions) || initialSessions < 0)
+        {
+            ErrorMessage = "الحصص المبدئية يجب أن تكون رقماً صحيحاً — 0 = بلا شراء الآن.";
+            return;
+        }
+
         IsBusy = true;
         try
         {
@@ -265,12 +281,15 @@ public sealed class EnrollInGroupDialogViewModel : BaseViewModel, IDialogViewMod
             var handler = scope.ServiceProvider.GetRequiredService<EnrollStudentInGroupHandler>();
             var result = await handler.ExecuteAsync(new EnrollStudentInGroupRequest(
                 group.Id, _student.Id, agreedCentimes,
-                string.IsNullOrWhiteSpace(DiscountNote) ? null : DiscountNote));
+                string.IsNullOrWhiteSpace(DiscountNote) ? null : DiscountNote,
+                initialSessions));
 
             if (result.IsSuccess)
             {
                 _changed = true;
-                _notifier.ShowSuccess($"أُلحق «{_student.FullName}» بفوج «{group.Name}» ✔");
+                _notifier.ShowSuccess(initialSessions > 0
+                    ? $"أُلحق «{_student.FullName}» بفوج «{group.Name}» واشترى {initialSessions} حصص ✔"
+                    : $"أُلحق «{_student.FullName}» بفوج «{group.Name}» ✔");
                 // D-83: إلحاق متتالٍ — الديالوغ لا يُغلق، والفوج يختفي من المؤهَّلة فيلتحق بالمادة التالية فوراً
                 await RefreshAsync();
             }

@@ -1,0 +1,109 @@
+﻿<UserControl x:Class="EduMaster.UI.Scheduling.SessionAttendanceDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <!-- المحتوى: مسقوف بمرور داخلي (D-82) -->
+            <RowDefinition Height="Auto"/>
+            <!-- التذييل: مثبّت دائماً (D-41) -->
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="540">
+            <StackPanel MinWidth="620">
+
+                <TextBlock Text="{Binding ContextText}" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                <DockPanel Margin="0,0,0,6">
+                    <Button Content="✓ الكل حاضر" Command="{Binding MarkAllPresentCommand}"
+                            DockPanel.Dock="Left" Padding="12,5"/>
+                    <TextBlock Text="{Binding CountsText}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                </DockPanel>
+
+                <DataGrid ItemsSource="{Binding Rows}"
+                          AutoGenerateColumns="False" CanUserAddRows="False"
+                          SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                          MaxHeight="380">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الطالب" Binding="{Binding FullName}" Width="2*" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="✓ حاضر" Command="{Binding SetPresentCommand}" Padding="10,3" Margin="0,0,4,0">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPresent}" Value="True">
+                                                            <Setter Property="Background" Value="#DFF0D8"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Content="✗ غائب" Command="{Binding SetAbsentCommand}" Padding="10,3" Margin="0,0,4,0">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAbsent}" Value="True">
+                                                            <Setter Property="Background" Value="#F2DEDE"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Content="⚠ مبرر" Command="{Binding SetJustifiedCommand}" Padding="10,3">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsJustified}" Value="True">
+                                                            <Setter Property="Background" Value="#FCF8E3"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="ملاحظة" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"
+                                             BorderThickness="0,0,0,1" Padding="4,2"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <TextBlock Text="الحاضر والغائب يخصمان من الرصيد — المبرر لا يخصم (D-93) · يمكن إعادة فتح الديالوغ وتصحيح أي صف لاحقاً"
+                           Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- التذييل المثبّت: البانر + الأزرار -->
+        <Grid Grid.Row="1" Margin="0,14,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Background="#FDE7E9" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="4"
+                    Padding="10,8" Margin="0,0,0,10"
+                    Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C42B1C" TextWrapping="Wrap"/>
+            </Border>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Content="💾 حفظ الحضور" Command="{Binding SaveCommand}" Padding="22,8" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                <Button Content="إلغاء" Command="{Binding CancelCommand}" Padding="22,8"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

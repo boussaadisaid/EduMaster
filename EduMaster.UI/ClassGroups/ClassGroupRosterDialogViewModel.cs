@@ -16,9 +16,8 @@ namespace EduMaster.UI.ClassGroups;
 
 /// <summary>
 /// ديالوغ «المسجَّلون» (D-75، منحوف D-85): قائمة الفوج + إلحاق طالب ببحث حي + تدفق سريع (D-76)
-/// + سعر مقترح (D-77) + انسحاب + نقل (D-78)
+/// + سعر مقترح (D-77) + حصص مبدئية في معاملة الإلحاق (D-97) + انسحاب + نقل (D-78)
 /// </summary>
-     
 public sealed class ClassGroupRosterDialogViewModel : BaseViewModel, IDialogViewModel
 {
     private readonly IServiceScopeFactory _scopeFactory;
@@ -182,6 +181,14 @@ public sealed class ClassGroupRosterDialogViewModel : BaseViewModel, IDialogView
         set => SetProperty(ref _discountNote, value);
     }
 
+    // ---------- الحصص المبدئية (D-97: عرف الشهر = 4 · 0 = بلا شراء الآن) ----------
+    private string _initialSessionsText = "4";
+    public string InitialSessionsText
+    {
+        get => _initialSessionsText;
+        set => SetProperty(ref _initialSessionsText, value);
+    }
+
     // ---------- الخطأ والانشغال ----------
     private string? _errorMessage;
     public string? ErrorMessage
@@ -285,6 +292,7 @@ public sealed class ClassGroupRosterDialogViewModel : BaseViewModel, IDialogView
         SuggestedPriceText = string.Empty;
         AgreedPriceText = string.Empty;
         DiscountNote = string.Empty;
+        InitialSessionsText = "4";   // D-97: الافتراضي يعود مع كل التقاط جديد
         ErrorMessage = null;
 
         var student = PickedStudent;
@@ -393,6 +401,13 @@ public sealed class ClassGroupRosterDialogViewModel : BaseViewModel, IDialogView
             agreedCentimes = parsed;
         }
 
+        // D-97: الحصص المبدئية
+        if (!int.TryParse(InitialSessionsText.Trim(), out var initialSessions) || initialSessions < 0)
+        {
+            ErrorMessage = "الحصص المبدئية يجب أن تكون رقماً صحيحاً — 0 = بلا شراء الآن.";
+            return;
+        }
+
         IsBusy = true;
         try
         {
@@ -400,12 +415,15 @@ public sealed class ClassGroupRosterDialogViewModel : BaseViewModel, IDialogView
             var handler = scope.ServiceProvider.GetRequiredService<EnrollStudentInGroupHandler>();
             var result = await handler.ExecuteAsync(new EnrollStudentInGroupRequest(
                 _group.Id, student.Id, agreedCentimes,
-                string.IsNullOrWhiteSpace(DiscountNote) ? null : DiscountNote));
+                string.IsNullOrWhiteSpace(DiscountNote) ? null : DiscountNote,
+                initialSessions));
 
             if (result.IsSuccess)
             {
                 _changed = true;
-                _notifier.ShowSuccess($"أُلحق «{student.FullName}» بالفوج ✔");
+                _notifier.ShowSuccess(initialSessions > 0
+                    ? $"أُلحق «{student.FullName}» بالفوج واشترى {initialSessions} حصص ✔"
+                    : $"أُلحق «{student.FullName}» بالفوج ✔");
                 PickedStudent = null;
                 StudentSearchText = string.Empty;
                 StudentResults.Clear();

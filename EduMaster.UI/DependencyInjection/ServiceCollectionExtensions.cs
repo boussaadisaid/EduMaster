@@ -7,6 +7,7 @@ using EduMaster.UI.Dialogs;
 using EduMaster.UI.Enrollments;
 using EduMaster.UI.People;
 using EduMaster.UI.Pricing;
+using EduMaster.UI.Scheduling;
 using EduMaster.UI.Services;
 using EduMaster.UI.Students;
 using EduMaster.UI.Teachers;
@@ -57,7 +58,18 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<SubjectPriceEditorViewModel>();
             // Enrollments (F2 — الشريحتان 2.3/2.4)
             services.AddTransient<AnnualEnrollmentEditorViewModel>();
-            services.AddTransient<EnrollInGroupDialogViewModel>();     //  سطر التحقق
+            services.AddTransient<EnrollInGroupDialogViewModel>();
+
+            // Scheduling (F3 — الشرائح 3.1/3.2/3.3)   //  سطر التحقق: القسم كاملاً بسبعة
+            services.AddTransient<TimetableViewModel>();
+            services.AddTransient<SessionsViewModel>();
+            services.AddTransient<ScheduleSlotEditorViewModel>();
+            services.AddTransient<GenerateSessionsDialogViewModel>();
+            services.AddTransient<AdHocSessionViewModel>();
+            services.AddTransient<PurchaseSessionsDialogViewModel>();
+            services.AddTransient<SessionAttendanceDialogViewModel>();
+
+
             return services;
         }
     }

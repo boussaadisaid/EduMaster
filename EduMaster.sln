@@ -22,6 +22,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		db\007_slice22.sql = db\007_slice22.sql
 		db\008_slice23.sql = db\008_slice23.sql
 		db\009_slice24.sql = db\009_slice24.sql
+		db\010_slice31.sql = db\010_slice31.sql
+		db\011_slice32.sql = db\011_slice32.sql
+		db\012_slice33.sql = db\012_slice33.sql
 		README.md = README.md
 	EndProjectSection
 EndProject

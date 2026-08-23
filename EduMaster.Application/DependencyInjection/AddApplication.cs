@@ -9,10 +9,12 @@ using EduMaster.Application.ClassGroups;
 using EduMaster.Application.Enrollments;
 using EduMaster.Application.People;
 using EduMaster.Application.Pricing;
+using EduMaster.Application.Scheduling;
 using EduMaster.Application.Students;
 using EduMaster.Application.Teachers;
 using EduMaster.Application.Users;
 using Microsoft.Extensions.DependencyInjection;
+
 
 namespace EduMaster.Application.DependencyInjection
 {
@@ -84,7 +86,7 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<UpdateSubjectPriceHandler>();
             services.AddTransient<DeleteSubjectPriceHandler>();
             services.AddTransient<GetSubjectPriceHandler>();
-            // Enrollments (F2 — الشريحتان 2.3/2.4)   //  سطر التحقق: القسم كاملاً بقارئ المؤهَّلة
+            // Enrollments (F2 — الشريحتان 2.3/2.4)
             services.AddTransient<GetAnnualEnrollmentsForStudentHandler>();
             services.AddTransient<RegisterAnnualEnrollmentHandler>();
             services.AddTransient<UpdateAnnualEnrollmentHandler>();
@@ -96,6 +98,22 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<TransferGroupEnrollmentHandler>();
             services.AddTransient<GetTransferTargetsHandler>();
             services.AddTransient<GetEnrollableGroupsForStudentHandler>();
+            // Scheduling(F3 — الشرائح 3.1 / 3.2 / 3.3)   //  سطر التحقق: القسم كاملاً بخمسة عشر
+            services.AddTransient<GetTimetableHandler>();
+            services.AddTransient<GetGroupSchedulesHandler>();
+            services.AddTransient<GetSessionsHandler>();
+            services.AddTransient<GetScheduleConflictsHandler>();
+            services.AddTransient<CreateScheduleSlotHandler>();
+            services.AddTransient<UpdateScheduleSlotHandler>();
+            services.AddTransient<DeactivateScheduleSlotHandler>();
+            services.AddTransient<ActivateScheduleSlotHandler>();
+            services.AddTransient<GenerateSessionsHandler>();
+            services.AddTransient<CreateAdHocSessionHandler>();
+            services.AddTransient<CancelSessionHandler>();
+            services.AddTransient<MarkSessionHeldHandler>();
+            services.AddTransient<PurchaseSessionsHandler>();
+            services.AddTransient<GetSessionAttendanceHandler>();
+            services.AddTransient<SaveSessionAttendanceHandler>();
             return services;
         }
     }

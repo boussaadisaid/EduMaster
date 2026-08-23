@@ -7,6 +7,7 @@ using EduMaster.UI.ClassGroups;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Enrollments;
+using EduMaster.UI.Scheduling;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 
@@ -44,10 +45,11 @@ public sealed class StudentsViewModel : BaseViewModel
         EditEnrollmentCommand = new AsyncRelayCommand(EditEnrollmentAsync, () => SelectedEnrollment is { Status: EnrollmentStatus.Active });
         WithdrawEnrollmentCommand = new AsyncRelayCommand(WithdrawEnrollmentAsync, () => SelectedEnrollment is { Status: EnrollmentStatus.Active });
 
-        // أفواجه: العمليات (F2 — الشريحة 2.4 · D-84: اللوحة لم تعد قراءةً فقط)
+        // أفواجه: العمليات (F2 2.4 · D-84) + شراء الحصص (F3 3.2 · D-91)
         EnrollInGroupCommand = new AsyncRelayCommand(EnrollInGroupAsync, () => SelectedStudent is { IsActive: true });
         WithdrawGroupEnrollmentCommand = new AsyncRelayCommand(WithdrawGroupEnrollmentAsync, () => SelectedGroupEnrollment is { Status: EnrollmentStatus.Active });
         TransferGroupEnrollmentCommand = new AsyncRelayCommand(TransferGroupEnrollmentAsync, () => SelectedGroupEnrollment is { Status: EnrollmentStatus.Active });
+        PurchaseSessionsCommand = new AsyncRelayCommand(PurchaseSessionsAsync, () => SelectedGroupEnrollment is { Status: EnrollmentStatus.Active });
     }
 
     // ---------- البحث الفوري ----------
@@ -142,6 +144,7 @@ public sealed class StudentsViewModel : BaseViewModel
             SetProperty(ref _selectedGroupEnrollment, value);
             WithdrawGroupEnrollmentCommand.RaiseCanExecuteChanged();
             TransferGroupEnrollmentCommand.RaiseCanExecuteChanged();
+            PurchaseSessionsCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -160,6 +163,7 @@ public sealed class StudentsViewModel : BaseViewModel
     public AsyncRelayCommand EnrollInGroupCommand { get; }
     public AsyncRelayCommand WithdrawGroupEnrollmentCommand { get; }
     public AsyncRelayCommand TransferGroupEnrollmentCommand { get; }
+    public AsyncRelayCommand PurchaseSessionsCommand { get; }
 
     public Task InitializeAsync() => LoadAsync();
 
@@ -417,6 +421,20 @@ public sealed class StudentsViewModel : BaseViewModel
 
         var dialog = _services.GetRequiredService<TransferGroupEnrollmentViewModel>();
         await dialog.InitializeAsync(enrollment.Id, student.FullName, enrollment.ClassGroupName);
+
+        if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
+            await LoadStudentGroupsAsync();
+    }
+
+    // D-91: شراء حصص — على النشط فقط (D-99 والـHandler يحرس خلفياً)
+    private async Task PurchaseSessionsAsync()
+    {
+        var enrollment = SelectedGroupEnrollment;
+        var student = SelectedStudent;
+        if (enrollment is null || student is null) return;
+
+        var dialog = _services.GetRequiredService<PurchaseSessionsDialogViewModel>();
+        dialog.Initialize(enrollment, student.FullName);
 
         if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
             await LoadStudentGroupsAsync();

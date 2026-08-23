@@ -6,7 +6,7 @@
     <Grid Margin="28">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="360"/>
+            <ColumnDefinition Width="380"/>
         </Grid.ColumnDefinitions>
 
         <!-- العمود الأيمن: قائمة الطلاب (كما هي) -->
@@ -76,7 +76,7 @@
             </StackPanel>
         </Grid>
 
-        <!-- العمود الأيسر: لوحة الطالب — تسجيلاته السنوية (2.3) + أفواجه بالعمليات (2.4 · D-84) -->
+        <!-- العمود الأيسر: لوحة الطالب — تسجيلاته السنوية (2.3) + أفواجه بالعمليات والرصيد (2.4/3.2) -->
         <Border Grid.Column="1" Margin="16,0,0,0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="14,12">
             <Grid>
                 <Grid.RowDefinitions>
@@ -131,8 +131,25 @@
                           HeadersVisibility="Column" GridLinesVisibility="Horizontal">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="الفوج" Binding="{Binding ClassGroupName}" Width="2*"/>
-                        <DataGridTextColumn Header="المادة" Binding="{Binding SubjectName}" Width="*"/>
                         <DataGridTextColumn Header="السعر" Binding="{Binding AgreedUnitPriceCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
+                        <DataGridTemplateColumn Header="الرصيد" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <!-- D-92/D-98: المتبقي — أحمر غامق عند السالب -->
+                                    <TextBlock Text="{Binding Balance}" FontWeight="SemiBold" HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsNegativeBalance}" Value="True">
+                                                        <Setter Property="Foreground" Value="#C42B1C"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="Auto"/>
                     </DataGrid.Columns>
                 </DataGrid>
@@ -143,9 +160,10 @@
                            Visibility="{Binding StudentGroupsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                 <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,10,0,0">
-                    <Button Content="➕ إلحاق بفوج" Command="{Binding EnrollInGroupCommand}"            Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="↩ انسحاب"     Command="{Binding WithdrawGroupEnrollmentCommand}" Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="🔀 نقل"        Command="{Binding TransferGroupEnrollmentCommand}" Padding="12,6"/>
+                    <Button Content="➕ إلحاق بفوج"  Command="{Binding EnrollInGroupCommand}"            Padding="12,6" Margin="0,0,6,0"/>
+                    <Button Content="🎟 شراء حصص"    Command="{Binding PurchaseSessionsCommand}"         Padding="12,6" Margin="0,0,6,0"/>
+                    <Button Content="↩ انسحاب"      Command="{Binding WithdrawGroupEnrollmentCommand}" Padding="12,6" Margin="0,0,6,0"/>
+                    <Button Content="🔀 نقل"         Command="{Binding TransferGroupEnrollmentCommand}" Padding="12,6"/>
                 </StackPanel>
             </Grid>
         </Border>
