@@ -27,6 +27,15 @@ public sealed class SearchStudentsHandler
             var items = (await _students.SearchAsync(normalized, cancellationToken)).ToList();
             return OperationResult<IReadOnlyList<StudentListItem>>.Success(items);
         }
+        catch (OperationCanceledException)
+        {
+            throw;   // D-64: الإلغاء ليس خطأً
+        }
+        catch (Exception ex) when (cancellationToken.IsCancellationRequested)
+        {
+            // D-64: SqlClient قد يلفّ الإلغاء داخل SqlException
+            throw new OperationCanceledException("Students search cancelled.", ex, cancellationToken);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to search students with term {SearchTerm}", searchTerm);

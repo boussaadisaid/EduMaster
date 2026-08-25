@@ -1,13 +1,15 @@
 ﻿using EduMaster.UI.Academic;
 using EduMaster.UI.AcademicYears;
+using EduMaster.UI.Billing;
 using EduMaster.UI.ClassGroups;
 using EduMaster.UI.Common.MVVM;
+using EduMaster.UI.Employees;
+using EduMaster.UI.Payroll;
 using EduMaster.UI.People;
 using EduMaster.UI.Scheduling;
 using EduMaster.UI.Students;
 using EduMaster.UI.Teachers;
 using Microsoft.Extensions.DependencyInjection;
-
 
 namespace EduMaster.UI
 {
@@ -46,6 +48,13 @@ namespace EduMaster.UI
                 CurrentViewModel = vm;
                 await vm.InitializeAsync();
             });
+            // F5 — الشريحة 5.1: الموظفون (بند رئيسي — ب-1)
+            NavigateToEmployeesCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<EmployeesViewModel>();
+                CurrentViewModel = vm;
+                await vm.InitializeAsync();
+            });
             NavigateToClassGroupsCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<ClassGroupsViewModel>();
@@ -62,6 +71,20 @@ namespace EduMaster.UI
             NavigateToSessionsCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<SessionsViewModel>();
+                CurrentViewModel = vm;
+                await vm.InitializeAsync();
+            });
+            // F4 — الشريحة 4.3: المالية (ديون + سجل مدفوعات — عمل يومي)
+            NavigateToFinanceCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<FinanceViewModel>();
+                CurrentViewModel = vm;
+                await vm.InitializeAsync();
+            });
+            // F5 — الشريحة 5.2: الأجور (الاحتساب والاعتماد — D-116)   // جديد هـ-2
+            NavigateToPayrollCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<PayrollRunsViewModel>();
                 CurrentViewModel = vm;
                 await vm.InitializeAsync();
             });
@@ -84,9 +107,12 @@ namespace EduMaster.UI
         public AsyncRelayCommand NavigateToPeopleCommand { get; }
         public AsyncRelayCommand NavigateToStudentsCommand { get; }
         public AsyncRelayCommand NavigateToTeachersCommand { get; }
+        public AsyncRelayCommand NavigateToEmployeesCommand { get; }
         public AsyncRelayCommand NavigateToClassGroupsCommand { get; }
         public AsyncRelayCommand NavigateToTimetableCommand { get; }
         public AsyncRelayCommand NavigateToSessionsCommand { get; }
+        public AsyncRelayCommand NavigateToFinanceCommand { get; }
+        public AsyncRelayCommand NavigateToPayrollCommand { get; }   // جديد هـ-2
         public AsyncRelayCommand NavigateToAcademicStructureCommand { get; }
     }
 }

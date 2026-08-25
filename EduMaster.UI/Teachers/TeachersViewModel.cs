@@ -1,8 +1,10 @@
 ﻿using EduMaster.Application.Common;
 using EduMaster.Application.People;
 using EduMaster.Application.Teachers;
+using EduMaster.Domain.Payroll;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
+using EduMaster.UI.Payroll;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 
@@ -33,6 +35,7 @@ public sealed class TeachersViewModel : BaseViewModel
         DeactivateCommand = new AsyncRelayCommand(DeactivateAsync, () => SelectedTeacher is { IsActive: true });
         ActivateCommand = new AsyncRelayCommand(ActivateAsync, () => SelectedTeacher is { IsActive: false });
         RemoveFileCommand = new AsyncRelayCommand(RemoveFileAsync, () => SelectedTeacher is not null);
+        OpenPayPolicyCommand = new AsyncRelayCommand(OpenPayPolicyAsync, () => SelectedTeacher is not null);
     }
 
     private string _searchText = string.Empty;
@@ -72,6 +75,7 @@ public sealed class TeachersViewModel : BaseViewModel
             DeactivateCommand.RaiseCanExecuteChanged();
             ActivateCommand.RaiseCanExecuteChanged();
             RemoveFileCommand.RaiseCanExecuteChanged();
+            OpenPayPolicyCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -90,6 +94,7 @@ public sealed class TeachersViewModel : BaseViewModel
     public AsyncRelayCommand DeactivateCommand { get; }
     public AsyncRelayCommand ActivateCommand { get; }
     public AsyncRelayCommand RemoveFileCommand { get; }
+    public AsyncRelayCommand OpenPayPolicyCommand { get; }
 
     public Task InitializeAsync() => LoadAsync();
 
@@ -184,6 +189,17 @@ public sealed class TeachersViewModel : BaseViewModel
         var handler = scope.ServiceProvider.GetRequiredService<SoftDeleteTeacherHandler>();
         var result = await handler.ExecuteAsync(new SoftDeleteTeacherRequest(teacher.Id));
         await HandleResultAsync(result.IsSuccess, result.ErrorMessage, result.ErrorType, "أُزيل ملف الأستاذ ✔");
+    }
+
+    // F5 — دفعة B-2: ديالوغ سياسات الأجر للأستاذ المحدد (D-113) — لا إعادة تحميل: لا تظهر في الشبكة
+    private async Task OpenPayPolicyAsync()
+    {
+        var teacher = SelectedTeacher;
+        if (teacher is null) return;
+
+        var dialog = _services.GetRequiredService<PayPolicyDialogViewModel>();
+        await dialog.InitializeAsync(PayeeKind.Teacher, teacher.Id, teacher.FullName);
+        await _dialogs.ShowDialogAsync(dialog, dialog.Title);
     }
 
     private async Task HandleResultAsync(bool isSuccess, string? errorMessage, ErrorType errorType, string successMessage)

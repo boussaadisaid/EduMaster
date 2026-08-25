@@ -37,6 +37,9 @@
                 <Button Content="👨‍🏫  الأساتذة" Style="{StaticResource NavButton}"
                         Command="{Binding NavigateToTeachersCommand}"/>
 
+                <Button Content="👔  الموظفون" Style="{StaticResource NavButton}"
+                        Command="{Binding NavigateToEmployeesCommand}"/>
+
                 <Button Content="🧑‍🤝‍🧑  الأفواج" Style="{StaticResource NavButton}"
                         Command="{Binding NavigateToClassGroupsCommand}"/>
 
@@ -45,8 +48,13 @@
 
                 <Button Content="✅  الحصص" Style="{StaticResource NavButton}"
                         Command="{Binding NavigateToSessionsCommand}"/>
-                
-                
+
+                <Button Content="💰  المالية" Style="{StaticResource NavButton}"
+                        Command="{Binding NavigateToFinanceCommand}"/>
+
+                <Button Content="💼  الأجور" Style="{StaticResource NavButton}"
+                        Command="{Binding NavigateToPayrollCommand}"/>
+
                 <Separator Margin="8,14"/>
                 <TextBlock Text=" الإعدادات" Foreground="Gray" Margin="16,4,16,6"/>
                 <Button Content="  السنوات الدراسية" Style="{StaticResource NavButton}"

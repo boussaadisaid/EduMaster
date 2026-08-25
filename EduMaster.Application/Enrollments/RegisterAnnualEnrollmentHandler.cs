@@ -22,6 +22,7 @@ public sealed class RegisterAnnualEnrollmentHandler
     private readonly IAcademicYearRepository _years;
     private readonly ILevelRepository _levels;
     private readonly IStreamRepository _streams;
+    private readonly IChargeRepository _charges;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
@@ -29,6 +30,7 @@ public sealed class RegisterAnnualEnrollmentHandler
 
     public RegisterAnnualEnrollmentHandler(IAnnualEnrollmentRepository enrollments, IStudentRepository students,
         IPersonRepository persons, IAcademicYearRepository years, ILevelRepository levels, IStreamRepository streams,
+        IChargeRepository charges,
         IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork,
         ILogger<RegisterAnnualEnrollmentHandler> logger)
     {
@@ -38,6 +40,7 @@ public sealed class RegisterAnnualEnrollmentHandler
         _years = years;
         _levels = levels;
         _streams = streams;
+        _charges = charges;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
@@ -90,13 +93,26 @@ public sealed class RegisterAnnualEnrollmentHandler
             if (await _enrollments.AnyActiveForStudentInYearAsync(request.StudentId, request.AcademicYearId, cancellationToken))
                 return OperationResult<int>.Failure("لهذا الطالب تسجيل سنوي نشط في هذه السنة بالفعل.", ErrorType.Conflict);
 
+            // طابع واحد لكلتا الكتابتين — ذرّية اللحظة كذرّية المعاملة
+            var utcNow = _clock.UtcNow;
+            var userId = _currentUser.UserAccountId;
+
             var enrollment = Domain.Enrollments.AnnualEnrollment.Create(
                 request.StudentId, request.AcademicYearId, request.LevelId, request.StreamId,
                 request.AgreedRegistrationFeeCentimes, request.RegistrationFeeNote,
-                _clock.UtcNow, _currentUser.UserAccountId);
+                utcNow, userId);
 
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _enrollments.AddAsync(enrollment, cancellationToken);
+
+            // D-103: مستحق الحقوق يتولد في نفس المعاملة (0 = إعفاء ← لا مستحق)
+            if (request.AgreedRegistrationFeeCentimes > 0)
+            {
+                var charge = Domain.Billing.Charge.CreateForRegistrationFee(
+                    enrollment.StudentId, enrollment.Id, request.AgreedRegistrationFeeCentimes, utcNow, userId);
+                await _charges.AddAsync(charge, cancellationToken);
+            }
+
             await _unitOfWork.CommitAsync(cancellationToken);
 
             return OperationResult<int>.Success(enrollment.Id);

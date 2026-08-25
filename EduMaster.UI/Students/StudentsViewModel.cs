@@ -1,9 +1,12 @@
-﻿using EduMaster.Application.Common;
+﻿using EduMaster.Application.Billing;
+using EduMaster.Application.Common;
 using EduMaster.Application.Enrollments;
 using EduMaster.Application.People;
 using EduMaster.Application.Students;
 using EduMaster.Domain.Enums;
+using EduMaster.UI.Billing;
 using EduMaster.UI.ClassGroups;
+using EduMaster.UI.Common;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Enrollments;
@@ -50,6 +53,12 @@ public sealed class StudentsViewModel : BaseViewModel
         WithdrawGroupEnrollmentCommand = new AsyncRelayCommand(WithdrawGroupEnrollmentAsync, () => SelectedGroupEnrollment is { Status: EnrollmentStatus.Active });
         TransferGroupEnrollmentCommand = new AsyncRelayCommand(TransferGroupEnrollmentAsync, () => SelectedGroupEnrollment is { Status: EnrollmentStatus.Active });
         PurchaseSessionsCommand = new AsyncRelayCommand(PurchaseSessionsAsync, () => SelectedGroupEnrollment is { Status: EnrollmentStatus.Active });
+
+        // المالية (F4): قبض واسترجاع متاحان دائماً (الدين والزائدة لا يموتان بالتعطيل) · تسوية على الفعّال فقط (D-108)
+        ReceivePaymentCommand = new AsyncRelayCommand(ReceivePaymentAsync, () => SelectedStudent is not null);
+        RefundCommand = new AsyncRelayCommand(RefundAsync, () => SelectedStudent is not null);
+        CancelChargeCommand = new AsyncRelayCommand(CancelChargeAsync, () => SelectedCharge is { IsActive: true });
+        ReduceChargeCommand = new AsyncRelayCommand(ReduceChargeAsync, () => SelectedCharge is { IsActive: true });
     }
 
     // ---------- البحث الفوري ----------
@@ -92,16 +101,20 @@ public sealed class StudentsViewModel : BaseViewModel
             ActivateCommand.RaiseCanExecuteChanged();
             RemoveFileCommand.RaiseCanExecuteChanged();
 
-            // اللوحة الجانبية (D-70/D-84): تحديد طالب ← تسجيلاته السنوية + أفواجه — مع إلغاء أي تحميل سابق (D-64)
+            // اللوحة الجانبية (D-70/D-84): تحديد طالب ← تسجيلاته + أفواجه + مستحقاته — مع إلغاء أي تحميل سابق (D-64)
             AddEnrollmentCommand.RaiseCanExecuteChanged();
             EnrollInGroupCommand.RaiseCanExecuteChanged();
+            ReceivePaymentCommand.RaiseCanExecuteChanged();
+            RefundCommand.RaiseCanExecuteChanged();
             OnPropertyChanged(nameof(NoStudentSelected));
             OnPropertyChanged(nameof(EnrollmentsEmpty));
             OnPropertyChanged(nameof(StudentGroupsEmpty));
+            OnPropertyChanged(nameof(ChargesEmpty));
             _enrollmentsCts?.Cancel();
             var cts = _enrollmentsCts = new CancellationTokenSource();
             _ = LoadEnrollmentsAsync(cts.Token);
             _ = LoadStudentGroupsAsync(cts.Token);
+            _ = LoadStudentChargesAsync(cts.Token);
         }
     }
 
@@ -150,6 +163,30 @@ public sealed class StudentsViewModel : BaseViewModel
 
     public bool StudentGroupsEmpty => SelectedStudent is not null && StudentGroups.Count == 0;
 
+    // ---------- اللوحة الجانبية: المالية (F4) ----------
+    public ObservableCollection<StudentChargeItem> Charges { get; } = new();
+
+    private StudentChargeItem? _selectedCharge;
+    public StudentChargeItem? SelectedCharge
+    {
+        get => _selectedCharge;
+        set
+        {
+            SetProperty(ref _selectedCharge, value);
+            CancelChargeCommand.RaiseCanExecuteChanged();
+            ReduceChargeCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public bool ChargesEmpty => SelectedStudent is not null && Charges.Count == 0;
+
+    private string _financeSummaryText = string.Empty;
+    public string FinanceSummaryText
+    {
+        get => _financeSummaryText;
+        private set => SetProperty(ref _financeSummaryText, value);
+    }
+
     // ---------- الأوامر ----------
     public AsyncRelayCommand RefreshCommand { get; }
     public AsyncRelayCommand AddCommand { get; }
@@ -164,6 +201,10 @@ public sealed class StudentsViewModel : BaseViewModel
     public AsyncRelayCommand WithdrawGroupEnrollmentCommand { get; }
     public AsyncRelayCommand TransferGroupEnrollmentCommand { get; }
     public AsyncRelayCommand PurchaseSessionsCommand { get; }
+    public AsyncRelayCommand ReceivePaymentCommand { get; }
+    public AsyncRelayCommand RefundCommand { get; }
+    public AsyncRelayCommand CancelChargeCommand { get; }
+    public AsyncRelayCommand ReduceChargeCommand { get; }
 
     public Task InitializeAsync() => LoadAsync();
 
@@ -261,6 +302,44 @@ public sealed class StudentsViewModel : BaseViewModel
         catch (OperationCanceledException) { }   // D-64
     }
 
+    private async Task LoadStudentChargesAsync(CancellationToken cancellationToken = default)
+    {
+        var student = SelectedStudent;
+        if (student is null)
+        {
+            Charges.Clear();
+            SelectedCharge = null;
+            FinanceSummaryText = string.Empty;
+            OnPropertyChanged(nameof(ChargesEmpty));
+            return;
+        }
+
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var handler = scope.ServiceProvider.GetRequiredService<GetStudentChargesHandler>();
+            var result = await handler.ExecuteAsync(student.Id, cancellationToken);
+
+            if (result.IsSuccess)
+            {
+                Charges.Clear();
+                foreach (var item in result.Value!)
+                    Charges.Add(item);
+                SelectedCharge = null;
+                OnPropertyChanged(nameof(ChargesEmpty));
+
+                // D-109: الرصيد المالي = Σفعّالة − Σمخصوص = Σالمتبقي
+                var totalRemaining = Charges.Where(c => c.IsActive).Sum(c => c.RemainingCentimes);
+                FinanceSummaryText = $"المتبقي عليه إجمالاً: {MoneyInput.FormatDinars(totalRemaining)} دج";
+            }
+            else
+            {
+                _notifier.ShowError(result.ErrorMessage!);
+            }
+        }
+        catch (OperationCanceledException) { }   // D-64
+    }
+
     // ---------- العمليات ----------
     private async Task AddAsync()
     {
@@ -315,7 +394,7 @@ public sealed class StudentsViewModel : BaseViewModel
         var student = SelectedStudent;
         if (student is null) return;
 
-        // ح-7/D-73: الإزالة حذف منطقي — وعليه تسجيلات تُمنع برسالة عربية (الحارس مفعَّل)
+        // ح-7/D-73/D-109: الإزالة حذف منطقي — وعليه تسجيلات أو مستحقات أو مدفوعات تُمنع برسالة عربية (الحُراس مفعَّلون)
         var confirmed = await _dialogs.ConfirmAsync(
             "إزالة ملف الطالب",
             $"سيُزال ملف الطالب لـ«{student.FullName}» (حذف منطقي). الشخص نفسه يبقى في السجل المدني سليماً بكل بياناته.",
@@ -338,7 +417,10 @@ public sealed class StudentsViewModel : BaseViewModel
         await editor.InitializeForCreateAsync(student);
 
         if (await _dialogs.ShowDialogAsync(editor, editor.Title))
+        {
             await LoadEnrollmentsAsync();
+            await LoadStudentChargesAsync();   // F4: حقوق > 0 تولّد مستحقاً ذرّياً (D-103)
+        }
     }
 
     private async Task EditEnrollmentAsync()
@@ -391,6 +473,7 @@ public sealed class StudentsViewModel : BaseViewModel
         {
             await LoadStudentGroupsAsync();
             await LoadEnrollmentsAsync();   // قد يكون أنشأ تسجيلاً سنوياً من التدفق السريع (D-76)
+            await LoadStudentChargesAsync();   // F4: حصص مبدئية > 0 بسعر > 0 تولّد مستحقاً ذرّياً (D-97/D-103)
         }
     }
 
@@ -437,7 +520,61 @@ public sealed class StudentsViewModel : BaseViewModel
         dialog.Initialize(enrollment, student.FullName);
 
         if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
+        {
             await LoadStudentGroupsAsync();
+            await LoadStudentChargesAsync();   // F4: الشراء يولّد مستحق الحزمة ذرّياً (D-103)
+        }
+    }
+
+    // ---------- المالية: القبض (4.2) والاسترجاع (4.3) — متاحان دائماً · والتسوية على الفعّال فقط (D-108) ----------
+    private async Task ReceivePaymentAsync()
+    {
+        var student = SelectedStudent;
+        if (student is null) return;
+
+        var dialog = _services.GetRequiredService<PaymentDialogViewModel>();
+        await dialog.InitializeAsync(student);
+
+        if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
+            await LoadStudentChargesAsync();   // المتبقي والملخص يتحدثان فوراً
+    }
+
+    private async Task RefundAsync()
+    {
+        var student = SelectedStudent;
+        if (student is null) return;
+
+        var dialog = _services.GetRequiredService<RefundDialogViewModel>();
+        await dialog.InitializeAsync(student);
+
+        // الاسترجاع يمسّ الزائدة الدائنة لا المستحقات — شبكة المستحقات لا تتغير فلا إعادة تحميل
+        await _dialogs.ShowDialogAsync(dialog, dialog.Title);
+    }
+
+    private async Task CancelChargeAsync()
+    {
+        var charge = SelectedCharge;
+        var student = SelectedStudent;
+        if (charge is null || student is null) return;
+
+        var dialog = _services.GetRequiredService<ChargeSettlementDialogViewModel>();
+        dialog.Initialize(charge, student.FullName, isReduction: false);
+
+        if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
+            await LoadStudentChargesAsync();
+    }
+
+    private async Task ReduceChargeAsync()
+    {
+        var charge = SelectedCharge;
+        var student = SelectedStudent;
+        if (charge is null || student is null) return;
+
+        var dialog = _services.GetRequiredService<ChargeSettlementDialogViewModel>();
+        dialog.Initialize(charge, student.FullName, isReduction: true);
+
+        if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
+            await LoadStudentChargesAsync();
     }
 
     private async Task HandleResultAsync(bool isSuccess, string? errorMessage, ErrorType errorType, string successMessage,

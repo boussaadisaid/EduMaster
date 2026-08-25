@@ -1,0 +1,49 @@
+﻿<UserControl x:Class="EduMaster.UI.Billing.ChargeSettlementDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="340">
+            <StackPanel MinWidth="420">
+                <TextBlock Text="{Binding ContextText}" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                <!-- التخفيض فقط -->
+                <StackPanel Visibility="{Binding ShowAmountField, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding CurrentAmountText, StringFormat='المبلغ الحالي: {0}'}" Margin="0,0,0,6"/>
+                    <TextBlock Text="المبلغ الجديد (دج) *" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding NewAmountText, UpdateSourceTrigger=PropertyChanged}" Width="140" HorizontalAlignment="Right"/>
+                    <TextBlock Text="أقل من الحالي إلزاماً · فارغ = إعفاء كامل (0) · الأصلي يبقى محفوظاً للتدقيق (D-108)"
+                               Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,10"/>
+                </StackPanel>
+
+                <TextBlock Text="سبب التسوية *" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="يُحفظ مع العملية في السجل المالي — لا حذف ولا تعديل صامت (D-108/D-109)"
+                           Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" Margin="0,14,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Background="#FDE7E9" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="4"
+                    Padding="10,8" Margin="0,0,0,10"
+                    Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C42B1C" TextWrapping="Wrap"/>
+            </Border>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Content="💾 تثبيت التسوية" Command="{Binding SaveCommand}" Padding="22,8" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                <Button Content="إلغاء" Command="{Binding CancelCommand}" Padding="22,8"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

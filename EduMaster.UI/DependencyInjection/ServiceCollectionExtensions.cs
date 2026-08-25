@@ -1,10 +1,13 @@
 ﻿using EduMaster.Application.Abstractions;
 using EduMaster.UI.Academic;
 using EduMaster.UI.AcademicYears;
+using EduMaster.UI.Billing;
 using EduMaster.UI.ClassGroups;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Dialogs;
+using EduMaster.UI.Employees;
 using EduMaster.UI.Enrollments;
+using EduMaster.UI.Payroll;
 using EduMaster.UI.People;
 using EduMaster.UI.Pricing;
 using EduMaster.UI.Scheduling;
@@ -12,7 +15,6 @@ using EduMaster.UI.Services;
 using EduMaster.UI.Students;
 using EduMaster.UI.Teachers;
 using Microsoft.Extensions.DependencyInjection;
-
 
 namespace EduMaster.UI.DependencyInjection
 {
@@ -59,8 +61,7 @@ namespace EduMaster.UI.DependencyInjection
             // Enrollments (F2 — الشريحتان 2.3/2.4)
             services.AddTransient<AnnualEnrollmentEditorViewModel>();
             services.AddTransient<EnrollInGroupDialogViewModel>();
-
-            // Scheduling (F3 — الشرائح 3.1/3.2/3.3)   //  سطر التحقق: القسم كاملاً بسبعة
+            // Scheduling
             services.AddTransient<TimetableViewModel>();
             services.AddTransient<SessionsViewModel>();
             services.AddTransient<ScheduleSlotEditorViewModel>();
@@ -68,8 +69,21 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<AdHocSessionViewModel>();
             services.AddTransient<PurchaseSessionsDialogViewModel>();
             services.AddTransient<SessionAttendanceDialogViewModel>();
+            // Billing (F4 — الشرائح 4.1/4.2/4.3)   //  سطر التحقق: القسم بأربعة
+            services.AddTransient<ChargeSettlementDialogViewModel>();
+            services.AddTransient<PaymentDialogViewModel>();
+            services.AddTransient<FinanceViewModel>();
+            services.AddTransient<RefundDialogViewModel>();
+            // Employees (F5 — دفعة B-1)   //  سطر التحقق: القسم بثلاثة
+            services.AddTransient<EmployeesViewModel>();
+            services.AddTransient<EmployeeEditorViewModel>();
+            services.AddTransient<AssignEmployeeRoleViewModel>();
+            // Payroll (F5 — دفعة B-2)   //  سطر التحقق: القسم بواحد
+            services.AddTransient<PayPolicyDialogViewModel>();
 
+            services.AddTransient<PayrollRunsViewModel>();
 
+            services.AddTransient<PayoutDialogViewModel>();
             return services;
         }
     }

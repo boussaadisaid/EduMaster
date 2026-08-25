@@ -10,6 +10,7 @@ namespace EduMaster.Application.Enrollments;
 /// الإلحاق بالفوج — الحُراس (D-54/D-59/D-79): فوج فعّال · طالب فعّال (ملف وشخص) · تسجيل سنوي نشط مطابق
 /// (نفس السنة والمستوى، والشعبة ضمن شعب الفوج إن قُيّد) · لا نشط مكرر · السعة صارمة · والسعر يُنسخ من جدول الأسعار (D-50/D-77)
 /// · F3: الحصص المبدئية تُشترى في نفس المعاملة ذرّياً (D-97 — 0 = بلا شراء)
+/// · F4: مستحق الحزمة المبدئية يتولد في المعاملة ذاتها (D-103 — يُتخطّى عند قيمة 0)
 /// </summary>
 public sealed record EnrollStudentInGroupRequest(
     int ClassGroupId,
@@ -27,6 +28,7 @@ public sealed class EnrollStudentInGroupHandler
     private readonly IPersonRepository _persons;
     private readonly ISubjectPriceRepository _prices;
     private readonly IGroupSessionPurchaseRepository _purchases;
+    private readonly IChargeRepository _charges;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
@@ -34,7 +36,7 @@ public sealed class EnrollStudentInGroupHandler
 
     public EnrollStudentInGroupHandler(IClassGroupEnrollmentRepository groupEnrollments, IClassGroupRepository classGroups,
         IAnnualEnrollmentRepository annualEnrollments, IStudentRepository students, IPersonRepository persons,
-        ISubjectPriceRepository prices, IGroupSessionPurchaseRepository purchases,
+        ISubjectPriceRepository prices, IGroupSessionPurchaseRepository purchases, IChargeRepository charges,
         IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<EnrollStudentInGroupHandler> logger)
     {
         _groupEnrollments = groupEnrollments;
@@ -44,6 +46,7 @@ public sealed class EnrollStudentInGroupHandler
         _persons = persons;
         _prices = prices;
         _purchases = purchases;
+        _charges = charges;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
@@ -128,6 +131,15 @@ public sealed class EnrollStudentInGroupHandler
                 var initialPurchase = Domain.Scheduling.GroupSessionPurchase.Create(
                     enrollment.Id, request.InitialSessionsCount, "حصص مبدئية عند الإلحاق", utcNow, userId);
                 await _purchases.AddAsync(initialPurchase, cancellationToken);
+
+                // D-103/D-96: مستحق الحزمة المبدئية في المعاملة ذاتها = عدد × سعر الحصة المتفق (يُتخطّى عند 0)
+                var initialAmountCentimes = request.InitialSessionsCount * agreedCentimes;
+                if (initialAmountCentimes > 0)
+                {
+                    var initialCharge = Domain.Billing.Charge.CreateForSessionBundle(
+                        request.StudentId, initialPurchase.Id, initialAmountCentimes, utcNow, userId);
+                    await _charges.AddAsync(initialCharge, cancellationToken);
+                }
             }
 
             await _unitOfWork.CommitAsync(cancellationToken);

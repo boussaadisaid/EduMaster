@@ -12,6 +12,9 @@
              xmlns:pricing="clr-namespace:EduMaster.UI.Pricing"
              xmlns:enrollments="clr-namespace:EduMaster.UI.Enrollments"
              xmlns:scheduling="clr-namespace:EduMaster.UI.Scheduling"
+             xmlns:billing="clr-namespace:EduMaster.UI.Billing"
+             xmlns:employees="clr-namespace:EduMaster.UI.Employees"
+             xmlns:payroll="clr-namespace:EduMaster.UI.Payroll"
              xmlns:common="clr-namespace:EduMaster.UI.Common">
 
     <Application.Resources>
@@ -25,7 +28,7 @@
 
                 <ResourceDictionary Source="pack://application:,,,/ToastNotifications.Messages;component/Themes/Default.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            
+
             <DataTemplate DataType="{x:Type ui:HomeViewModel}">
                 <ui:HomeView />
             </DataTemplate>
@@ -59,14 +62,14 @@
             <DataTemplate DataType="{x:Type students:StudentEditorViewModel}">
                 <students:StudentEditorView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type students:AssignStudentRoleViewModel}">
+                <students:AssignStudentRoleView />
+            </DataTemplate>
             <DataTemplate DataType="{x:Type teachers:TeachersViewModel}">
                 <teachers:TeachersView />
             </DataTemplate>
             <DataTemplate DataType="{x:Type teachers:TeacherEditorViewModel}">
                 <teachers:TeacherEditorView />
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type students:AssignStudentRoleViewModel}">
-                <students:AssignStudentRoleView />
             </DataTemplate>
             <DataTemplate DataType="{x:Type teachers:AssignTeacherRoleViewModel}">
                 <teachers:AssignTeacherRoleView />
@@ -129,6 +132,46 @@
             <DataTemplate DataType="{x:Type scheduling:SessionAttendanceDialogViewModel}">
                 <scheduling:SessionAttendanceDialogView />
             </DataTemplate>
+
+            <DataTemplate DataType="{x:Type billing:ChargeSettlementDialogViewModel}">
+                <billing:ChargeSettlementDialogView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type billing:PaymentDialogViewModel}">
+                <billing:PaymentDialogView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type billing:FinanceViewModel}">
+                <billing:FinanceView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type billing:RefundDialogViewModel}">
+                <billing:RefundDialogView />
+            </DataTemplate>
+
+            <!-- Employees (F5 — دفعة B-1) -->
+            <DataTemplate DataType="{x:Type employees:EmployeesViewModel}">
+                <employees:EmployeesView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type employees:EmployeeEditorViewModel}">
+                <employees:EmployeeEditorView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type employees:AssignEmployeeRoleViewModel}">
+                <employees:AssignEmployeeRoleView />
+            </DataTemplate>
+
+            <!-- Payroll (F5 — دفعة B-2) — ✔ سطر التحقق -->
+            <DataTemplate DataType="{x:Type payroll:PayPolicyDialogViewModel}">
+                <payroll:PayPolicyDialogView />
+            </DataTemplate>
+            <!-- Payroll (F5 — الشريحة 5.2): شاشة «💼 الأجور» — جديد هـ-2 -->
+            <DataTemplate DataType="{x:Type payroll:PayrollRunsViewModel}">
+                <payroll:PayrollRunsView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type payroll:PayoutDialogViewModel}">
+                <payroll:PayoutDialogView />
+            </DataTemplate>
+
             <!-- Custom Font (make sure Cairo.ttf is in /Fonts folder) -->
             <FontFamily x:Key="CairoFont">pack://application:,,,/Fonts/#Cairo</FontFamily>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>

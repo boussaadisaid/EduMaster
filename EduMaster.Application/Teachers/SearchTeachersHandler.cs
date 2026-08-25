@@ -27,6 +27,15 @@ public sealed class SearchTeachersHandler
             var items = (await _teachers.SearchAsync(normalized, cancellationToken)).ToList();
             return OperationResult<IReadOnlyList<TeacherListItem>>.Success(items);
         }
+        catch (OperationCanceledException)
+        {
+            throw;   // D-64: الإلغاء ليس خطأً
+        }
+        catch (Exception ex) when (cancellationToken.IsCancellationRequested)
+        {
+            // D-64: SqlClient قد يلفّ الإلغاء داخل SqlException
+            throw new OperationCanceledException("Teachers search cancelled.", ex, cancellationToken);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to search teachers with term {SearchTerm}", searchTerm);

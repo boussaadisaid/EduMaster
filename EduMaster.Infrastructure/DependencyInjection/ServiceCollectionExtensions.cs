@@ -2,9 +2,12 @@
 using EduMaster.Application.Abstractions.Repositories;
 using EduMaster.Infrastructure.Academic;
 using EduMaster.Infrastructure.AcademicYears;
+using EduMaster.Infrastructure.Billing;
 using EduMaster.Infrastructure.ClassGroups;
+using EduMaster.Infrastructure.Employees;
 using EduMaster.Infrastructure.Enrollments;
 using EduMaster.Infrastructure.Files;
+using EduMaster.Infrastructure.Payroll;
 using EduMaster.Infrastructure.People;
 using EduMaster.Infrastructure.Persistence;
 using EduMaster.Infrastructure.Pricing;
@@ -61,6 +64,25 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddScoped<IClassSessionRepository, ClassSessionRepository>();
             services.AddScoped<IGroupSessionPurchaseRepository, GroupSessionPurchaseRepository>();
             services.AddScoped<ISessionAttendanceRepository, SessionAttendanceRepository>();
+
+            // Billing (F4 — الشريحتان 4.1/4.2)   //  سطر التحقق
+            services.AddScoped<IChargeRepository, ChargeRepository>();
+            services.AddScoped<IPaymentRepository, PaymentRepository>();
+
+            // Employees + Payroll (F5 — الشريحة 5.1)   //  سطر التحقق: القسم بثلاثة
+            services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+            services.AddScoped<IEmployeeWorkLogRepository, EmployeeWorkLogRepository>();
+            services.AddScoped<IPayPolicyRepository, PayPolicyRepository>();
+
+            // Payroll (F5 — الشريحة 5.2: الاحتساب والاعتماد)   //   — جديد 5.2-ج
+            services.AddScoped<IPayrollRunRepository, PayrollRunRepository>();
+            services.AddScoped<IPayrollLineRepository, PayrollLineRepository>();
+            services.AddScoped<IPayrollFactsRepository, PayrollFactsRepository>();
+
+            // Payroll (F5 — الشريحة 5.3: الصرف)   //  سطر التحقق: القسم بواحد — جديد 5.3-ج
+            services.AddScoped<IPayoutRepository, PayoutRepository>();
+
+
             return services;
         }
     }

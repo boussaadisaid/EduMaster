@@ -17,6 +17,7 @@ public sealed class ClassSessionRepository : IClassSessionRepository
         int Id,
         int ClassGroupId,
         int? SourceScheduleId,
+         int? TeacherId,
         DateTime StartsAt,
         int DurationMinutes,
         byte Status,
@@ -45,7 +46,7 @@ public sealed class ClassSessionRepository : IClassSessionRepository
         int ActiveEnrolledCount);
 
     private const string SelectColumns = @"
-SELECT Id, ClassGroupId, SourceScheduleId, StartsAt, DurationMinutes, Status, Topic, CancelledAtUtc,
+SELECT Id, ClassGroupId, SourceScheduleId, TeacherId, StartsAt, DurationMinutes, Status, Topic, CancelledAtUtc,
        CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
 FROM ClassSessions";
 
@@ -218,6 +219,7 @@ WHERE ClassGroupId = @ClassGroupId AND Status = 1 AND StartsAt > @LocalNow;",
             id: row.Id,
             classGroupId: row.ClassGroupId,
             sourceScheduleId: row.SourceScheduleId,
+            teacherId: row.TeacherId,
             startsAt: row.StartsAt,
             durationMinutes: row.DurationMinutes,
             status: (SessionStatus)row.Status,

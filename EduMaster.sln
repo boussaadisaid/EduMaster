@@ -25,8 +25,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		db\010_slice31.sql = db\010_slice31.sql
 		db\011_slice32.sql = db\011_slice32.sql
 		db\012_slice33.sql = db\012_slice33.sql
+		db\013_slice41.sql = db\013_slice41.sql
+		db\014_slice42.sql = db\014_slice42.sql
+		db\015_slice51.sql = db\015_slice51.sql
+		db\016_slice52.sql = db\016_slice52.sql
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduMaster.Domain.Tests", "EduMaster.Domain.Tests\EduMaster.Domain.Tests.csproj", "{321B7534-4181-490B-82F9-D32BA7ABF41D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduMaster.Application.Tests", "EduMaster.Application.Tests\EduMaster.Application.Tests.csproj", "{5F3BF6F7-AF8D-46A1-BE2C-0A7ED66253A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduMaster.UI.Tests", "EduMaster.UI.Tests\EduMaster.UI.Tests.csproj", "{88C0589B-3517-40B0-A351-B2CD7721AF7E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +60,18 @@ Global
 		{DAB5059A-3A20-E735-7C9B-246A92B4363C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DAB5059A-3A20-E735-7C9B-246A92B4363C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DAB5059A-3A20-E735-7C9B-246A92B4363C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{321B7534-4181-490B-82F9-D32BA7ABF41D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{321B7534-4181-490B-82F9-D32BA7ABF41D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{321B7534-4181-490B-82F9-D32BA7ABF41D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{321B7534-4181-490B-82F9-D32BA7ABF41D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F3BF6F7-AF8D-46A1-BE2C-0A7ED66253A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F3BF6F7-AF8D-46A1-BE2C-0A7ED66253A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F3BF6F7-AF8D-46A1-BE2C-0A7ED66253A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F3BF6F7-AF8D-46A1-BE2C-0A7ED66253A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88C0589B-3517-40B0-A351-B2CD7721AF7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88C0589B-3517-40B0-A351-B2CD7721AF7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88C0589B-3517-40B0-A351-B2CD7721AF7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88C0589B-3517-40B0-A351-B2CD7721AF7E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

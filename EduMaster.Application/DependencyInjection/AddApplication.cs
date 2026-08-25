@@ -5,8 +5,11 @@ using EduMaster.Application.AcademicYears.CreateAcademicYear;
 using EduMaster.Application.AcademicYears.DeactivateAcademicYear;
 using EduMaster.Application.AcademicYears.SetCurrentAcademicYear;
 using EduMaster.Application.AcademicYears.UpdateAcademicYear;
+using EduMaster.Application.Billing;
 using EduMaster.Application.ClassGroups;
+using EduMaster.Application.Employees;
 using EduMaster.Application.Enrollments;
+using EduMaster.Application.Payroll;
 using EduMaster.Application.People;
 using EduMaster.Application.Pricing;
 using EduMaster.Application.Scheduling;
@@ -114,6 +117,48 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<PurchaseSessionsHandler>();
             services.AddTransient<GetSessionAttendanceHandler>();
             services.AddTransient<SaveSessionAttendanceHandler>();
+
+            // Billing (F4 — الشرائح 4.1/4.2/4.3)   //  سطر التحقق: القسم بثمانية
+            services.AddTransient<GetStudentChargesHandler>();
+            services.AddTransient<CancelChargeHandler>();
+            services.AddTransient<ReduceChargeHandler>();
+            services.AddTransient<GetPaymentContextHandler>();
+            services.AddTransient<RegisterPaymentHandler>();
+            services.AddTransient<GetDebtorsHandler>();
+            services.AddTransient<GetPaymentsLogHandler>();
+            services.AddTransient<RegisterRefundHandler>();
+
+            // Payroll (F5 — الشريحة 5.1)   //  سطر التحقق: القسم باثني عشر
+            services.AddTransient<GetEmployeesHandler>();
+            services.AddTransient<CreateEmployeeHandler>();
+            services.AddTransient<UpdateEmployeeHandler>();
+            services.AddTransient<SoftDeleteEmployeeHandler>();
+            services.AddTransient<CreateEmployeeFileHandler>();   //  مُصحَّح: نمط «أضف كـ…» = Create...FileHandler (مرآة الطالب/الأستاذ)
+            services.AddTransient<GetWorkLogHandler>();
+            services.AddTransient<AddWorkLogDayHandler>();
+            services.AddTransient<RemoveWorkLogDayHandler>();
+            services.AddTransient<GetPayPoliciesHandler>();
+            services.AddTransient<CreatePayPolicyHandler>();
+            services.AddTransient<UpdatePayPolicyHandler>();
+            services.AddTransient<SetPayPolicyActiveHandler>();
+            // Payroll (F5 — الشريحة 5.2: الاحتساب والاعتماد)   //  سطر التحقق: القسم بتسعة — جديد 5.2-ج
+            services.AddScoped<PayrollComputationService>();
+            services.AddTransient<GeneratePayrollRunHandler>();
+            services.AddTransient<RegeneratePayrollRunHandler>();
+            services.AddTransient<ApprovePayrollRunHandler>();
+            services.AddTransient<DeletePayrollRunHandler>();
+            services.AddTransient<AddManualPayrollLineHandler>();
+            services.AddTransient<RemoveManualPayrollLineHandler>();
+            services.AddTransient<GetPayrollRunsHandler>();
+            services.AddTransient<GetPayrollRunDetailsHandler>();
+
+            // Payroll (F5 — الشريحة 5.3: الصرف والأرصدة)   //  سطر التحقق: القسم بثلاثة — جديد 5.3-ج
+            services.AddTransient<RegisterPayoutHandler>();
+            services.AddTransient<GetPayrollBalancesHandler>();
+            services.AddTransient<GetPayeePayoutsHandler>();
+
+
+
             return services;
         }
     }

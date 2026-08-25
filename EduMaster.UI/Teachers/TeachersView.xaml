@@ -62,6 +62,7 @@
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,14,0,0">
             <Button Content="✏️ تعديل"        Command="{Binding EditCommand}"       Padding="14,6" Margin="0,0,8,0"/>
+            <Button Content="💼 الأجر"        Command="{Binding OpenPayPolicyCommand}" Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="🚫 تعطيل"       Command="{Binding DeactivateCommand}" Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="✔ تفعيل"        Command="{Binding ActivateCommand}"   Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="🗑 إزالة الملف"  Command="{Binding RemoveFileCommand}" Padding="14,6"/>

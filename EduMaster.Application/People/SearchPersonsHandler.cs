@@ -43,6 +43,15 @@ public sealed class SearchPersonsHandler
 
             return OperationResult<IReadOnlyList<PersonListItem>>.Success(items);
         }
+        catch (OperationCanceledException)
+        {
+            throw;   // D-64: إلغاء طلب سابق أثناء الكتابة — ليس خطأً، يعالجه المتصل بصمت
+        }
+        catch (Exception ex) when (cancellationToken.IsCancellationRequested)
+        {
+            // D-64: SqlClient قد يلفّ إلغاء الأمر الجاري داخل SqlException («Operation cancelled by user») — الإلغاء ليس خطأً
+            throw new OperationCanceledException("People search cancelled.", ex, cancellationToken);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to search people with term {SearchTerm}", searchTerm);
