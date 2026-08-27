@@ -15,6 +15,9 @@ public interface IPaymentRepository
     /// <summary>الزائدة الدائنة للطالب (D-107): Σقبض − Σمخصوص − Σصرف — تظهر «متاحاً» في قبضه القادم وتحرس الصرف (4.3)</summary>
     Task<long> GetUnallocatedForStudentAsync(int studentId, CancellationToken cancellationToken = default);
 
+    /// <summary>إيصالات الطالب الحرة (قبض بحريّة > 0) — الأقدم أولاً · لاستهلاك الزائدة (6.6 — ز-1): الصرف غير مربوط بإيصال فسقف الإجمالي حارسه الموثّق</summary>
+    Task<IReadOnlyList<UnallocatedReceiptRaw>> GetUnallocatedReceiptsForStudentAsync(int studentId, CancellationToken cancellationToken = default);
+
     /// <summary>سجل الفترة مسطّحاً (قبض + صرف — 4.3): الأحدث أولاً بمخصوص كل دفعة</summary>
     Task<IEnumerable<PaymentListItem>> GetForPeriodAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default);
 

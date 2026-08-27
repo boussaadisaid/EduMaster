@@ -31,6 +31,7 @@ public sealed class PurchaseSessionsHandlerTests
         var uow = new FakeUnitOfWork();
         var handler = new PurchaseSessionsHandler(
             purchases, enrollments, charges, new FakeClock(), new FakeCurrentUserService(), uow,
+            new EduMaster.Application.Billing.CreditConsumptionService(new FakePaymentRepository(), charges),
             NullLogger<PurchaseSessionsHandler>.Instance);
         return (handler, purchases, charges, uow);
     }

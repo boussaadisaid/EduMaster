@@ -1,8 +1,10 @@
 ﻿using EduMaster.Application.Billing;
 using EduMaster.Application.Common;
+using EduMaster.Application.Printing;
 using EduMaster.UI.Common;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
+using EduMaster.UI.Printing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
@@ -13,23 +15,30 @@ namespace EduMaster.UI.Billing;
 /// شاشة «المالية» الرئيسية (4.3): قسم الديون (من عليهم متبقٍّ — بحث حي 300ms) + سجل المدفوعات بفلتر فترة
 /// افتراضه اليوم — وعمود «غير مخصص» يُخرج الزائدة الدائنة من حبس الديالوغ إلى الضوء (فجوة مسجّلة).
 /// قراءات فقط هنا — القبض من لوحة الطالب (4.2) والاسترجاع منها أيضاً.
+/// 6.3 (ط-هـ): زر 🖨 على سطر السجل — إعادة طباعة دائمة لأن الإيصال وثيقة (D-105/D-130).
 /// </summary>
 public sealed class FinanceViewModel : BaseViewModel
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IUserNotifier _notifier;
     private readonly ILogger<FinanceViewModel> _logger;
+    private readonly IPrintService _printService;
     private CancellationTokenSource? _debtorsCts;
     private CancellationTokenSource? _paymentsCts;
     private CancellationTokenSource? _searchCts;
 
-    public FinanceViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier, ILogger<FinanceViewModel> logger)
+    public FinanceViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
+        ILogger<FinanceViewModel> logger, IPrintService printService)
     {
         _scopeFactory = scopeFactory;
         _notifier = notifier;
         _logger = logger;
+        _printService = printService;
 
         RefreshCommand = new AsyncRelayCommand(RefreshAllAsync);
+        // بلا بوابة تفعيل عمداً: الزر المعطَّل يبتلع النقرة الأولى التي كان يجب أن تحدّد السطر (درس تجريب 6.3) —
+        // التحديد يتم عند MouseDown قبل Click فيُطبع من أول نقرة، وغياب التحديد لا-عملية آمنة
+        PrintReceiptCommand = new AsyncRelayCommand(PrintSelectedReceiptAsync);
     }
 
     // ---------- قسم الديون ----------
@@ -64,6 +73,14 @@ public sealed class FinanceViewModel : BaseViewModel
 
     // ---------- قسم سجل المدفوعات ----------
     public ObservableCollection<PaymentListItem> Payments { get; } = new();
+
+    /// <summary>سطر السجل المحدَّد — أوامر الطباعة بالتحديد لا بالمعاملات (قاعدة الواجهة)</summary>
+    private PaymentListItem? _selectedPayment;
+    public PaymentListItem? SelectedPayment
+    {
+        get => _selectedPayment;
+        set => SetProperty(ref _selectedPayment, value);
+    }
 
     private DateTime? _fromDate;
     public DateTime? FromDate
@@ -104,6 +121,7 @@ public sealed class FinanceViewModel : BaseViewModel
     }
 
     public AsyncRelayCommand RefreshCommand { get; }
+    public AsyncRelayCommand PrintReceiptCommand { get; }
 
     public async Task InitializeAsync()
     {
@@ -223,6 +241,41 @@ public sealed class FinanceViewModel : BaseViewModel
         finally
         {
             IsLoadingPayments = false;
+        }
+    }
+
+    /// <summary>
+    /// 🖨 من سطر السجل (6.3 — ط-هـ): إعادة طباعة دائمة — الإيصال وثيقة (D-105).
+    /// النموذج يُبنى بالمعالج النقي المختبَر (ط-2) ثم يُرسم ويُطبع · إلغاء نافذة الطباعة يمرّ بصمت (روح D-64).
+    /// </summary>
+    private async Task PrintSelectedReceiptAsync()
+    {
+        var selected = SelectedPayment;
+        if (selected is null)
+            return;
+
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var handler = scope.ServiceProvider.GetRequiredService<GetReceiptPrintModelHandler>();
+            var result = await handler.ExecuteAsync(selected.Id);
+
+            if (!result.IsSuccess)
+            {
+                if (result.ErrorType == ErrorType.Unexpected)
+                    _notifier.ShowError(result.ErrorMessage!);
+                else
+                    _notifier.ShowWarning(result.ErrorMessage!);   // «الإيصال غير موجود» — شاشة قائمة ← تحذيري (D-29)
+                return;
+            }
+
+            if (_printService.PrintReceipt(result.Value!) == PrintOutcome.Failed)
+                _notifier.ShowError("تعذّرت الطباعة — تحقق من الطابعة وأعد المحاولة.");
+        }
+        catch (Exception ex)   // D-69
+        {
+            _logger.LogError(ex, "Failed to print receipt for payment {PaymentId}", selected.Id);
+            _notifier.ShowError("تعذّرت طباعة الإيصال — أعد المحاولة.");
         }
     }
 }

@@ -1,0 +1,85 @@
+﻿<UserControl x:Class="EduMaster.UI.Reports.PaymentMovementReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+             FlowDirection="RightToLeft">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Margin="0,0,0,8">
+            <TextBlock Text="{Binding SummaryText}" DockPanel.Dock="Left" Foreground="Gray" VerticalAlignment="Center"/>
+            <TextBlock Text="حركة القبض والصرف" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <DatePicker SelectedDate="{Binding FromDate}" Width="120"/>
+                <TextBlock Text="إلى" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                <DatePicker SelectedDate="{Binding ToDate}" Width="120"/>
+            </StackPanel>
+            <Button Content="🔄 تحديث" Command="{Binding RefreshCommand}" Margin="14,0,0,0" Padding="14,6"/>
+            <!-- 6.3 (ط-هـ): طباعة التقرير المعروض حرفياً (WYSIWYP) بترويسة الهوية — تُفعَّل بعد أول تحميل ناجح -->
+            <Button Content="🖨 طباعة" Command="{Binding PrintCommand}" Margin="8,0,0,0" Padding="14,6"/>
+        </DockPanel>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Rows}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserAddRows="False" SelectionMode="Single"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="إيصال" Binding="{Binding ReceiptNoText}" Width="Auto"/>
+                <DataGridTextColumn Header="التاريخ" Binding="{Binding PaidOn, StringFormat='yyyy-MM-dd'}" Width="Auto"/>
+                <DataGridTextColumn Header="الطالب" Binding="{Binding StudentName}" Width="2*"/>
+                <DataGridTextColumn Header="الدافع" Binding="{Binding PayerName, TargetNullValue='—'}" Width="*"/>
+                <DataGridTemplateColumn Header="النوع" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding KindText}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding KindText}" Value="صرف">
+                                                <Setter Property="Foreground" Value="#B26B00"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="المبلغ" Binding="{Binding AmountCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
+                <DataGridTemplateColumn Header="غير مخصص" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding UnallocatedCentimes, Converter={StaticResource CentimesToDinarsConverter}}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="Gray"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasUnallocated}" Value="True">
+                                                <Setter Property="Foreground" Value="#B26B00"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="ملاحظة" Binding="{Binding Note, TargetNullValue='—'}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="1" Text="لا حركة قبض في هذه الفترة"
+                   Foreground="Gray" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        <TextBlock Grid.Row="1" Text="جارٍ التحميل…" Foreground="Gray"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+    </Grid>
+</UserControl>

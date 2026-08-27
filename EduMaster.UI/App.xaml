@@ -15,6 +15,7 @@
              xmlns:billing="clr-namespace:EduMaster.UI.Billing"
              xmlns:employees="clr-namespace:EduMaster.UI.Employees"
              xmlns:payroll="clr-namespace:EduMaster.UI.Payroll"
+             xmlns:reports="clr-namespace:EduMaster.UI.Reports"
              xmlns:common="clr-namespace:EduMaster.UI.Common">
 
     <Application.Resources>
@@ -110,6 +111,11 @@
             <DataTemplate DataType="{x:Type enrollments:EnrollInGroupDialogViewModel}">
                 <enrollments:EnrollInGroupDialogView />
             </DataTemplate>
+            <!-- Enrollments (F6 — الشريحة 6.2): ديالوغ الترحيل الجماعي — ✔ سطر التحقق -->
+            <DataTemplate DataType="{x:Type enrollments:RolloverDialogViewModel}">
+                <enrollments:RolloverDialogView />
+            </DataTemplate>
+
             <DataTemplate DataType="{x:Type scheduling:TimetableViewModel}">
                 <scheduling:TimetableView />
             </DataTemplate>
@@ -125,7 +131,6 @@
             <DataTemplate DataType="{x:Type scheduling:AdHocSessionViewModel}">
                 <scheduling:AdHocSessionView />
             </DataTemplate>
-            <!--  سطر التحقق -->
             <DataTemplate DataType="{x:Type scheduling:PurchaseSessionsDialogViewModel}">
                 <scheduling:PurchaseSessionsDialogView />
             </DataTemplate>
@@ -170,6 +175,27 @@
 
             <DataTemplate DataType="{x:Type payroll:PayoutDialogViewModel}">
                 <payroll:PayoutDialogView />
+            </DataTemplate>
+
+            <!-- Reports (F6 — الشريحة 6.1) — ✔ سطر التحقق: القسم بثلاثة -->
+            <DataTemplate DataType="{x:Type reports:ReportsViewModel}">
+                <reports:ReportsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type reports:PaymentMovementReportViewModel}">
+                <reports:PaymentMovementReportView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type reports:StudentStatementViewModel}">
+                <reports:StudentStatementView />
+            </DataTemplate>
+            <!-- Reports (F6 — الشريحة 6.4: ق-ب) — ✔ سطر التحقق: القسم بثلاثة -->
+            <DataTemplate DataType="{x:Type reports:AttendanceSummaryReportViewModel}">
+                <reports:AttendanceSummaryReportView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type reports:GroupSessionsReportViewModel}">
+                <reports:GroupSessionsReportView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type reports:LowSessionBalancesViewModel}">
+                <reports:LowSessionBalancesView />
             </DataTemplate>
 
             <!-- Custom Font (make sure Cairo.ttf is in /Fonts folder) -->

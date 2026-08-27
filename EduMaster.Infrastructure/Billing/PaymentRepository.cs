@@ -105,6 +105,31 @@ SELECT ISNULL((SELECT SUM(p.AmountCentimes) FROM Payments p WHERE p.StudentId = 
                 cancellationToken: cancellationToken));
     }
 
+    // ⚠ D-81: بنفس ترتيب الاستعلام أدناه (6.6 — ز-1)
+    private sealed record UnallocatedReceiptRow(int PaymentId, long FreeCentimes);
+
+    public async Task<IReadOnlyList<UnallocatedReceiptRaw>> GetUnallocatedReceiptsForStudentAsync(int studentId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // 6.6 — ز-1: حرّية كل إيصال قبض = مبلغه − Σ تخصيصاته · الحرّة > 0 فقط · الأقدم أولاً (الصرف يُحسم بسقف الإجمالي في المصفف)
+        const string sqlFree = @"
+SELECT p.Id AS PaymentId,
+       p.AmountCentimes - ISNULL((SELECT SUM(a.AmountCentimes) FROM PaymentAllocations a WHERE a.PaymentId = p.Id), 0) AS FreeCentimes
+FROM Payments p
+WHERE p.StudentId = @StudentId
+  AND p.Kind = 1
+  AND p.AmountCentimes - ISNULL((SELECT SUM(a.AmountCentimes) FROM PaymentAllocations a WHERE a.PaymentId = p.Id), 0) > 0
+ORDER BY p.PaidOn, p.Id;";
+
+        var rows = await connection.QueryAsync<UnallocatedReceiptRow>(
+            new CommandDefinition(sqlFree, new { StudentId = studentId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return rows.Select(r => new UnallocatedReceiptRaw(r.PaymentId, r.FreeCentimes)).ToList();
+    }
+
     public async Task<IEnumerable<PaymentListItem>> GetForPeriodAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);

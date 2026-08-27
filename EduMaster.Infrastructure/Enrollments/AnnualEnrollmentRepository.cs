@@ -42,6 +42,20 @@ public sealed class AnnualEnrollmentRepository : IAnnualEnrollmentRepository
         DateTime EnrolledAtUtc,
         DateTime? WithdrawnAtUtc);
 
+    // ⚠ D-81: بترتيب أعمدة SELECT حرفياً
+    private sealed record RolloverCandidateRow(
+        int StudentId,
+        string FullName,
+        string? Phone,
+        int SourceLevelId,
+        string SourceLevelName,
+        int? SourceStreamId,
+        string? SourceStreamName,
+        int AlreadyInTarget,
+        bool PersonActive,
+        bool FileDeleted,
+        long DebtCentimes);
+
     private const string SelectColumns = @"
 SELECT Id, StudentId, AcademicYearId, LevelId, StreamId, Status, AgreedRegistrationFeeCentimes, RegistrationFeeNote,
        EnrolledAtUtc, WithdrawnAtUtc, CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId
@@ -201,6 +215,62 @@ ORDER BY ae.EnrolledAtUtc DESC;";
                 cancellationToken: cancellationToken));
 
         return count > 0;
+    }
+
+    public async Task<IReadOnlyList<RolloverCandidateItem>> GetRolloverCandidatesAsync(int sourceYearId, int targetYearId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // 6.2 (D-129): نشطو المصدر كلهم — الأهلية والسبب يُحسبان عند التجسيد (مرئي لا صامت روح D-124)
+        // الدين معلوماتي لا مانع (تر-5): Σ(الحالي − مخصوص) على المستحقات الفعّالة (D-109) · «في الهدف مسبقاً» يُقرأ بضمّة ذاتية على النشط
+        const string sql = @"
+SELECT ae.StudentId,
+       CONCAT_WS(N' ', p.FirstName, p.LastName, p.FatherName) AS FullName,
+       p.Phone,
+       ae.LevelId AS SourceLevelId, l.Name AS SourceLevelName,
+       ae.StreamId AS SourceStreamId, st.Name AS SourceStreamName,
+       CASE WHEN tgt.Id IS NOT NULL THEN 1 ELSE 0 END AS AlreadyInTarget,
+       p.IsActive AS PersonActive,
+       s.IsDeleted AS FileDeleted,
+       ISNULL(debt.RemainingCentimes, 0) AS DebtCentimes
+FROM AnnualEnrollments ae
+JOIN Students s ON s.Id = ae.StudentId
+JOIN Persons p ON p.Id = s.PersonId
+JOIN Levels l ON l.Id = ae.LevelId
+LEFT JOIN Streams st ON st.Id = ae.StreamId
+LEFT JOIN AnnualEnrollments tgt
+       ON tgt.StudentId = ae.StudentId AND tgt.AcademicYearId = @TargetYearId AND tgt.Status = 1
+LEFT JOIN (SELECT c.StudentId, SUM(c.AmountCentimes - ISNULL(alloc.SumAllocated, 0)) AS RemainingCentimes
+           FROM Charges c
+           LEFT JOIN (SELECT ChargeId, SUM(AmountCentimes) AS SumAllocated
+                      FROM PaymentAllocations GROUP BY ChargeId) alloc
+                  ON alloc.ChargeId = c.Id
+           WHERE c.Status = 1
+           GROUP BY c.StudentId) debt
+       ON debt.StudentId = ae.StudentId
+WHERE ae.AcademicYearId = @SourceYearId AND ae.Status = 1
+ORDER BY l.Name, st.Name, FullName;";
+
+        var rows = await connection.QueryAsync<RolloverCandidateRow>(
+            new CommandDefinition(sql, new { SourceYearId = sourceYearId, TargetYearId = targetYearId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return rows.Select(row =>
+        {
+            // الأهلية (تر-6): شخص فعّال وملف غير محذوف — والسبب مرئي
+            var isEligible = row.PersonActive && !row.FileDeleted;
+            var reason = !row.PersonActive ? "شخصه معطّل — فعّله من شاشة الأشخاص أولاً"
+                       : row.FileDeleted ? "ملفه محذوف — راجع ملفه أو أعد إنشاءه"
+                       : null;
+            return new RolloverCandidateItem(
+                row.StudentId, row.FullName, row.Phone,
+                row.SourceLevelId, row.SourceLevelName,
+                row.SourceStreamId, row.SourceStreamName,
+                row.AlreadyInTarget == 1,
+                isEligible, reason,
+                row.DebtCentimes);
+        }).ToList();
     }
 
     private static Domain.Enrollments.AnnualEnrollment MapToDomain(AnnualEnrollmentRow row) =>

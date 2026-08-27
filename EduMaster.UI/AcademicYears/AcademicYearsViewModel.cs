@@ -5,6 +5,7 @@ using EduMaster.Application.AcademicYears.SetCurrentAcademicYear;
 using EduMaster.Application.Common;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
+using EduMaster.UI.Enrollments;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -39,6 +40,8 @@ namespace EduMaster.UI.AcademicYears
             SetCurrentCommand = new AsyncRelayCommand(SetCurrentAsync, () => SelectedYear is { IsActive: true, IsCurrent: false });
             DeactivateCommand = new AsyncRelayCommand(DeactivateAsync, () => SelectedYear is { IsActive: true, IsCurrent: false });
             ActivateCommand = new AsyncRelayCommand(ActivateAsync, () => SelectedYear is { IsActive: false });
+            // F6 — الشريحة 6.2: الترحيل الجماعي إلى السنة المحددة هدفاً (D-129) — الهدف فعّال إلزاماً (يحرسه الـHandler أيضاً)
+            RolloverCommand = new AsyncRelayCommand(RolloverAsync, () => SelectedYear is { IsActive: true });
         }
 
         // ---------- الحالة ----------
@@ -56,6 +59,7 @@ namespace EduMaster.UI.AcademicYears
                 SetCurrentCommand.RaiseCanExecuteChanged();
                 DeactivateCommand.RaiseCanExecuteChanged();
                 ActivateCommand.RaiseCanExecuteChanged();
+                RolloverCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -93,6 +97,7 @@ namespace EduMaster.UI.AcademicYears
         public AsyncRelayCommand SetCurrentCommand { get; }
         public AsyncRelayCommand DeactivateCommand { get; }
         public AsyncRelayCommand ActivateCommand { get; }
+        public AsyncRelayCommand RolloverCommand { get; }   // جديد 6.2-ج
 
         public Task InitializeAsync() => LoadAsync();
 
@@ -193,6 +198,17 @@ namespace EduMaster.UI.AcademicYears
 
             await HandleActionResult(result.IsSuccess, result.ErrorMessage, result.ErrorType,
                 $"فُعّلت «{SelectedYear.Name}»");
+        }
+
+        private async Task RolloverAsync()
+        {
+            if (SelectedYear is null) return;
+
+            var dialog = _services.GetRequiredService<RolloverDialogViewModel>();
+            await dialog.InitializeAsync(SelectedYear);
+
+            // النتيجة لا تغيّر شبكة السنوات — التسجيلات الجديدة تظهر في لوحات الطلاب وكشوفها
+            await _dialogs.ShowDialogAsync(dialog, dialog.Title);
         }
 
         // D-22 على شاشة بلا فورم: النجاح ← Toast · المتوقع (قاعدة عمل) ← Toast تحذيري · غير المتوقع ← Toast خطأ

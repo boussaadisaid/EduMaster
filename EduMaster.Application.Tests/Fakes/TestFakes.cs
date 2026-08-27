@@ -5,6 +5,7 @@ using EduMaster.Application.ClassGroups;
 using EduMaster.Application.Employees;
 using EduMaster.Application.Enrollments;
 using EduMaster.Application.Payroll;
+using EduMaster.Application.Students;
 using EduMaster.Application.Teachers;
 using System;
 using System.Collections.Generic;
@@ -122,6 +123,11 @@ public sealed class FakePaymentRepository : IPaymentRepository
 
     public Task<long> GetUnallocatedForStudentAsync(int studentId, CancellationToken cancellationToken = default)
         => Task.FromResult(UnallocatedValue);
+
+    public List<UnallocatedReceiptRaw> UnallocatedReceipts { get; } = new();
+
+    public Task<IReadOnlyList<UnallocatedReceiptRaw>> GetUnallocatedReceiptsForStudentAsync(int studentId, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<UnallocatedReceiptRaw>>(UnallocatedReceipts);
 
     public Task<IEnumerable<PaymentListItem>> GetForPeriodAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();   // قراءة 4.3 — لا تُستدعى في اختبارات الكتابة
@@ -306,4 +312,126 @@ public sealed class FakeClassGroupRepository : IClassGroupRepository
         => throw new NotImplementedException();
     public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
+}
+
+/// <summary>مزيّف التسجيلات السنوية (F6 — 6.2) — ByActive[(طالب, سنة)] للنشطة · يلتقط الإضافات بمعرفات متتالية · قراءة مرشحي الترحيل SQL لا تُستدعى في اختبارات الـHandler</summary>
+public sealed class FakeAnnualEnrollmentRepository : IAnnualEnrollmentRepository
+{
+    private int _nextId = 1;
+
+    public Dictionary<(int StudentId, int YearId), Domain.Enrollments.AnnualEnrollment> ByActive { get; } = new();
+    public List<Domain.Enrollments.AnnualEnrollment> Added { get; } = new();
+
+    public Task AddAsync(Domain.Enrollments.AnnualEnrollment enrollment, CancellationToken cancellationToken = default)
+    {
+        enrollment.SetId(_nextId++);   // محاكاة OUTPUT INSERTED.Id — متتالية لكل صف جماعي
+        Added.Add(enrollment);
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> AnyActiveForStudentInYearAsync(int studentId, int academicYearId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ByActive.ContainsKey((studentId, academicYearId)));
+
+    public Task<Domain.Enrollments.AnnualEnrollment?> GetActiveForStudentInYearAsync(int studentId, int academicYearId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ByActive.TryGetValue((studentId, academicYearId), out var enrollment) ? enrollment : null);
+
+    public Task UpdateAsync(Domain.Enrollments.AnnualEnrollment enrollment, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<Domain.Enrollments.AnnualEnrollment?> GetByIdAsync(int id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<IEnumerable<AnnualEnrollmentListItem>> GetForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> HasActiveGroupEnrollmentsAsync(int annualEnrollmentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<IReadOnlyList<RolloverCandidateItem>> GetRolloverCandidatesAsync(int sourceYearId, int targetYearId, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();   // قراءة معاينة 6.2 — SQL لا يُختبر بالمزيّفات
+}
+
+/// <summary>مزيّف ملفات الطلاب (F6 — 6.2) — ById للجلب (حارس الوجود في التسجيل)، والباقي لا يُستدعى في المختبَر</summary>
+public sealed class FakeStudentRepository : IStudentRepository
+{
+    public Dictionary<int, Domain.Students.Student> ById { get; } = new();
+
+    public Task<Domain.Students.Student?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        => Task.FromResult(ById.TryGetValue(id, out var student) ? student : null);
+
+    public Task AddAsync(Domain.Students.Student student, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task UpdateAsync(Domain.Students.Student student, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> AnyActiveForPersonAsync(int personId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<IEnumerable<StudentListItem>> SearchAsync(string? normalizedTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task SoftDeleteAsync(int id, DateTime deletedAtUtc, int? deletedByUserId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+}
+
+/// <summary>مزيّف الأشخاص (F6 — 6.2) — ById للجلب (حارس «الشخص فعّال» في التسجيل)، والباقي لا يُستدعى في المختبَر</summary>
+public sealed class FakePersonRepository : IPersonRepository
+{
+    public Dictionary<int, Domain.People.Person> ById { get; } = new();
+
+    public Task<Domain.People.Person?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        => Task.FromResult(ById.TryGetValue(id, out var person) ? person : null);
+
+    public Task AddAsync(Domain.People.Person person, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task UpdateAsync(Domain.People.Person person, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<IEnumerable<Domain.People.Person>> SearchAsync(string? normalizedTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+
+    public Application.People.PersonDuplicateRaw? MatchToReturn { get; set; }
+    public string? LastNormalizedNameReceived { get; private set; }
+    public Exception? ToThrowOnDuplicateCheck { get; set; }
+
+    public Task<Application.People.PersonDuplicateRaw?> GetByNormalizedFullNameAsync(string normalizedFullName, CancellationToken cancellationToken = default)
+    {
+        if (ToThrowOnDuplicateCheck is not null) throw ToThrowOnDuplicateCheck;
+        LastNormalizedNameReceived = normalizedFullName;
+        return Task.FromResult(MatchToReturn);
+    }
+}
+
+/// <summary>مزيّف السنوات الدراسية (F6 — 6.2) — ById للجلب بعدّاد استدعاءات (برهان «التحقق قبل أي قراءة») + ToThrow لمسارَي الإلغاء وغير المتوقع</summary>
+public sealed class FakeAcademicYearRepository : IAcademicYearRepository
+{
+    public Dictionary<int, Domain.AcademicYears.AcademicYear> ById { get; } = new();
+    public int GetByIdCallCount { get; private set; }
+    public Exception? ToThrow { get; set; }
+
+    public Task<Domain.AcademicYears.AcademicYear?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        GetByIdCallCount++;
+        if (ToThrow is not null) throw ToThrow;
+        return Task.FromResult(ById.TryGetValue(id, out var year) ? year : null);
+    }
+
+    public Task AddAsync(Domain.AcademicYears.AcademicYear academicYear, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task UpdateAsync(Domain.AcademicYears.AcademicYear academicYear, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<Domain.AcademicYears.AcademicYear?> GetCurrentAcademicYearAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<IEnumerable<Domain.AcademicYears.AcademicYear>> GetAllAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> AnyWithNameAsync(string name, int excludeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> AnyOverlappingAsync(DateOnly startDate, DateOnly endDate, int excludeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+}
+
+/// <summary>مزيّف المستويات (F6 — 6.2) — ById للجلب (تحقق الخريطة المقدَّم)، والباقي لا يُستدعى في المختبَر</summary>
+public sealed class FakeLevelRepository : ILevelRepository
+{
+    public Dictionary<int, Domain.Academic.Level> ById { get; } = new();
+
+    public Task<Domain.Academic.Level?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        => Task.FromResult(ById.TryGetValue(id, out var level) ? level : null);
+
+    public Task AddAsync(Domain.Academic.Level level, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task UpdateAsync(Domain.Academic.Level level, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<IReadOnlyList<Domain.Academic.Level>> GetAllAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> AnyWithNameAsync(string name, int? excludeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+}
+
+/// <summary>مزيّف الشعب (F6 — 6.2) — ByLevelId لشعب المستوى الهدف (تحقق الخريطة المقدَّم)، والباقي لا يُستدعى في المختبَر</summary>
+public sealed class FakeStreamRepository : IStreamRepository
+{
+    public Dictionary<int, IReadOnlyList<Domain.Academic.Stream>> ByLevelId { get; } = new();
+
+    public Task<IReadOnlyList<Domain.Academic.Stream>> GetByLevelIdAsync(int levelId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ByLevelId.TryGetValue(levelId, out var streams) ? streams : new List<Domain.Academic.Stream>());
+
+    public Task AddAsync(Domain.Academic.Stream stream, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task UpdateAsync(Domain.Academic.Stream stream, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<Domain.Academic.Stream?> GetByIdAsync(int id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> AnyWithNameInLevelAsync(int levelId, string name, int? excludeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 }

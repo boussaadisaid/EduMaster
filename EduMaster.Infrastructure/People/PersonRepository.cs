@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using EduMaster.Application.Abstractions.Repositories;
+using EduMaster.Application.People;
 using EduMaster.Domain.Enums;
 using EduMaster.Domain.People;
 using EduMaster.Domain.People.ValueObjects;
@@ -157,6 +158,28 @@ ORDER BY FirstName, LastName;";
                 cancellationToken: cancellationToken));
 
         return rows.Select(MapToDomain);
+    }
+
+    // ⚠ D-81: بنفس ترتيب الاستعلام (6.6 — ز-2)
+    private sealed record PersonDuplicateRow(int Id, string FirstName, string LastName);
+
+    public async Task<PersonDuplicateRaw?> GetByNormalizedFullNameAsync(string normalizedFullName, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // 6.6 — ز-2: تطابق تام على الاسم المطبَّع المخزَّن (الكيان يعيد حسابه عند كل كتابة — الشفاء الذاتي)
+        const string sqlDuplicate = @"
+SELECT TOP 1 Id, FirstName, LastName
+FROM Persons
+WHERE IsDeleted = 0 AND FullNameNormalized = @Name
+ORDER BY Id;";
+
+        var row = await connection.QueryFirstOrDefaultAsync<PersonDuplicateRow>(
+            new CommandDefinition(sqlDuplicate, new { Name = normalizedFullName },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return row is null ? null : new PersonDuplicateRaw(row.Id, $"{row.FirstName} {row.LastName}");
     }
 
     private static Person MapToDomain(PersonRow row) =>

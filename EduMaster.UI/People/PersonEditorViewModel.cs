@@ -11,11 +11,13 @@ public sealed class PersonEditorViewModel : BaseViewModel, IDialogViewModel
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IUserNotifier _notifier;
+    private readonly IDialogService _dialogs;
 
-    public PersonEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier)
+    public PersonEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier, IDialogService dialogs)
     {
         _scopeFactory = scopeFactory;
         _notifier = notifier;
+        _dialogs = dialogs;
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
         CancelCommand = new AsyncRelayCommand(() =>
@@ -131,6 +133,15 @@ public sealed class PersonEditorViewModel : BaseViewModel, IDialogViewModel
 
             if (_editingId is null)
             {
+                // 6.6 — ز-2: تحذير التكرار غير المانع — تطابق الاسم الثلاثي المطبَّع ← تأكيد قبل الإنشاء (فشل الفحص نفسه لا يمنع)
+                var duplicateResult = await scope.ServiceProvider.GetRequiredService<FindPersonDuplicateHandler>()
+                    .ExecuteAsync(new FindPersonDuplicateRequest(FirstName, LastName, FatherName));
+                if (duplicateResult.IsSuccess && duplicateResult.Value is not null
+                    && !await _dialogs.ConfirmAsync("تنبيه تكرار محتمل",
+                        $"يوجد شخص قائم بنفس الاسم: «{duplicateResult.Value.FullName}» — أتابع بإنشاء شخص جديد رغم ذلك؟",
+                        "تابع بالإنشاء"))
+                    return;
+
                 var handler = scope.ServiceProvider.GetRequiredService<CreatePersonHandler>();
                 var result = await handler.ExecuteAsync(new CreatePersonRequest(
                     FirstName, LastName, FatherName, birthDate, SelectedGender?.Value,

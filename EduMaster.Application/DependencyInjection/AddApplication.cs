@@ -5,6 +5,7 @@ using EduMaster.Application.AcademicYears.CreateAcademicYear;
 using EduMaster.Application.AcademicYears.DeactivateAcademicYear;
 using EduMaster.Application.AcademicYears.SetCurrentAcademicYear;
 using EduMaster.Application.AcademicYears.UpdateAcademicYear;
+using EduMaster.Application.Backup;
 using EduMaster.Application.Billing;
 using EduMaster.Application.ClassGroups;
 using EduMaster.Application.Employees;
@@ -12,7 +13,10 @@ using EduMaster.Application.Enrollments;
 using EduMaster.Application.Payroll;
 using EduMaster.Application.People;
 using EduMaster.Application.Pricing;
+using EduMaster.Application.Printing;
+using EduMaster.Application.Reports;
 using EduMaster.Application.Scheduling;
+using EduMaster.Application.Settings;
 using EduMaster.Application.Students;
 using EduMaster.Application.Teachers;
 using EduMaster.Application.Users;
@@ -36,6 +40,7 @@ namespace EduMaster.Application.DependencyInjection
             // People
             services.AddTransient<SearchPersonsHandler>();
             services.AddTransient<CreatePersonHandler>();
+            services.AddTransient<FindPersonDuplicateHandler>();   // جديد 6.6-ب (ز-2) — سطر التحقق: بواحد
             services.AddTransient<UpdatePersonHandler>();
             services.AddTransient<DeactivatePersonHandler>();
             services.AddTransient<ActivatePersonHandler>();
@@ -101,6 +106,8 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<TransferGroupEnrollmentHandler>();
             services.AddTransient<GetTransferTargetsHandler>();
             services.AddTransient<GetEnrollableGroupsForStudentHandler>();
+            services.AddTransient<BulkRolloverHandler>();   // جديد 6.2-أ — الترحيل الجماعي (D-129)
+            services.AddTransient<GetRolloverCandidatesHandler>();   // جديد 6.2-ج — قراءة المعاينة
             // Scheduling(F3 — الشرائح 3.1 / 3.2 / 3.3)   //  سطر التحقق: القسم كاملاً بخمسة عشر
             services.AddTransient<GetTimetableHandler>();
             services.AddTransient<GetGroupSchedulesHandler>();
@@ -133,7 +140,7 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<CreateEmployeeHandler>();
             services.AddTransient<UpdateEmployeeHandler>();
             services.AddTransient<SoftDeleteEmployeeHandler>();
-            services.AddTransient<CreateEmployeeFileHandler>();   //  مُصحَّح: نمط «أضف كـ…» = Create...FileHandler (مرآة الطالب/الأستاذ)
+            services.AddTransient<CreateEmployeeFileHandler>();
             services.AddTransient<GetWorkLogHandler>();
             services.AddTransient<AddWorkLogDayHandler>();
             services.AddTransient<RemoveWorkLogDayHandler>();
@@ -157,7 +164,30 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<GetPayrollBalancesHandler>();
             services.AddTransient<GetPayeePayoutsHandler>();
 
+            // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم باثنين — جديد 6.1-ب
+            services.AddTransient<GetPaymentMovementReportHandler>();
+            services.AddTransient<GetStudentStatementHandler>();
 
+            // Settings (F6 — الشريحة 6.3: هوية المدرسة ط-7)   //  سطر التحقق: القسم بثلاثة — جديد 6.3-أ
+            services.AddTransient<GetSchoolInfoHandler>();
+            services.AddTransient<UpdateSchoolInfoHandler>();
+            services.AddTransient<SetSchoolLogoHandler>();
+
+            // Printing (F6 — الشريحة 6.3)   //  سطر التحقق: القسم بواحد — جديد 6.3-ج
+            services.AddTransient<GetReceiptPrintModelHandler>();
+
+            // Reports (F6 — الشريحة 6.4: الأكاديمية وملخصات الأجور)   //  سطر التحقق: القسم بثلاثة — جديد 6.4-أ
+            services.AddTransient<GetAttendanceSummaryHandler>();
+            services.AddTransient<GetGroupSessionsReportHandler>();
+            services.AddTransient<GetLowSessionBalancesHandler>();
+
+            // Backup (F6 — الشريحة 6.5: النسخ الاحتياطي ن-أ)   //  سطر التحقق: القسم بثلاثة — جديد 6.5-أ
+            services.AddTransient<RunBackupHandler>();
+            services.AddTransient<GetBackupStatusHandler>();
+            services.AddTransient<SetBackupFolderHandler>();
+
+            // Billing (F6 — الشريحة 6.6: استهلاك الزائدة الدائنة — ز-أ)   //  سطر التحقق: القسم بواحد — جديد 6.6-أ (Scoped كـPayrollComputationService — ينضم لمعاملة المتصل)
+            services.AddScoped<CreditConsumptionService>();
 
             return services;
         }

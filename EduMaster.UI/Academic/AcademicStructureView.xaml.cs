@@ -24,5 +24,18 @@ namespace EduMaster.UI.Academic
         {
             InitializeComponent();
         }
+
+        // F6 — الشريحة 6.3: منتقي لوغو المدرسة (مرآة منتقي صورة الشخص — StudentEditorView)
+        private void PickLogo_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "اختيار لوغو المدرسة",
+                Filter = "الصور|*.jpg;*.jpeg;*.png"
+            };
+
+            if (dlg.ShowDialog() == true)
+                ((AcademicStructureViewModel)DataContext).SetPickedLogo(dlg.FileName);
+        }
     }
 }

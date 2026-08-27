@@ -1,4 +1,5 @@
-﻿using EduMaster.Domain.People;
+﻿using EduMaster.Application.People;
+using EduMaster.Domain.People;
 
 
 
@@ -11,4 +12,7 @@ public interface IPersonRepository
     Task<Person?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     /// <summary>المصطلح يصل مطبَّعاً من الـHandler عبر ArabicTextNormalizer — null = كل الأشخاص</summary>
     Task<IEnumerable<Person>> SearchAsync(string? normalizedTerm, CancellationToken cancellationToken = default);
+
+    /// <summary>تطابق تام على الاسم الثلاثي المطبَّع (6.6 — ز-2) — للتحذير غير المانع قبل إنشاء شخص · يستثني المحذوفين منطقياً</summary>
+    Task<PersonDuplicateRaw?> GetByNormalizedFullNameAsync(string normalizedFullName, CancellationToken cancellationToken = default);
 }

@@ -17,4 +17,7 @@ public interface IAnnualEnrollmentRepository
     Task<IEnumerable<AnnualEnrollmentListItem>> GetForStudentAsync(int studentId, CancellationToken cancellationToken = default);
     /// <summary>حارس D-54/D-72: تسجيلات فوج نشطة مرتبطة بهذا التسجيل (مفعَّل منذ 2.4)</summary>
     Task<bool> HasActiveGroupEnrollmentsAsync(int annualEnrollmentId, CancellationToken cancellationToken = default);
+
+    /// <summary>مرشحو الترحيل الجماعي (6.2 — D-129): نشطو سنة المصدر بأسمائهم ومستوياتهم وديونهم + علم «في الهدف مسبقاً» + أهلية الشخص/الملف بسببها المرئي — قراءة مسطّحة بلا معاملة (D-40)</summary>
+    Task<IReadOnlyList<RolloverCandidateItem>> GetRolloverCandidatesAsync(int sourceYearId, int targetYearId, CancellationToken cancellationToken = default);
 }

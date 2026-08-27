@@ -28,16 +28,19 @@ public sealed class RegisterPaymentHandler
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly CreditConsumptionService _creditConsumption;
     private readonly ILogger<RegisterPaymentHandler> _logger;
 
     public RegisterPaymentHandler(IPaymentRepository payments, IChargeRepository charges,
-        IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<RegisterPaymentHandler> logger)
+        IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork,
+        CreditConsumptionService creditConsumption, ILogger<RegisterPaymentHandler> logger)
     {
         _payments = payments;
         _charges = charges;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
+        _creditConsumption = creditConsumption;
         _logger = logger;
     }
 
@@ -103,6 +106,9 @@ public sealed class RegisterPaymentHandler
                 var allocation = Domain.Billing.PaymentAllocation.Create(payment.Id, input.ChargeId, input.AmountCentimes, utcNow, userId);
                 await _payments.AddAllocationAsync(allocation, cancellationToken);
             }
+
+            // 6.6 — ز-1: فائض هذا الإيصال (والزائدة القائمة) يسيل فوراً على المستحقات المفتوحة الأخرى — سداد وعد D-107 داخل المعاملة ذاتها
+            await _creditConsumption.ConsumeForStudentAsync(request.StudentId, utcNow, userId, cancellationToken);
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

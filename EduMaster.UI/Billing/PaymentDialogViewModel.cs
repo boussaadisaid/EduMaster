@@ -1,10 +1,15 @@
 ﻿using EduMaster.Application.Billing;
 using EduMaster.Application.Common;
+using EduMaster.Application.Printing;
+using EduMaster.Application.Settings;
 using EduMaster.Application.Students;
+using EduMaster.Domain.Enums;
 using EduMaster.UI.Common;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
+using EduMaster.UI.Printing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 
 namespace EduMaster.UI.Billing;
@@ -13,20 +18,29 @@ namespace EduMaster.UI.Billing;
 /// ديالوغ القبض (D-104…D-107): مبلغ + تاريخ (اليوم افتراضاً) + «الولي المسجَّل هو الدافع» عند وجوده
 /// + تخصيص مقترح تلقائياً (الأقدم أولاً) قابل للتعديل + الزائدة الدائنة مرئية حيّة.
 /// القبض متاح دائماً — الدين لا يموت بتعطيل الطالب.
+/// 6.3 (ط-هـ): بعد نجاح القبض سؤال «طباعة الإيصال الآن؟» — النموذج يُركَّب من بيانات الديالوغ المؤكدة نفسها (ط-9).
 /// </summary>
 public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IUserNotifier _notifier;
+    private readonly IDialogService _dialogService;
+    private readonly IPrintService _printService;
+    private readonly ILogger<PaymentDialogViewModel> _logger;
 
+    private StudentListItem _student = null!;
     private int _studentId;
     private int? _guardianPersonId;
     private IReadOnlyList<OpenChargeItem> _openCharges = new List<OpenChargeItem>();
 
-    public PaymentDialogViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier)
+    public PaymentDialogViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
+        IDialogService dialogService, IPrintService printService, ILogger<PaymentDialogViewModel> logger)
     {
         _scopeFactory = scopeFactory;
         _notifier = notifier;
+        _dialogService = dialogService;
+        _printService = printService;
+        _logger = logger;
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
         CancelCommand = new AsyncRelayCommand(() =>
@@ -137,6 +151,7 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
     // ---------- التهيئة ----------
     public async Task InitializeAsync(StudentListItem student)
     {
+        _student = student;
         _studentId = student.Id;
         ContextText = $"الطالب: {student.FullName}";
 
@@ -276,6 +291,7 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
             if (result.IsSuccess)
             {
                 _notifier.ShowSuccess($"قُبض {MoneyInput.FormatDinars(amountCentimes)} دج — إيصال #{result.Value:000000} ✔");
+                await AskAndPrintReceiptAsync(scope, result.Value, amountCentimes, allocations);   // 6.3 (ط-هـ): «طباعة الآن؟»
                 CloseRequested?.Invoke(this, true);
             }
             else if (result.ErrorType == ErrorType.Unexpected)
@@ -286,6 +302,47 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
         finally
         {
             IsSaving = false;
+        }
+    }
+
+    /// <summary>
+    /// 6.3 (ط-هـ): «طباعة الآن؟» بعد القبض الناجح — يُركَّب نموذج الإيصال من بيانات الديالوغ المؤكَّدة نفسها (WYSIWYP — ط-9):
+    /// handler القبض يعيد رقم الإيصال لا معرف الدفعة (مثبَّت باختباراته) وعقود القراءة مثبَّتة، فالتركيب المحلي هو المسار الوحيد بلا مساس بالمثبَّت —
+    /// والأوصاف من قائمة المستحقات المعروضة للمستخدم لحظة الحفظ (روح D-128) · إعادة الطباعة لاحقاً تمر بالمعالج النقي من سجل المدفوعات.
+    /// فشل الطباعة لا يفسد نجاح القبض أبداً — تحذير يدل على إعادة الطباعة من السجل.
+    /// </summary>
+    private async Task AskAndPrintReceiptAsync(AsyncServiceScope scope, int receiptNo, long amountCentimes,
+        IReadOnlyList<PaymentAllocationInput> allocations)
+    {
+        if (!await _dialogService.ConfirmAsync(
+                "تم القبض ✔",
+                $"إيصال قبض #{receiptNo:000000} — {MoneyInput.FormatDinars(amountCentimes)} دج\n\nهل تريد طباعة الإيصال الآن؟",
+                "🖨 طباعة"))
+            return;
+
+        try
+        {
+            var school = await scope.ServiceProvider.GetRequiredService<GetSchoolInfoHandler>().ExecuteAsync();
+            var info = school.IsSuccess ? school.Value! : new SchoolInfoItem(0, string.Empty, null, null, null);
+            var header = new PrintHeader(info.DisplayName, info.Phone, info.Address, info.LogoPath);
+
+            var lines = allocations
+                .Select(a => new ReceiptAllocationPrintLine(
+                    Rows.First(r => r.ChargeId == a.ChargeId).SourceText, a.AmountCentimes))
+                .ToList();
+
+            var model = new ReceiptPrintModel(
+                header, PaymentKind.Receipt, receiptNo, PaidOn!.Value,
+                _student.FullName, PaidByGuardian ? _student.GuardianFullName : null,
+                amountCentimes, string.IsNullOrWhiteSpace(Note) ? null : Note, lines);
+
+            if (_printService.PrintReceipt(model) == PrintOutcome.Failed)
+                _notifier.ShowWarning("تعذّرت الطباعة — يمكنك إعادة طباعة الإيصال في أي وقت من سجل المدفوعات في شاشة «💰 المالية» (زر 🖨 على السطر).");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to print receipt {ReceiptNo} right after payment", receiptNo);
+            _notifier.ShowWarning("تعذّرت الطباعة — يمكنك إعادة طباعة الإيصال في أي وقت من سجل المدفوعات في شاشة «💰 المالية» (زر 🖨 على السطر).");
         }
     }
 }

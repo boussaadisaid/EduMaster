@@ -37,6 +37,7 @@ public sealed class RegisterPaymentHandlerTests
         };
         var uow = new FakeUnitOfWork();
         var handler = new RegisterPaymentHandler(payments, charges, new FakeClock(), new FakeCurrentUserService(), uow,
+            new CreditConsumptionService(payments, charges),
             NullLogger<RegisterPaymentHandler>.Instance);
         return (handler, payments, charges, uow);
     }

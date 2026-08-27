@@ -1,12 +1,16 @@
 ﻿using EduMaster.Application.Common;
 using EduMaster.Application.Employees;
 using EduMaster.Application.Payroll;
+using EduMaster.Application.Printing;   // 6.4 — ق-3/ق-4: نماذج الطباعة الجدولية
+using EduMaster.Application.Settings;   // GetSchoolInfoHandler — ترويسة الهوية
 using EduMaster.Application.Teachers;
 using EduMaster.Domain.Payroll;
 using EduMaster.UI.Common;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
+using EduMaster.UI.Printing;            // IPrintService (6.4)
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 
 namespace EduMaster.UI.Payroll;
@@ -15,6 +19,7 @@ namespace EduMaster.UI.Payroll;
 /// شاشة «💼 الأجور» (5.2-هـ + 5.3-هـ — D-116/D-123/D-125): تبويب الكشوف (توليد/إعادة حساب/اعتماد/حذف/سطور يدوية) +
 /// تبويب الأرصدة الجارية (معتمد − مصروف — الترحيل تلقائي) + ديالوغ الصرف من سطر كشف معتمد أو من صف رصيد،
 /// وسلفة حرة بمنتقي مستفيد عند فتحه بلا تحديد (لمن لا حضور مالي له بعد — وإلا استحالت سلفته الأولى).
+/// 6.4 (ق-3/ق-4): 🖨 طباعة ملخص الأرصدة والكشف المعروضَين حرفياً (WYSIWYP) بترويسة الهوية عبر المسار الجدولي العام.
 /// </summary>
 public sealed class PayrollRunsViewModel : BaseViewModel
 {
@@ -22,18 +27,24 @@ public sealed class PayrollRunsViewModel : BaseViewModel
     private readonly IServiceProvider _services;
     private readonly IUserNotifier _notifier;
     private readonly IDialogService _dialogs;
+    private readonly IPrintService _printService;
+    private readonly ILogger<PayrollRunsViewModel> _logger;
     private bool _suspendAutoDetails;   // حارس سبق التوليد/إعادة الحساب: التحميل الصريح (مع التحذيرات) هو الوحيد هناك
 
     public PayrollRunsViewModel(
         IServiceScopeFactory scopeFactory,
         IServiceProvider services,
         IUserNotifier notifier,
-        IDialogService dialogs)
+        IDialogService dialogs,
+        IPrintService printService,
+        ILogger<PayrollRunsViewModel> logger)
     {
         _scopeFactory = scopeFactory;
         _services = services;
         _notifier = notifier;
         _dialogs = dialogs;
+        _printService = printService;
+        _logger = logger;
 
         _selectedManualKind = ManualKindOptions[0];
 
@@ -46,6 +57,8 @@ public sealed class PayrollRunsViewModel : BaseViewModel
         RemoveManualLineCommand = new AsyncRelayCommand(RemoveManualLineAsync, () => IsSelectedDraft && SelectedLine is { IsManual: true });
         OpenPayoutForLineCommand = new AsyncRelayCommand(OpenPayoutForLineAsync, () => SelectedRun is { IsDraft: false } && SelectedLine is not null);
         OpenPayoutForBalanceCommand = new AsyncRelayCommand(OpenPayoutForBalanceAsync);   // يعمل دائماً: بلا تحديد = سلفة حرة بمنتقي مستفيد
+        PrintRunCommand = new AsyncRelayCommand(PrintRunAsync, () => SelectedRun is not null && RunLines.Count > 0);   // 6.4 — ق-4: يتبع «محدد + سطور معروضة»
+        PrintBalancesCommand = new AsyncRelayCommand(PrintBalancesAsync, () => Balances.Count > 0);                    // 6.4 — ق-3
     }
 
     // ---------- التبويبات (5.3-هـ) ----------
@@ -126,6 +139,7 @@ public sealed class PayrollRunsViewModel : BaseViewModel
             AddManualLineCommand.RaiseCanExecuteChanged();
             RemoveManualLineCommand.RaiseCanExecuteChanged();
             OpenPayoutForLineCommand.RaiseCanExecuteChanged();
+            PrintRunCommand.RaiseCanExecuteChanged();   // ق-4
             if (!_suspendAutoDetails)
                 _ = LoadDetailsAsync(value?.Id);
         }
@@ -171,6 +185,8 @@ public sealed class PayrollRunsViewModel : BaseViewModel
     public AsyncRelayCommand RemoveManualLineCommand { get; }
     public AsyncRelayCommand OpenPayoutForLineCommand { get; }
     public AsyncRelayCommand OpenPayoutForBalanceCommand { get; }
+    public AsyncRelayCommand PrintRunCommand { get; }
+    public AsyncRelayCommand PrintBalancesCommand { get; }
 
     public Task InitializeAsync() => LoadRunsAsync();
 
@@ -219,6 +235,7 @@ public sealed class PayrollRunsViewModel : BaseViewModel
             _notifier.ShowError(result.ErrorMessage!);
 
         OnPropertyChanged(nameof(BalancesEmpty));
+        PrintBalancesCommand.RaiseCanExecuteChanged();   // ق-3
     }
 
     private async Task LoadDetailsAsync(int? runId, IReadOnlyList<string>? warnings = null)
@@ -253,6 +270,8 @@ public sealed class PayrollRunsViewModel : BaseViewModel
         {
             _notifier.ShowError(result.ErrorMessage!);
         }
+
+        PrintRunCommand.RaiseCanExecuteChanged();   // ق-4: الزر يتبع السطور المعروضة فعلاً
     }
 
     private async Task LoadPayeeOptionsAsync()
@@ -314,6 +333,100 @@ public sealed class PayrollRunsViewModel : BaseViewModel
 
         if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
             await LoadBalancesAsync();
+    }
+
+    // ---------- الطباعة (6.4 — ق-3/ق-4: المعروض حرفياً WYSIWYP بترويسة الهوية — المسار الجدولي العام) ----------
+
+    /// <summary>🖨 طباعة الكشف المحدد بسطوره المعروضة حالياً — لا إعادة تحميل (WYSIWYP)</summary>
+    private async Task PrintRunAsync()
+    {
+        var run = SelectedRun;
+        if (run is null || RunLines.Count == 0)
+            return;
+
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var school = await scope.ServiceProvider.GetRequiredService<GetSchoolInfoHandler>().ExecuteAsync();
+            var info = school.IsSuccess ? school.Value! : new SchoolInfoItem(0, string.Empty, null, null, null);
+            var header = new PrintHeader(info.DisplayName, info.Phone, info.Address, info.LogoPath);
+
+            var model = new TabularReportPrintModel(
+                header,
+                $"كشف أجور — {run.PeriodText}",
+                $"الحالة: {run.StatusText} · السطور: {run.LinesCount}" +
+                    (run.ApprovedAtUtc is null ? string.Empty : $" · اعتُمد: {run.ApprovedAtUtc:yyyy-MM-dd}"),
+                $"الإجمالي: {MoneyInput.FormatDinars(run.TotalCentimes)} دج",
+                new[]
+                {
+                    new TabularReportColumn("المستفيد", 2.2),
+                    new TabularReportColumn("النوع", 1.3),
+                    new TabularReportColumn("التفصيل", 3.4),
+                    new TabularReportColumn("المبلغ (دج)", 1.1),
+                },
+                RunLines.Select(l => (IReadOnlyList<string>)new[]
+                {
+                    l.PayeeName,
+                    l.KindText,
+                    l.Details,
+                    MoneyInput.FormatDinars(l.AmountCentimes),
+                }).ToList());
+
+            if (_printService.PrintA4Report(model) == PrintOutcome.Failed)
+                _notifier.ShowError("تعذّرت الطباعة — تحقق من الطابعة وأعد المحاولة.");
+        }
+        catch (Exception ex)   // D-69
+        {
+            _logger.LogError(ex, "Failed to print payroll run {RunId}", run.Id);
+            _notifier.ShowError("تعذّرت طباعة الكشف — أعد المحاولة.");
+        }
+    }
+
+    /// <summary>🖨 طباعة ملخص الأرصدة المعروض حالياً — الإجماليات تُجمع من السطور المعروضة نفسها (WYSIWYP)</summary>
+    private async Task PrintBalancesAsync()
+    {
+        if (Balances.Count == 0)
+            return;
+
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var school = await scope.ServiceProvider.GetRequiredService<GetSchoolInfoHandler>().ExecuteAsync();
+            var info = school.IsSuccess ? school.Value! : new SchoolInfoItem(0, string.Empty, null, null, null);
+            var header = new PrintHeader(info.DisplayName, info.Phone, info.Address, info.LogoPath);
+
+            var approvedTotal = Balances.Sum(b => b.ApprovedCentimes);
+            var paidTotal = Balances.Sum(b => b.PaidCentimes);
+            var model = new TabularReportPrintModel(
+                header,
+                "ملخص أرصدة الأجور",
+                $"بتاريخ {DateTime.Today:yyyy-MM-dd} · البقية = المعتمد − المصروف (السالب = سلفة قائمة)",
+                $"المعتمد: {MoneyInput.FormatDinars(approvedTotal)} دج · المصروف: {MoneyInput.FormatDinars(paidTotal)} دج · البقية: {MoneyInput.FormatDinars(approvedTotal - paidTotal)} دج",
+                new[]
+                {
+                    new TabularReportColumn("المستفيد", 2.6),
+                    new TabularReportColumn("النوع", 0.9),
+                    new TabularReportColumn("المعتمد (دج)", 1.3),
+                    new TabularReportColumn("المصروف (دج)", 1.3),
+                    new TabularReportColumn("البقية (دج)", 1.3),
+                },
+                Balances.Select(b => (IReadOnlyList<string>)new[]
+                {
+                    b.PayeeName,
+                    b.PayeeKindText,
+                    MoneyInput.FormatDinars(b.ApprovedCentimes),
+                    MoneyInput.FormatDinars(b.PaidCentimes),
+                    MoneyInput.FormatDinars(b.BalanceCentimes),
+                }).ToList());
+
+            if (_printService.PrintA4Report(model) == PrintOutcome.Failed)
+                _notifier.ShowError("تعذّرت الطباعة — تحقق من الطابعة وأعد المحاولة.");
+        }
+        catch (Exception ex)   // D-69
+        {
+            _logger.LogError(ex, "Failed to print payroll balances");
+            _notifier.ShowError("تعذّرت طباعة الأرصدة — أعد المحاولة.");
+        }
     }
 
     // ---------- الأفعال على الكشوف ----------

@@ -1,5 +1,6 @@
 ﻿using EduMaster.Application.Abstractions;
 using EduMaster.Application.Abstractions.Repositories;
+using EduMaster.Application.Billing;
 using EduMaster.Application.Common;
 using EduMaster.Domain.Common;
 using Microsoft.Extensions.Logging;
@@ -17,11 +18,13 @@ public sealed class PurchaseSessionsHandler
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly CreditConsumptionService _creditConsumption;
     private readonly ILogger<PurchaseSessionsHandler> _logger;
 
     public PurchaseSessionsHandler(IGroupSessionPurchaseRepository purchases, IClassGroupEnrollmentRepository groupEnrollments,
         IChargeRepository charges,
-        IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<PurchaseSessionsHandler> logger)
+        IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork,
+        CreditConsumptionService creditConsumption, ILogger<PurchaseSessionsHandler> logger)
     {
         _purchases = purchases;
         _groupEnrollments = groupEnrollments;
@@ -29,6 +32,7 @@ public sealed class PurchaseSessionsHandler
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
+        _creditConsumption = creditConsumption;
         _logger = logger;
     }
 
@@ -67,6 +71,9 @@ public sealed class PurchaseSessionsHandler
                     enrollment.StudentId, purchase.Id, bundleAmountCentimes, utcNow, userId);
                 await _charges.AddAsync(charge, cancellationToken);
             }
+
+            // 6.6 — ز-1: الزائدة الدائنة (إن وُجدت) تستهلَك فوراً في مستحق الحزمة الجديد وسابقه المفتوح — سداد وعد D-107 داخل المعاملة ذاتها
+            await _creditConsumption.ConsumeForStudentAsync(enrollment.StudentId, utcNow, userId, cancellationToken);
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

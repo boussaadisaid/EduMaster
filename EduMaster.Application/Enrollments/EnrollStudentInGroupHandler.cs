@@ -1,5 +1,6 @@
 ﻿using EduMaster.Application.Abstractions;
 using EduMaster.Application.Abstractions.Repositories;
+using EduMaster.Application.Billing;
 using EduMaster.Application.Common;
 using EduMaster.Domain.Common;
 using Microsoft.Extensions.Logging;
@@ -32,12 +33,14 @@ public sealed class EnrollStudentInGroupHandler
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly CreditConsumptionService _creditConsumption;
     private readonly ILogger<EnrollStudentInGroupHandler> _logger;
 
     public EnrollStudentInGroupHandler(IClassGroupEnrollmentRepository groupEnrollments, IClassGroupRepository classGroups,
         IAnnualEnrollmentRepository annualEnrollments, IStudentRepository students, IPersonRepository persons,
         ISubjectPriceRepository prices, IGroupSessionPurchaseRepository purchases, IChargeRepository charges,
-        IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<EnrollStudentInGroupHandler> logger)
+        IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork,
+        CreditConsumptionService creditConsumption, ILogger<EnrollStudentInGroupHandler> logger)
     {
         _groupEnrollments = groupEnrollments;
         _classGroups = classGroups;
@@ -50,6 +53,7 @@ public sealed class EnrollStudentInGroupHandler
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
+        _creditConsumption = creditConsumption;
         _logger = logger;
     }
 
@@ -141,6 +145,9 @@ public sealed class EnrollStudentInGroupHandler
                     await _charges.AddAsync(initialCharge, cancellationToken);
                 }
             }
+
+            // 6.6 — ز-1: الزائدة الدائنة (إن وُجدت) تستهلَك فوراً في المستحقات المفتوحة — سداد وعد D-107 داخل المعاملة ذاتها
+            await _creditConsumption.ConsumeForStudentAsync(request.StudentId, utcNow, userId, cancellationToken);
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

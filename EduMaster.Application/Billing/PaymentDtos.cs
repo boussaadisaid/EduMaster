@@ -53,3 +53,6 @@ public sealed record PaymentListItem(
     public long UnallocatedCentimes => Kind == PaymentKind.Receipt ? AmountCentimes - AllocatedCentimes : 0;
     public bool HasUnallocated => UnallocatedCentimes > 0;
 }
+
+/// <summary>إيصال قبض بحرّية > 0 (6.6 — ز-1): المبلغ − Σ تخصيصاته — الأقدم أولاً لاستهلاك الزائدة · الصرف غير مربوط بإيصال فسقف إجمالي الزائدة حارسه في المصفف</summary>
+public sealed record UnallocatedReceiptRaw(int PaymentId, long FreeCentimes);

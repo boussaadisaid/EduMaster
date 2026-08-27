@@ -69,6 +69,7 @@
 
         <DataGrid Grid.Row="4"
                   ItemsSource="{Binding Payments}"
+                  SelectedItem="{Binding SelectedPayment}"
                   AutoGenerateColumns="False" IsReadOnly="True"
                   CanUserAddRows="False" SelectionMode="Single"
                   HeadersVisibility="Column" GridLinesVisibility="Horizontal">
@@ -117,6 +118,15 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="ملاحظة" Binding="{Binding Note, TargetNullValue='—'}" Width="*"/>
+                <!-- 6.3 (ط-هـ): 🖨 على السطر — إعادة طباعة دائمة (الإيصال وثيقة D-105) · الأمر بالتحديد لا بالمعاملات -->
+                <DataGridTemplateColumn Header="" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="🖨" ToolTip="طباعة الإيصال" Padding="8,2" VerticalAlignment="Center"
+                                    Command="{Binding DataContext.PrintReceiptCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 

@@ -2,6 +2,7 @@
 using EduMaster.Application.Abstractions.Repositories;
 using EduMaster.Infrastructure.Academic;
 using EduMaster.Infrastructure.AcademicYears;
+using EduMaster.Infrastructure.Backup;
 using EduMaster.Infrastructure.Billing;
 using EduMaster.Infrastructure.ClassGroups;
 using EduMaster.Infrastructure.Employees;
@@ -11,8 +12,10 @@ using EduMaster.Infrastructure.Payroll;
 using EduMaster.Infrastructure.People;
 using EduMaster.Infrastructure.Persistence;
 using EduMaster.Infrastructure.Pricing;
+using EduMaster.Infrastructure.Reports;
 using EduMaster.Infrastructure.Scheduling;
 using EduMaster.Infrastructure.Security;
+using EduMaster.Infrastructure.Settings;
 using EduMaster.Infrastructure.Students;
 using EduMaster.Infrastructure.Teachers;
 using EduMaster.Infrastructure.Time;
@@ -82,6 +85,15 @@ namespace EduMaster.Infrastructure.DependencyInjection
             // Payroll (F5 — الشريحة 5.3: الصرف)   //  سطر التحقق: القسم بواحد — جديد 5.3-ج
             services.AddScoped<IPayoutRepository, PayoutRepository>();
 
+            // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم بواحد — جديد 6.1-ب
+            services.AddScoped<IReportRepository, ReportRepository>();
+
+            // Settings (F6 — الشريحة 6.3: هوية المدرسة ط-7)   //  سطر التحقق: القسم بواحد — جديد 6.3-أ
+            services.AddScoped<ISchoolInfoRepository, SchoolInfoRepository>();
+
+            // Backup (F6 — الشريحة 6.5: النسخ الاحتياطي ن-أ)   //  سطر التحقق: القسم باثنين
+            services.AddScoped<IBackupGateway, SqlBackupGateway>();      // متصل بالقاعدة = Scoped
+            services.AddSingleton<IBackupFileStore, BackupFileStore>();  // عديم الحالة (ملفات) = Singleton
 
             return services;
         }

@@ -26,6 +26,9 @@
                         <DockPanel Margin="0,0,0,14">
                             <Button Content="🔄 تحديث" Command="{Binding RefreshCommand}"
                                     DockPanel.Dock="Left" Padding="14,6"/>
+                            <!-- 6.4 (ق-4): طباعة الكشف المحدد بسطوره المعروضة حرفياً (WYSIWYP) بترويسة الهوية -->
+                            <Button Content="🖨 طباعة الكشف" Command="{Binding PrintRunCommand}"
+                                    DockPanel.Dock="Left" Padding="14,6" Margin="8,0,0,0"/>
                             <TextBlock Text="💼 الأجور — الكشوف" FontSize="24" FontWeight="SemiBold"/>
                         </DockPanel>
 
@@ -210,6 +213,9 @@
                     <DockPanel Margin="0,0,0,10">
                         <Button Content="🔄 تحديث" Command="{Binding RefreshCommand}"
                                 DockPanel.Dock="Left" Padding="14,6"/>
+                        <!-- 6.4 (ق-3): طباعة ملخص الأرصدة المعروض حرفياً (WYSIWYP) بترويسة الهوية -->
+                        <Button Content="🖨 طباعة الأرصدة" Command="{Binding PrintBalancesCommand}"
+                                DockPanel.Dock="Left" Padding="14,6" Margin="8,0,0,0"/>
                         <TextBlock Text="الأرصدة الجارية — البقية = المعتمد − المصروف عبر التاريخ (الترحيل تلقائي) · السالب بالأحمر = سلفة قائمة"
                                    Foreground="Gray" FontSize="12" VerticalAlignment="Center"/>
                     </DockPanel>

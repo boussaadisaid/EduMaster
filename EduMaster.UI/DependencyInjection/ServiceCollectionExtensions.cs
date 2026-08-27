@@ -10,6 +10,8 @@ using EduMaster.UI.Enrollments;
 using EduMaster.UI.Payroll;
 using EduMaster.UI.People;
 using EduMaster.UI.Pricing;
+using EduMaster.UI.Printing;
+using EduMaster.UI.Reports;
 using EduMaster.UI.Scheduling;
 using EduMaster.UI.Services;
 using EduMaster.UI.Students;
@@ -61,6 +63,7 @@ namespace EduMaster.UI.DependencyInjection
             // Enrollments (F2 — الشريحتان 2.3/2.4)
             services.AddTransient<AnnualEnrollmentEditorViewModel>();
             services.AddTransient<EnrollInGroupDialogViewModel>();
+            services.AddTransient<RolloverDialogViewModel>();
             // Scheduling
             services.AddTransient<TimetableViewModel>();
             services.AddTransient<SessionsViewModel>();
@@ -84,6 +87,17 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<PayrollRunsViewModel>();
 
             services.AddTransient<PayoutDialogViewModel>();
+
+            // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم بثلاثة
+            services.AddTransient<ReportsViewModel>();
+            services.AddTransient<PaymentMovementReportViewModel>();
+            services.AddTransient<StudentStatementViewModel>();
+            // Reports (F6 — الشريحة 6.4: ق-ب)   //  سطر التحقق: القسم بثلاثة
+            services.AddTransient<AttendanceSummaryReportViewModel>();
+            services.AddTransient<GroupSessionsReportViewModel>();
+            services.AddTransient<LowSessionBalancesViewModel>();
+            // Printing (F6 — الشريحة 6.3: ط-د)   //  سطر التحقق: القسم بواحد
+            services.AddSingleton<IPrintService, PrintService>();   // عديمة الحالة = Singleton — نافذة الطباعة تُنشأ لكل عملية (قواعد الوصفة)
             return services;
         }
     }
