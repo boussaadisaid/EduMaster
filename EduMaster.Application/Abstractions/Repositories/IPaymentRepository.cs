@@ -18,6 +18,15 @@ public interface IPaymentRepository
     /// <summary>إيصالات الطالب الحرة (قبض بحريّة > 0) — الأقدم أولاً · لاستهلاك الزائدة (6.6 — ز-1): الصرف غير مربوط بإيصال فسقف الإجمالي حارسه الموثّق</summary>
     Task<IReadOnlyList<UnallocatedReceiptRaw>> GetUnallocatedReceiptsForStudentAsync(int studentId, CancellationToken cancellationToken = default);
 
+    /// <summary>بطاقة إيصال لعكسه (6.6-ع-4) — بعلم «عُكس من قبل» باتفاق وسم الملاحظة المولَّد</summary>
+    Task<ReceiptReversalInfoRaw?> GetReceiptReversalInfoAsync(int paymentId, CancellationToken cancellationToken = default);
+
+    /// <summary>فكّ تخصيصات إيصال (6.6-ع-ب2): الجدول فريد الزوج ومشروط الموجب — الإزالة هي فكّ التخصيص المصمَّمة · الوثيقة (الإيصال) لا تُحذف أبداً (D-109) والحدث موثّق بإيصال العكس الموسوم</summary>
+    Task DeleteAllocationsForPaymentAsync(int paymentId, CancellationToken cancellationToken = default);
+
+    /// <summary>فكّ تخصيصات مستحق (6.6-ع-ب2): نفس القاعدة — إلغاؤه يحرر ماله إلى الزائدة، والحدث موثّق بحالته وسببه</summary>
+    Task DeleteAllocationsForChargeAsync(int chargeId, CancellationToken cancellationToken = default);
+
     /// <summary>سجل الفترة مسطّحاً (قبض + صرف — 4.3): الأحدث أولاً بمخصوص كل دفعة</summary>
     Task<IEnumerable<PaymentListItem>> GetForPeriodAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default);
 

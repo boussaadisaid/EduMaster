@@ -111,6 +111,21 @@ namespace EduMaster.Domain.Scheduling
             UpdatedByUserId = updatedByUserId;
         }
 
+        /// <summary>تصحيح لقطة الأستاذ الفارغة (6.6-ص-ب — مراجعة الأجور 2026-08-27): المُقامة بلقطة فارغة فقط — اللقطة القائمة لا تُعاد كتابتها أبداً</summary>
+        public void CorrectHeldTeacherSnapshot(int teacherId, DateTime utcNow, int? updatedByUserId)
+        {
+            if (Status != SessionStatus.Held)
+                throw new DomainException("تصحيح اللقطة على حصة مُقامة فقط.");
+            if (TeacherId is not null)
+                throw new DomainException("لهذه الحصة لقطة أستاذ قائمة — اللقطات لا تُعاد كتابتها.");
+            if (teacherId <= 0)
+                throw new DomainException("معرّف الأستاذ غير صالح.");
+
+            TeacherId = teacherId;
+            UpdatedAtUtc = utcNow;
+            UpdatedByUserId = updatedByUserId;
+        }
+
         /// <summary>الموضوع يُعدَّل ما دامت مجدولة فقط</summary>
         public void UpdateTopic(string? topic, DateTime utcNow, int? updatedByUserId)
         {

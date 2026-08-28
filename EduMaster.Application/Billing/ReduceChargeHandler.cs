@@ -42,6 +42,12 @@ public sealed class ReduceChargeHandler
             if (charge is null)
                 return OperationResult.Failure("المستحق غير موجود.", ErrorType.NotFound);
 
+            // 6.6-ع-3: لا تخفيض تحت المخصوص — وإلا متبقٍّ سالب على فعّال يهبط المجاميع زوراً (فحص مراجعة الإلغاء)
+            var allocated = await _charges.GetAllocatedForChargeAsync(request.ChargeId, cancellationToken);
+            if (request.NewAmountCentimes < allocated)
+                return OperationResult.Failure(
+                    $"لا يُخفَّض مستحق تحت مخصوصه ({allocated / 100m:0.00} دج) — ألغِه أو خفّضه فوقها.", ErrorType.BusinessRule);
+
             charge.Reduce(request.NewAmountCentimes, request.Reason, _clock.UtcNow, _currentUser.UserAccountId);
 
             await _unitOfWork.BeginTransactionAsync(cancellationToken);

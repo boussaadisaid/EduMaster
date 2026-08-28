@@ -23,22 +23,25 @@ public sealed class FinanceViewModel : BaseViewModel
     private readonly IUserNotifier _notifier;
     private readonly ILogger<FinanceViewModel> _logger;
     private readonly IPrintService _printService;
+    private readonly IDialogService _dialogs;
     private CancellationTokenSource? _debtorsCts;
     private CancellationTokenSource? _paymentsCts;
     private CancellationTokenSource? _searchCts;
 
     public FinanceViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
-        ILogger<FinanceViewModel> logger, IPrintService printService)
+        ILogger<FinanceViewModel> logger, IPrintService printService, IDialogService dialogs)
     {
         _scopeFactory = scopeFactory;
         _notifier = notifier;
         _logger = logger;
         _printService = printService;
+        _dialogs = dialogs;
 
         RefreshCommand = new AsyncRelayCommand(RefreshAllAsync);
         // بلا بوابة تفعيل عمداً: الزر المعطَّل يبتلع النقرة الأولى التي كان يجب أن تحدّد السطر (درس تجريب 6.3) —
         // التحديد يتم عند MouseDown قبل Click فيُطبع من أول نقرة، وغياب التحديد لا-عملية آمنة
         PrintReceiptCommand = new AsyncRelayCommand(PrintSelectedReceiptAsync);
+        ReverseReceiptCommand = new AsyncRelayCommand(ReverseSelectedReceiptAsync);   // 6.6-ع-ب (ع-4): بلا بوابة — نفس درس زر الطباعة أعلاه
     }
 
     // ---------- قسم الديون ----------
@@ -122,6 +125,7 @@ public sealed class FinanceViewModel : BaseViewModel
 
     public AsyncRelayCommand RefreshCommand { get; }
     public AsyncRelayCommand PrintReceiptCommand { get; }
+    public AsyncRelayCommand ReverseReceiptCommand { get; }   // جديد 6.6-ع-ب
 
     public async Task InitializeAsync()
     {
@@ -276,6 +280,45 @@ public sealed class FinanceViewModel : BaseViewModel
         {
             _logger.LogError(ex, "Failed to print receipt for payment {PaymentId}", selected.Id);
             _notifier.ShowError("تعذّرت طباعة الإيصال — أعد المحاولة.");
+        }
+    }
+
+    // 6.6-ع-ب (ع-4): عكس إيصال قبض خاطئ — تأكيد موثّق ثم المعالج ثم تحديث القسمين (السبب ثابت V1: «تصحيح خطأ إدخال»)
+    private async Task ReverseSelectedReceiptAsync()
+    {
+        var selected = SelectedPayment;
+        if (selected is null) return;
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            "عكس إيصال قبض",
+            $"سيُعكَس إيصال القبض #{selected.ReceiptNo:000000} ({selected.AmountCentimes / 100m:0.00} دج — {selected.StudentName}):\n\n" +
+            "· يُكتب إيصال صرف معاكس بنفس المبلغ (يُصفَّر أثره النقدي)\n" +
+            $"· تُفكّ تخصيصاته ({selected.AllocatedCentimes / 100m:0.00} دج) فتعود مستحقاته مفتوحة بمتبقيها الصحيح\n" +
+            "· يبقى الإيصال الأصلي موثقاً في السجل — لا حذف إطلاقاً\n\n" +
+            "السبب المسجَّل: «تصحيح خطأ إدخال».\n\nأعكس الإيصال؟",
+            "↩ اعكس الإيصال");
+        if (!confirmed) return;
+
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var handler = scope.ServiceProvider.GetRequiredService<ReverseReceiptHandler>();
+            var result = await handler.ExecuteAsync(new ReverseReceiptRequest(selected.Id, "تصحيح خطأ إدخال"));
+
+            if (result.IsSuccess)
+            {
+                _notifier.ShowSuccess($"عُكس الإيصال ✔ — أُنشئ إيصال العكس #{result.Value:000000}");
+                await RefreshAllAsync();
+            }
+            else if (result.ErrorType == ErrorType.Unexpected)
+                _notifier.ShowError(result.ErrorMessage!);
+            else
+                _notifier.ShowWarning(result.ErrorMessage!);
+        }
+        catch (Exception ex)   // D-69
+        {
+            _logger.LogError(ex, "Failed to reverse receipt for payment {PaymentId}", selected.Id);
+            _notifier.ShowError("تعذّر عكس الإيصال — أعد المحاولة.");
         }
     }
 }

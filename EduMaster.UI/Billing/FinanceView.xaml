@@ -122,8 +122,23 @@
                 <DataGridTemplateColumn Header="" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="🖨" ToolTip="طباعة الإيصال" Padding="8,2" VerticalAlignment="Center"
-                                    Command="{Binding DataContext.PrintReceiptCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="🖨" ToolTip="طباعة الإيصال" Padding="8,2" VerticalAlignment="Center"
+                                        Command="{Binding DataContext.PrintReceiptCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                                <!-- 6.6-ع-ب (ع-4): عكس القبض الخاطئ — يظهر لإيصالات القبض فقط (رؤية لا بوابة — D-134) -->
+                                <Button Content="↩" ToolTip="عكس إيصال القبض — يصفّر أثره ويعيد مستحقاته مفتوحة (تصحيح خطأ إدخال)" Padding="8,2" VerticalAlignment="Center" Margin="4,0,0,0"
+                                        Command="{Binding DataContext.ReverseReceiptCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsReceipt}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

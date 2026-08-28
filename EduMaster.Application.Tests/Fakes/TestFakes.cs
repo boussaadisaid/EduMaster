@@ -62,6 +62,7 @@ public sealed class FakeChargeRepository : IChargeRepository
     public IReadOnlyDictionary<int, Domain.Billing.Charge> ChargesById { get; set; } = new Dictionary<int, Domain.Billing.Charge>();
     public IReadOnlyList<OpenChargeItem> OpenToReturn { get; set; } = new List<OpenChargeItem>();
     public bool HasAnyValue { get; set; }
+    public long AllocatedForChargeValue { get; set; }   // 6.6-ع-3
 
     public Task AddAsync(Domain.Billing.Charge charge, CancellationToken cancellationToken = default)
     {
@@ -76,6 +77,9 @@ public sealed class FakeChargeRepository : IChargeRepository
             return Task.FromResult<Domain.Billing.Charge?>(charge);
         return Task.FromResult(EntityToReturn);
     }
+
+    public Task<long> GetAllocatedForChargeAsync(int chargeId, CancellationToken cancellationToken = default)
+        => Task.FromResult(AllocatedForChargeValue);
 
     public Task UpdateAsync(Domain.Billing.Charge charge, CancellationToken cancellationToken = default)
     {
@@ -128,6 +132,29 @@ public sealed class FakePaymentRepository : IPaymentRepository
 
     public Task<IReadOnlyList<UnallocatedReceiptRaw>> GetUnallocatedReceiptsForStudentAsync(int studentId, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<UnallocatedReceiptRaw>>(UnallocatedReceipts);
+
+    public ReceiptReversalInfoRaw? ReversalInfoToReturn { get; set; }
+    public Exception? ToThrowOnReversalRead { get; set; }
+    public List<int> DeletedAllocationsForPayments { get; } = new();
+    public List<int> DeletedAllocationsForCharges { get; } = new();
+
+    public Task<ReceiptReversalInfoRaw?> GetReceiptReversalInfoAsync(int paymentId, CancellationToken cancellationToken = default)
+    {
+        if (ToThrowOnReversalRead is not null) throw ToThrowOnReversalRead;
+        return Task.FromResult(ReversalInfoToReturn);
+    }
+
+    public Task DeleteAllocationsForPaymentAsync(int paymentId, CancellationToken cancellationToken = default)
+    {
+        DeletedAllocationsForPayments.Add(paymentId);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAllocationsForChargeAsync(int chargeId, CancellationToken cancellationToken = default)
+    {
+        DeletedAllocationsForCharges.Add(chargeId);
+        return Task.CompletedTask;
+    }
 
     public Task<IEnumerable<PaymentListItem>> GetForPeriodAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();   // قراءة 4.3 — لا تُستدعى في اختبارات الكتابة

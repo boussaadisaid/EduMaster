@@ -81,10 +81,11 @@ VALUES (@ClassGroupId, @SourceScheduleId, @StartsAt, @DurationMinutes, @Status, 
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
-        // الهوية الزمنية والمصدر ثوابت — التحديث للحالة والموضوع والإلغاء
+        // الهوية الزمنية والمصدر ثوابت — التحديث للحالة والموضوع والإلغاء ولقطة الأستاذ (6.6-ص-ب: TeacherId كان مفقوداً من هنا — لقطات D-117 الملتقطة منذ 5.1 ضاعت عند الكتابة)
         const string sql = @"
 UPDATE ClassSessions
 SET Status          = @Status,
+    TeacherId       = @TeacherId,
     Topic           = @Topic,
     CancelledAtUtc  = @CancelledAtUtc,
     UpdatedAtUtc    = @UpdatedAtUtc,
@@ -95,6 +96,7 @@ WHERE Id = @Id;";
             new CommandDefinition(sql, new
             {
                 Status = (byte)session.Status,
+                session.TeacherId,
                 session.Topic,
                 session.CancelledAtUtc,
                 session.UpdatedAtUtc,
@@ -125,6 +127,7 @@ WHERE Id = @Id;";
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         // نموذج قراءة مسطّح (D-40) + عدد النشطين المتوقع حضورهم
+        // 6.6-ص-ب2: اسم الأستاذ — للمُقامة من اللقطة (cs.TeacherId: من أقام فعلاً — والفارغة تظهر «—» فتُصحَّح بزر 🔧) · ولغير المُقامة أستاذ الفوج الحالي (المنتظر)
         const string sql = @"
 SELECT cs.Id, cs.ClassGroupId, cg.Name AS GroupName, sb.Name AS SubjectName, l.Name AS LevelName,
        tp.FirstName AS TeacherFirstName, tp.LastName AS TeacherLastName, tp.FatherName AS TeacherFatherName,
@@ -135,7 +138,7 @@ FROM ClassSessions cs
 JOIN ClassGroups cg ON cg.Id = cs.ClassGroupId
 JOIN Subjects sb ON sb.Id = cg.SubjectId
 JOIN Levels l ON l.Id = cg.LevelId
-LEFT JOIN Teachers t ON t.Id = cg.TeacherId AND t.IsDeleted = 0
+LEFT JOIN Teachers t ON t.Id = CASE WHEN cs.Status = 2 THEN cs.TeacherId ELSE cg.TeacherId END AND t.IsDeleted = 0
 LEFT JOIN Persons tp ON tp.Id = t.PersonId AND tp.IsDeleted = 0
 LEFT JOIN Rooms r ON r.Id = cg.RoomId
 WHERE cs.StartsAt >= @From AND cs.StartsAt < @ToExclusive

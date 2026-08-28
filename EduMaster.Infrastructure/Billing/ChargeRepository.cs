@@ -179,6 +179,22 @@ ORDER BY c.CreatedAtUtc DESC;";
             row.AdjustmentNote, row.CreatedAtUtc, row.AllocatedCentimes));
     }
 
+    public async Task<long> GetAllocatedForChargeAsync(int chargeId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // 6.6-ع-3: مجموع تخصيصات مستحق — لحارس «لا تخفيض تحت المخصوص» (ولعكس الإلغاء في ع-ب)
+        const string sql = @"
+SELECT ISNULL(SUM(a.AmountCentimes), 0)
+FROM PaymentAllocations a
+WHERE a.ChargeId = @ChargeId;";
+
+        return await connection.ExecuteScalarAsync<long>(
+            new CommandDefinition(sql, new { ChargeId = chargeId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+    }
+
     public async Task<IEnumerable<OpenChargeItem>> GetOpenForStudentAsync(int studentId, CancellationToken cancellationToken = default)
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);

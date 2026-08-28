@@ -77,7 +77,7 @@
                     <DataGridTemplateColumn Header="المتبقي" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding RemainingCentimes, Converter={StaticResource CentimesToDinarsConverter}}"
+                                <TextBlock Text="{Binding RemainingForDisplayCentimes, Converter={StaticResource CentimesToDinarsConverter}, TargetNullValue='—'}"
                                            Foreground="#C42B1C" FontWeight="SemiBold"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

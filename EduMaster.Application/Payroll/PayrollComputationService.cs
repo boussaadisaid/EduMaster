@@ -72,12 +72,12 @@ public sealed class PayrollComputationService
             .ToList();
 
         var warnings = result.Warnings
-            .Select(w => $"«{teacherNames.GetValueOrDefault(w.TeacherId, $"أستاذ #{w.TeacherId}")}»: {w.SessionsCount} حصص في فوج «{w.ClassGroupName}» بلا سياسة مغطية — لم تدخل الكشف (أضِف سياسة افتراضية أو تجاوزاً)")
+            .Select(w => $"«{teacherNames.GetValueOrDefault(w.TeacherId, $"أستاذ #{w.TeacherId}")}»: {w.SessionsCount} حصص في فوج «{w.ClassGroupName}» بلا سياسة مغطية — لم تدخل الكشف · الفعل: أضِف سياسة افتراضية أو تجاوزاً من زر «💼 الأجر» في شاشة الأساتذة ثم أعد الحساب 🔁")
             .ToList();
 
         // حصص بلقطة أستاذ فارغة — أُقيمت قبل إسناد أستاذ لفوجها (D-117) — كشف المستخدم 2026-08-25: كانت تختفي بصمت
         foreach (var group in sessions.Where(s => s.TeacherId is null).GroupBy(s => s.ClassGroupName))
-            warnings.Add($"{group.Count()} حصص في فوج «{group.Key}» أُقيمت بلا أستاذ مسند لحظتها (لقطة فارغة) — لا تدخل الأجور؛ إن كان أقامها أستاذ فعلاً فصحّح اللقطة في بيانات الحصة ثم أعد الحساب");
+            warnings.Add($"{group.Count()} حصص في فوج «{group.Key}» أُقيمت بلا أستاذ مسند لحظتها (لقطة فارغة — D-117) — لا تدخل الأجور · إن أقامها أستاذ فعلاً فالمساران: صحّح اللقطة من شاشة الحصص (زر «🔧 لقطة الأستاذ» عليها) ثم أعد الحساب 🔁 · أو عوّضه بسطر يدوي ➕ في هذه المسودة قبل الاعتماد");
 
         // أساتذة أقاموا حصصاً بلا أي سياسة فعّالة أصلاً
         var coveredTeacherIds = policies
@@ -88,7 +88,7 @@ public sealed class PayrollComputationService
         foreach (var group in sessions.Where(s => s.TeacherId is not null && !coveredTeacherIds.Contains(s.TeacherId!.Value)).GroupBy(s => s.TeacherId!.Value))
         {
             var name = teacherNames.GetValueOrDefault(group.Key, $"أستاذ #{group.Key}");
-            warnings.Add($"«{name}»: {group.Count()} حصص مُقامة بلا أي سياسة أجر فعّالة — لم تدخل الكشف (أنشئها من زر «💼 الأجر» في شاشة الأساتذة)");
+            warnings.Add($"«{name}»: {group.Count()} حصص مُقامة بلا أي سياسة أجر فعّالة — لم تدخل الكشف · الفعل: أنشئ السياسة من زر «💼 الأجر» في شاشة الأساتذة ثم أعد الحساب 🔁");
         }
 
         return new PayrollComputationOutcome(lines, warnings);

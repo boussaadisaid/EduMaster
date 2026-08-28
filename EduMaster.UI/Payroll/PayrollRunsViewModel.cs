@@ -499,9 +499,13 @@ public sealed class PayrollRunsViewModel : BaseViewModel
         var run = SelectedRun;
         if (run is not { IsDraft: true }) return;
 
+        // 6.6-ص-أ: التحذيرات المولَّدة هذه الجلسة تُذكَّر عند نقطة اللاعودة — والمخرج اليدوي يُذكَّر دائماً (مراجعة الأجور 2026-08-27)
+        var warningsNote = Warnings.Count > 0
+            ? $"⚠ هذا الكشف وُلّد مع {Warnings.Count} تحذيراً معروضة أعلاه — ما خرج من الحساب لا يعود بعد الاعتماد إلا يدوياً.\n\n"
+            : string.Empty;
         var confirmed = await _dialogs.ConfirmAsync(
             "اعتماد الكشف — نقطة اللاعودة",
-            $"الاعتماد يقفل الكشف نهائياً: لا تعديل ولا حذف ولا إعادة حساب بعده (الخطأ يُصحَّح بصرف تسوية).\n\nالفترة: {run.PeriodText}\nالإجمالي: {MoneyInput.FormatDinars(run.TotalCentimes)} دج\nعدد السطور: {run.LinesCount}\n\nاعتمد؟",
+            $"{warningsNote}الاعتماد يقفل الكشف نهائياً: لا تعديل ولا حذف ولا إعادة حساب بعده · من فاته يُعوَّض بسطر يدوي ➕ في مسودة لاحقة أو بصرف تسوية من تبويب «💰 الأرصدة».\n\nالفترة: {run.PeriodText}\nالإجمالي: {MoneyInput.FormatDinars(run.TotalCentimes)} دج\nعدد السطور: {run.LinesCount}\n\nاعتمد؟",
             "اعتمد نهائياً");
         if (!confirmed) return;
 

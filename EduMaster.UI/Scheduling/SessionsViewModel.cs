@@ -30,6 +30,7 @@ public sealed class SessionsViewModel : BaseViewModel
         MarkHeldCommand = new AsyncRelayCommand(MarkHeldAsync, () => SelectedSession is { Status: SessionStatus.Scheduled });
         CancelSessionCommand = new AsyncRelayCommand(CancelSessionAsync, () => SelectedSession is { Status: SessionStatus.Scheduled });
         AttendanceCommand = new AsyncRelayCommand(AttendanceAsync, () => SelectedSession is { Status: SessionStatus.Held });   // D-100
+        CorrectTeacherCommand = new AsyncRelayCommand(CorrectTeacherAsync, () => SelectedSession is { Status: SessionStatus.Held, TeacherFullName: null });   // 6.6-ص-ب
     }
 
     // ---------- الفلاتر ----------
@@ -89,6 +90,7 @@ public sealed class SessionsViewModel : BaseViewModel
             MarkHeldCommand.RaiseCanExecuteChanged();
             CancelSessionCommand.RaiseCanExecuteChanged();
             AttendanceCommand.RaiseCanExecuteChanged();
+            CorrectTeacherCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -106,6 +108,7 @@ public sealed class SessionsViewModel : BaseViewModel
     public AsyncRelayCommand MarkHeldCommand { get; }
     public AsyncRelayCommand CancelSessionCommand { get; }
     public AsyncRelayCommand AttendanceCommand { get; }
+    public AsyncRelayCommand CorrectTeacherCommand { get; }   // جديد 6.6-ص-ب
 
     public async Task InitializeAsync()
     {
@@ -197,6 +200,19 @@ public sealed class SessionsViewModel : BaseViewModel
 
         // النتيجة true لا تغيّر شبكة الحصص (الحضور لا يمس صفها) — الرصيد يظهر محدَّثاً في شاشة الطلاب
         await _dialogs.ShowDialogAsync(dialog, dialog.Title);
+    }
+
+    // 6.6-ص-ب: تصحيح لقطة الأستاذ الفارغة للمُقامة — نجاحه يغيّر صف الشبكة (اسم الأستاذ) فتُعاد التهيئة
+    private async Task CorrectTeacherAsync()
+    {
+        var session = SelectedSession;
+        if (session is null) return;
+
+        var dialog = _services.GetRequiredService<CorrectSessionTeacherDialogViewModel>();
+        dialog.Initialize(session.Id, $"{session.GroupName} · {session.TimeDisplay}");
+        var saved = await _dialogs.ShowDialogAsync(dialog, dialog.Title);
+        if (saved)
+            await LoadAsync();
     }
 
     private async Task CancelSessionAsync()

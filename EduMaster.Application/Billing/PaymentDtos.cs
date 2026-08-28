@@ -52,7 +52,11 @@ public sealed record PaymentListItem(
     public string ReceiptNoText => $"#{ReceiptNo:000000}";
     public long UnallocatedCentimes => Kind == PaymentKind.Receipt ? AmountCentimes - AllocatedCentimes : 0;
     public bool HasUnallocated => UnallocatedCentimes > 0;
+    public bool IsReceipt => Kind == PaymentKind.Receipt;   // 6.6-ع-ب (ع-4): زر العكس للقبض فقط
 }
 
 /// <summary>إيصال قبض بحرّية > 0 (6.6 — ز-1): المبلغ − Σ تخصيصاته — الأقدم أولاً لاستهلاك الزائدة · الصرف غير مربوط بإيصال فسقف إجمالي الزائدة حارسه في المصفف</summary>
 public sealed record UnallocatedReceiptRaw(int PaymentId, long FreeCentimes);
+
+/// <summary>بطاقة إيصال لعكسه (6.6-ع-4) — AlreadyReversed باتفاق وسم الملاحظة المولَّد («↩ عكس الإيصال #…») لنفس الطالب والمبلغ</summary>
+public sealed record ReceiptReversalInfoRaw(int StudentId, byte Kind, long AmountCentimes, int ReceiptNo, bool AlreadyReversed);

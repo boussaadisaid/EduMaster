@@ -18,6 +18,8 @@ public sealed record StudentChargeItem(
     public string KindText => Kind == ChargeKind.RegistrationFee ? "حقوق تسجيل" : "حزمة حصص";
     public string StatusText => Status == ChargeStatus.Active ? "فعّال" : "ملغى";
     public bool IsActive => Status == ChargeStatus.Active;
+    /// <summary>المتبقي للعرض (6.6-ع-2): الملغى لا يعرض متبقّياً حياً — يُعرض «—» (موثق وغير محسوب — D-108/D-109)</summary>
+    public long? RemainingForDisplayCentimes => IsActive ? RemainingCentimes : null;
 
     /// <summary>المتبقي = الحالي − المخصوص (D-109) — على الفعّال فقط معنى له</summary>
     public long RemainingCentimes => AmountCentimes - AllocatedCentimes;

@@ -36,6 +36,9 @@ public sealed class GetPaymentMovementReportHandlerTests
         public Task<int> GetNextReceiptNoAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<long> GetUnallocatedForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<UnallocatedReceiptRaw>> GetUnallocatedReceiptsForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<ReceiptReversalInfoRaw?> GetReceiptReversalInfoAsync(int paymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteAllocationsForPaymentAsync(int paymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteAllocationsForChargeAsync(int chargeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> HasAnyForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 

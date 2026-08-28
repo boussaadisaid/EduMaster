@@ -130,6 +130,68 @@ ORDER BY p.PaidOn, p.Id;";
         return rows.Select(r => new UnallocatedReceiptRaw(r.PaymentId, r.FreeCentimes)).ToList();
     }
 
+    // ⚠ D-81: بنفس ترتيب الاستعلام أدناه (6.6-ع-ب)
+    private sealed record ReceiptReversalRow(int StudentId, byte Kind, long AmountCentimes, int ReceiptNo);
+
+    public async Task<ReceiptReversalInfoRaw?> GetReceiptReversalInfoAsync(int paymentId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        const string sqlReceipt = @"
+SELECT p.StudentId, p.Kind, p.AmountCentimes, p.ReceiptNo
+FROM Payments p
+WHERE p.Id = @PaymentId;";
+
+        var row = await connection.QuerySingleOrDefaultAsync<ReceiptReversalRow>(
+            new CommandDefinition(sqlReceipt, new { PaymentId = paymentId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+        if (row is null)
+            return null;
+
+        // 6.6-ع-4: «عُكس من قبل» باتفاق وسم الملاحظة المولَّد لنفس الطالب والمبلغ — يمنع العكس المزدوج بلا عمود جديد
+        const string sqlReversed = @"
+SELECT CASE WHEN EXISTS (
+    SELECT 1 FROM Payments pr
+    WHERE pr.StudentId = @StudentId AND pr.Kind = 2 AND pr.AmountCentimes = @AmountCentimes
+      AND pr.Note LIKE @Marker + N'%')
+THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END;";
+
+        var alreadyReversed = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(sqlReversed,
+                new { row.StudentId, row.AmountCentimes, Marker = $"↩ عكس الإيصال #{row.ReceiptNo:000000}" },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return new ReceiptReversalInfoRaw(row.StudentId, row.Kind, row.AmountCentimes, row.ReceiptNo, alreadyReversed);
+    }
+
+    public async Task DeleteAllocationsForPaymentAsync(int paymentId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // 6.6-ع-ب2: فكّ تخصيص الإيصال — الجدول فريد الزوج ومشروط الموجب فالإزالة هي المسار المصمَّم (لا حذف وثائق — D-109)
+        const string sql = @"DELETE FROM PaymentAllocations WHERE PaymentId = @PaymentId;";
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(sql, new { PaymentId = paymentId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+    }
+
+    public async Task DeleteAllocationsForChargeAsync(int chargeId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        // 6.6-ع-ب2: تحرير مال المستحق الملغى — نفس القاعدة (فكّ لا حذف وثيقة)
+        const string sql = @"DELETE FROM PaymentAllocations WHERE ChargeId = @ChargeId;";
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(sql, new { ChargeId = chargeId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+    }
+
     public async Task<IEnumerable<PaymentListItem>> GetForPeriodAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);

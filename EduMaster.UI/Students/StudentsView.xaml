@@ -187,12 +187,12 @@
                             <Setter Property="ToolTip" Value="{Binding AdjustmentNote, TargetNullValue=''}"/>
                         </Style>
                     </DataGrid.RowStyle>
-                    
-                    
+
+
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="النوع" Binding="{Binding KindText}" Width="Auto"/>
                         <DataGridTextColumn Header="المصدر" Binding="{Binding SourceDescription}" Width="2*"/>
-                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
+                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingForDisplayCentimes, Converter={StaticResource CentimesToDinarsConverter}, TargetNullValue='—'}" Width="Auto"/>
                         <DataGridTextColumn Header="الأصلي" Binding="{Binding OriginalAmountCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
                         <DataGridTemplateColumn Header="الحالة" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
@@ -212,7 +212,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <!-- سبب التسوية يظهر تحويمةً على الصف (D-108) -->
-                        
+
                     </DataGrid.Columns>
                 </DataGrid>
 

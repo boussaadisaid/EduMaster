@@ -72,6 +72,7 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<AdHocSessionViewModel>();
             services.AddTransient<PurchaseSessionsDialogViewModel>();
             services.AddTransient<SessionAttendanceDialogViewModel>();
+            services.AddTransient<CorrectSessionTeacherDialogViewModel>();   // جديد 6.6-ص-ب — سطر التحقق
             // Billing (F4 — الشرائح 4.1/4.2/4.3)   //  سطر التحقق: القسم بأربعة
             services.AddTransient<ChargeSettlementDialogViewModel>();
             services.AddTransient<PaymentDialogViewModel>();

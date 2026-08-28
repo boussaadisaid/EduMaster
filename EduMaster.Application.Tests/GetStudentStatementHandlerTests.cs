@@ -58,6 +58,7 @@ public sealed class GetStudentStatementHandlerTests
         public Task UpdateAsync(Charge charge, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IEnumerable<OpenChargeItem>> GetOpenForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IEnumerable<DebtorItem>> GetDebtorsAsync(string? searchTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<long> GetAllocatedForChargeAsync(int chargeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> HasAnyForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
@@ -76,6 +77,9 @@ public sealed class GetStudentStatementHandlerTests
         public Task AddAllocationAsync(PaymentAllocation allocation, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<int> GetNextReceiptNoAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<UnallocatedReceiptRaw>> GetUnallocatedReceiptsForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<ReceiptReversalInfoRaw?> GetReceiptReversalInfoAsync(int paymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteAllocationsForPaymentAsync(int paymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteAllocationsForChargeAsync(int chargeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IEnumerable<PaymentListItem>> GetForPeriodAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> HasAnyForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }

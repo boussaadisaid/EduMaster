@@ -85,6 +85,8 @@
             <Button Content="✔ أُقيمت"      Command="{Binding MarkHeldCommand}"      Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="📋 الحضور"     Command="{Binding AttendanceCommand}"    Padding="14,6" Margin="0,0,8,0"/>
             <Button Content="✕ إلغاء الحصة" Command="{Binding CancelSessionCommand}" Padding="14,6"/>
+            <Button Content="🔧 لقطة الأستاذ" Command="{Binding CorrectTeacherCommand}" Padding="14,6" Margin="8,0,0,0"
+                    ToolTip="تعيين من أقام هذه الحصة فعلاً — للمُقامة بلقطة فارغة فقط (تصحيح أجور — 6.6)"/>
         </StackPanel>
     </Grid>
 </UserControl>

@@ -23,11 +23,18 @@ public sealed class ChargeSettlementHandlersTests
 
     private static (CancelChargeHandler handler, FakeChargeRepository charges, FakeUnitOfWork uow) BuildCancel(Domain.Billing.Charge? charge)
     {
+        var full = BuildCancelFull(charge);
+        return (full.handler, full.charges, full.uow);   // التوقيع القديم يبقى — المدفوعات لاختبارات العكس الجديدة (ع-ب)
+    }
+
+    private static (CancelChargeHandler handler, FakeChargeRepository charges, FakePaymentRepository payments, FakeUnitOfWork uow) BuildCancelFull(Domain.Billing.Charge? charge)
+    {
         var charges = new FakeChargeRepository { EntityToReturn = charge };
+        var payments = new FakePaymentRepository();
         var uow = new FakeUnitOfWork();
-        var handler = new CancelChargeHandler(charges, new FakeClock(), new FakeCurrentUserService(), uow,
+        var handler = new CancelChargeHandler(charges, payments, new FakeClock(), new FakeCurrentUserService(), uow,
             NullLogger<CancelChargeHandler>.Instance);
-        return (handler, charges, uow);
+        return (handler, charges, payments, uow);
     }
 
     private static (ReduceChargeHandler handler, FakeChargeRepository charges, FakeUnitOfWork uow) BuildReduce(Domain.Billing.Charge? charge)
@@ -37,6 +44,50 @@ public sealed class ChargeSettlementHandlersTests
         var handler = new ReduceChargeHandler(charges, new FakeClock(), new FakeCurrentUserService(), uow,
             NullLogger<ReduceChargeHandler>.Instance);
         return (handler, charges, uow);
+    }
+
+    // ---------- حارس المخصوص (6.6-ع-3): لا تخفيض تحته — والحدّ «يساويه» يمرّ ----------
+    [Fact]
+    public async Task Reduce_BelowAllocated_Rejected_BusinessRule()
+    {
+        var (handler, charges, uow) = BuildReduce(BuildActiveCharge(100000));
+        charges.AllocatedForChargeValue = 60000;   // مخصوص 600.00 دج على مستحق 1000.00 دج
+
+        var result = await handler.ExecuteAsync(new ReduceChargeRequest(5, 40000, "تخفيض تحت المخصوص"));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.BusinessRule, result.ErrorType);
+        Assert.Equal("لا يُخفَّض مستحق تحت مخصوصه (600.00 دج) — ألغِه أو خفّضه فوقها.", result.ErrorMessage);
+        Assert.Empty(charges.Updated);
+        Assert.Equal(0, uow.BeganCount);
+    }
+
+    [Fact]
+    public async Task Reduce_ToExactlyAllocated_Allowed_Boundary()
+    {
+        var (handler, charges, uow) = BuildReduce(BuildActiveCharge(100000));
+        charges.AllocatedForChargeValue = 60000;
+
+        var result = await handler.ExecuteAsync(new ReduceChargeRequest(5, 60000, "إلى المخصوص تماماً"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(charges.Updated);
+        Assert.Equal(1, uow.CommittedCount);
+    }
+
+    // ---------- تحرير مال الملغي (6.6-ع-ب2 / ع-1): فكّ تخصيصاته في المعاملة نفسها — الجدول فريد الزوج ومشروط الموجب فالإزالة مصمَّمة ----------
+    [Fact]
+    public async Task Cancel_DeletesItsAllocations_InSameTransaction_ReturningMoney()
+    {
+        var (handler, charges, payments, uow) = BuildCancelFull(BuildActiveCharge(100000));
+
+        var result = await handler.ExecuteAsync(new CancelChargeRequest(5, "أُلغي — ماله يعود للزائدة"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ChargeStatus.Cancelled, Assert.Single(charges.Updated).Status);
+        Assert.Equal(5, Assert.Single(payments.DeletedAllocationsForCharges));   // فُكّت تخصيصات المستحق 5
+        Assert.Empty(payments.Allocations);                                       // لا سطور جديدة — فكّ في المكان
+        Assert.Equal(1, uow.CommittedCount);
     }
 
     // ---------- الإلغاء ----------

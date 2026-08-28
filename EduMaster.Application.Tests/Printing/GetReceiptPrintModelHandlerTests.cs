@@ -183,6 +183,7 @@ namespace EduMaster.Application.Tests.Printing
             public Task UpdateAsync(Charge charge, CancellationToken cancellationToken = default) => throw new NotImplementedException();
             public Task<IEnumerable<OpenChargeItem>> GetOpenForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
             public Task<IEnumerable<DebtorItem>> GetDebtorsAsync(string? searchTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+            public Task<long> GetAllocatedForChargeAsync(int chargeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
             public Task<bool> HasAnyForStudentAsync(int studentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         }
 

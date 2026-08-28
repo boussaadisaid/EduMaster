@@ -26,30 +26,35 @@ namespace EduMaster.UI
             NavigateToHomeCommand = new AsyncRelayCommand(() =>
             {
                 CurrentViewModel = _services.GetRequiredService<HomeViewModel>();
+                CurrentScreenKey = "Home";
                 return Task.CompletedTask;
             });
             NavigateToAcademicYearsCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<AcademicYearsViewModel>();   // نسخة طازجة = بيانات طازجة
                 CurrentViewModel = vm;
+                CurrentScreenKey = "AcademicYears";
                 await vm.InitializeAsync();
             });
             NavigateToPeopleCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<PeopleViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "People";
                 await vm.InitializeAsync();
             });
             NavigateToStudentsCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<StudentsViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "Students";
                 await vm.InitializeAsync();
             });
             NavigateToTeachersCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<TeachersViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "Teachers";
                 await vm.InitializeAsync();
             });
             // F5 — الشريحة 5.1: الموظفون (بند رئيسي — ب-1)
@@ -57,12 +62,14 @@ namespace EduMaster.UI
             {
                 var vm = _services.GetRequiredService<EmployeesViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "Employees";
                 await vm.InitializeAsync();
             });
             NavigateToClassGroupsCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<ClassGroupsViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "ClassGroups";
                 await vm.InitializeAsync();
             });
             // F3 — الشريحة 3.1: جدول استعمال الزمن + الحصص (بندان رئيسيان — عمل يومي لا إعداد)
@@ -70,12 +77,14 @@ namespace EduMaster.UI
             {
                 var vm = _services.GetRequiredService<TimetableViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "Timetable";
                 await vm.InitializeAsync();
             });
             NavigateToSessionsCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<SessionsViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "Sessions";
                 await vm.InitializeAsync();
             });
             // F4 — الشريحة 4.3: المالية (ديون + سجل مدفوعات — عمل يومي)
@@ -83,6 +92,7 @@ namespace EduMaster.UI
             {
                 var vm = _services.GetRequiredService<FinanceViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "Finance";
                 await vm.InitializeAsync();
             });
             // F5 — الشريحة 5.2: الأجور (الاحتساب والاعتماد — D-116)   // جديد هـ-2
@@ -90,6 +100,7 @@ namespace EduMaster.UI
             {
                 var vm = _services.GetRequiredService<PayrollRunsViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "Payroll";
                 await vm.InitializeAsync();
             });
             // F6 — الشريحة 6.1: التقارير (D-127)
@@ -97,12 +108,14 @@ namespace EduMaster.UI
             {
                 var vm = _services.GetRequiredService<ReportsViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "Reports";
                 await vm.InitializeAsync();
             });
             NavigateToAcademicStructureCommand = new AsyncRelayCommand(async () =>
             {
                 var vm = _services.GetRequiredService<AcademicStructureViewModel>();
                 CurrentViewModel = vm;
+                CurrentScreenKey = "AcademicStructure";
                 await vm.InitializeAsync();
             });
             CurrentViewModel = _services.GetRequiredService<HomeViewModel>();      // الشاشة الافتتاحية
@@ -115,6 +128,14 @@ namespace EduMaster.UI
         {
             get => _currentViewModel;
             private set => SetProperty(ref _currentViewModel, value);
+        }
+
+        // F7: مفتاح الشاشة الحالية — يضيء بندها في الشريط الجانبي (يُسنَد في كل أمر تنقل)
+        private string _currentScreenKey = "Home";
+        public string CurrentScreenKey
+        {
+            get => _currentScreenKey;
+            private set => SetProperty(ref _currentScreenKey, value);
         }
         public AsyncRelayCommand NavigateToHomeCommand { get; }
         public AsyncRelayCommand NavigateToAcademicYearsCommand { get; }

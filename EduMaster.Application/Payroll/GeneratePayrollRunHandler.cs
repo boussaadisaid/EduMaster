@@ -53,7 +53,7 @@ public sealed class GeneratePayrollRunHandler
             // حارس «لا ازدواج احتساب» — الفترة المعتمدة مقفلة نهائياً (س-3)
             if (await _runs.ExistsApprovedOverlapAsync(request.From, request.To, cancellationToken))
                 return OperationResult<PayrollRunGenerationResult>.Failure(
-                    "تتقاطع هذه الفترة مع كشف معتمد — الفترات المعتمدة لا يُعاد احتسابها.", ErrorType.Conflict);
+                    "تتقاطع هذه الفترة مع كشف معتمد — المعتمد يُقفل نهائياً ولا يُعاد احتسابه · من فاته ذلك الكشف يُعوَّض: سطر يدوي ➕ في مسودة فترة لاحقة (مكافأة بسبب موثّق) أو صرف تسوية من تبويب «💰 الأرصدة».", ErrorType.Conflict);
 
             // حارس «لا تكديس مسودات» — مسودة الفترة تُعاد حسابها أو تُحذف، لا تُكرَّر
             if (await _runs.ExistsDraftOverlapAsync(request.From, request.To, cancellationToken))

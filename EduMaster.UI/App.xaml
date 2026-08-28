@@ -28,6 +28,9 @@
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Light.Blue.xaml"/>
 
                 <ResourceDictionary Source="pack://application:,,,/ToastNotifications.Messages;component/Themes/Default.xaml" />
+
+                <!-- F7: اللغة البصرية المشتركة (الشريط الجانبي/البطاقات/الأزرار) — تُدمج بعد MahApps لتبني عليه -->
+                <ResourceDictionary Source="Themes/EduStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate DataType="{x:Type ui:HomeViewModel}">
@@ -136,6 +139,9 @@
             </DataTemplate>
             <DataTemplate DataType="{x:Type scheduling:SessionAttendanceDialogViewModel}">
                 <scheduling:SessionAttendanceDialogView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type scheduling:CorrectSessionTeacherDialogViewModel}">
+                <scheduling:CorrectSessionTeacherDialogView />
             </DataTemplate>
 
             <DataTemplate DataType="{x:Type billing:ChargeSettlementDialogViewModel}">

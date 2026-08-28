@@ -8,6 +8,9 @@ public interface IChargeRepository
     Task AddAsync(Charge charge, CancellationToken cancellationToken = default);
     Task<Charge?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
+    /// <summary>مجموع تخصيصات مستحق (6.6-ع-3) — لحارس «لا تخفيض تحت المخصوص»، ولعكس الإلغاء في ع-ب</summary>
+    Task<long> GetAllocatedForChargeAsync(int chargeId, CancellationToken cancellationToken = default);
+
     /// <summary>تحديث التسوية فقط (الحالة/المبلغ الحالي/السبب/الإلغاء/التدقيق) — النوع والمصدر والأصلي ثوابت (D-108)</summary>
     Task UpdateAsync(Charge charge, CancellationToken cancellationToken = default);
 

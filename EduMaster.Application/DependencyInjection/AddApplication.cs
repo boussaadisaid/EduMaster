@@ -108,7 +108,7 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<GetEnrollableGroupsForStudentHandler>();
             services.AddTransient<BulkRolloverHandler>();   // جديد 6.2-أ — الترحيل الجماعي (D-129)
             services.AddTransient<GetRolloverCandidatesHandler>();   // جديد 6.2-ج — قراءة المعاينة
-            // Scheduling(F3 — الشرائح 3.1 / 3.2 / 3.3)   //  سطر التحقق: القسم كاملاً بخمسة عشر
+            // Scheduling(F3 — الشرائح 3.1 / 3.2 / 3.3)   //  سطر التحقق: القسم كاملاً بستة عشر (6.6-ص-ب)
             services.AddTransient<GetTimetableHandler>();
             services.AddTransient<GetGroupSchedulesHandler>();
             services.AddTransient<GetSessionsHandler>();
@@ -121,11 +121,12 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<CreateAdHocSessionHandler>();
             services.AddTransient<CancelSessionHandler>();
             services.AddTransient<MarkSessionHeldHandler>();
+            services.AddTransient<CorrectSessionTeacherHandler>();   // جديد 6.6-ص-ب
             services.AddTransient<PurchaseSessionsHandler>();
             services.AddTransient<GetSessionAttendanceHandler>();
             services.AddTransient<SaveSessionAttendanceHandler>();
 
-            // Billing (F4 — الشرائح 4.1/4.2/4.3)   //  سطر التحقق: القسم بثمانية
+            // Billing (F4 — الشرائح 4.1/4.2/4.3)   //  سطر التحقق: القسم بتسعة (6.6-ع-ب)
             services.AddTransient<GetStudentChargesHandler>();
             services.AddTransient<CancelChargeHandler>();
             services.AddTransient<ReduceChargeHandler>();
@@ -134,6 +135,7 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<GetDebtorsHandler>();
             services.AddTransient<GetPaymentsLogHandler>();
             services.AddTransient<RegisterRefundHandler>();
+            services.AddTransient<ReverseReceiptHandler>();   // جديد 6.6-ع-ب (عكس قبض خاطئ — ع-4)
 
             // Payroll (F5 — الشريحة 5.1)   //  سطر التحقق: القسم باثني عشر
             services.AddTransient<GetEmployeesHandler>();
