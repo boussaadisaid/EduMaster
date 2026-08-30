@@ -1,41 +1,75 @@
-﻿<UserControl x:Class="EduMaster.UI.Scheduling.CorrectSessionTeacherDialogView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FlowDirection="RightToLeft">
-    <Grid Margin="24">
+﻿<UserControl x:Class="EduMaster.UI.Scheduling.CorrectSessionTeacherDialogView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft" Width="560" Height="430">
+    <UserControl.Resources>
+        <Style x:Key="InputBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="10,6"/>
+        </Style>
+        <Style x:Key="InputCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="10,6"/>
+        </Style>
+        <Style x:Key="InputDate" TargetType="DatePicker" BasedOn="{StaticResource {x:Type DatePicker}}">
+            <Setter Property="Height" Value="38"/>
+        </Style>
+        <Style x:Key="SectionCard" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
+            <Setter Property="Effect" Value="{x:Null}"/>
+        </Style>
+        <Style x:Key="ActionPrimary" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="Padding" Value="20,8"/>
+        </Style>
+        <Style x:Key="ActionSecondary" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="Padding" Value="20,8"/>
+        </Style>
+    </UserControl.Resources>
+    <Grid Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
-        <StackPanel Grid.Row="0" MinWidth="440">
-            <TextBlock Text="للحصة المُقامة بلا أستاذ مسند لحظتها (لقطة فارغة) — عيّن من أقامها فعلاً لتدخل حصتها الأجور. اللقطات القائمة لا تُعاد كتابتها أبداً."
-                       Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,12"/>
-
-            <TextBlock Text="الحصة" Margin="0,0,0,4"/>
-            <TextBlock Text="{Binding SessionText}" FontWeight="SemiBold" Margin="0,0,0,12"/>
-
-            <TextBlock Text="من أقامها فعلاً؟ *" Margin="0,0,0,4"/>
-            <ComboBox ItemsSource="{Binding Teachers}" DisplayMemberPath="FullName"
-                      SelectedItem="{Binding SelectedTeacher}"/>
-        </StackPanel>
-
-        <Grid Grid.Row="1" Margin="0,14,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <Border Background="#FDE7E9" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="4"
-                    Padding="10,8" Margin="0,0,0,10"
-                    Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C42B1C" TextWrapping="Wrap"/>
-            </Border>
-
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left">
-                <Button Content="💾 حفظ التصحيح" Command="{Binding SaveCommand}" Padding="22,8" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                <Button Content="إلغاء" Command="{Binding CancelCommand}" Padding="22,8"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="22,20,22,8">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="2,0,2,18">
+                    <Border Width="48" Height="48" CornerRadius="24" Background="{StaticResource WarningSoftBrush}" Margin="0,0,12,0">
+                        <TextBlock Text="🔧" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="تصحيح لقطة الأستاذ" Style="{StaticResource EduSectionTitle}"/>
+                        <TextBlock Text="تحديد من أقام الحصة فعلياً" Style="{StaticResource EduBodyMuted}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <Border Background="{StaticResource WarningSoftBrush}" BorderBrush="#E9D7A5" BorderThickness="1" CornerRadius="8" Padding="12,9" Margin="0,0,0,14">
+                    <TextBlock Text="هذا التصحيح للحصة المقامة ذات اللقطة الفارغة فقط. اللقطات الموجودة لا يعاد تغييرها." Style="{StaticResource EduCaption}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap"/>
+                </Border>
+                <Border Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="الحصة" Style="{StaticResource EduFieldLabel}"/>
+                        <Border Background="#F7F9FC" CornerRadius="8" Padding="12,9" Margin="0,0,0,16">
+                            <TextBlock Text="{Binding SessionText}" Style="{StaticResource EduBodyStrong}" TextWrapping="Wrap"/>
+                        </Border>
+                        <TextBlock Text="الأستاذ الذي أقامها *" Style="{StaticResource EduFieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding Teachers}" DisplayMemberPath="FullName" SelectedItem="{Binding SelectedTeacher}" Style="{StaticResource InputCombo}"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
-        </Grid>
+        </ScrollViewer>
+        <Border Grid.Row="1" Background="White" BorderBrush="#E3E8F0" BorderThickness="0,1,0,0" Padding="22,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Background="{StaticResource NegativeSoftBrush}" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="8" Padding="12,9" Margin="0,0,14,0" Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource NegativeBrush}" TextWrapping="Wrap"/>
+                </Border>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="حفظ التصحيح" Command="{Binding SaveCommand}" Style="{StaticResource ActionPrimary}" Margin="0,0,8,0"/>
+                    <Button Content="إلغاء" Command="{Binding CancelCommand}" Style="{StaticResource ActionSecondary}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

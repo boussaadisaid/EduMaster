@@ -1,153 +1,245 @@
 ﻿<UserControl x:Class="EduMaster.UI.Payroll.PayPolicyDialogView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        FlowDirection="RightToLeft">
-    <Grid Margin="24">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft"
+             Width="650"
+             Height="680">
+    <Grid Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- قائمة السياسات -->
-            <RowDefinition Height="Auto"/>
-            <!-- المحرر المضمّن: يُمرَّر -->
             <RowDefinition Height="*"/>
-            <!-- التذييل: مثبّت دائماً (D-41) -->
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="{Binding PayeeName, StringFormat='سياسات الأجر لـ: {0}'}"
-                   FontWeight="SemiBold" FontSize="15" Margin="0,0,0,10"/>
+        <!-- رأس نافذة مدمج -->
+        <Grid Margin="22,20,22,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- قائمة سياسات المستفيد -->
-        <Grid Grid.Row="1" Margin="0,0,0,12">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <Border Width="48" Height="48" CornerRadius="24"
+                        Background="#EAF3FC" Margin="0,0,12,0">
+                    <TextBlock Text="💼" FontSize="21"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="سياسة الأجر" Style="{StaticResource EduSectionTitle}"/>
+                    <TextBlock Text="{Binding PayeeName, StringFormat='إدارة سياسات الأجر لـ {0}'}"
+                               Style="{StaticResource EduBodyMuted}" Margin="0,2,0,0"/>
+                </StackPanel>
+            </StackPanel>
 
-            <DataGrid ItemsSource="{Binding Policies}"
-                      SelectedItem="{Binding SelectedPolicy}"
-                      AutoGenerateColumns="False" IsReadOnly="True"
-                      CanUserAddRows="False" SelectionMode="Single"
-                      HeadersVisibility="Column" GridLinesVisibility="Horizontal"
-                      Height="170">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="النطاق" Binding="{Binding ScopeText}" Width="*"/>
-                    <DataGridTextColumn Header="النوع" Binding="{Binding KindText}" Width="*"/>
-                    <DataGridTextColumn Header="القيمة" Binding="{Binding ValueText}" Width="*"/>
-                    <DataGridTextColumn Header="الغياب" Binding="{Binding FlagText}" Width="*"/>
-                    <DataGridTemplateColumn Header="الحالة" Width="*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock>
+            <Button Grid.Column="1" Content="＋  سياسة جديدة"
+                    Command="{Binding NewCommand}"
+                    Style="{StaticResource PrimaryButton}"
+                    Padding="16,8" VerticalAlignment="Center"/>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="22,0,22,10">
+            <StackPanel>
+                <!-- السياسات الحالية -->
+                <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="190"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Padding="16,12" Background="#FAFBFD"
+                                BorderBrush="#E8EDF3" BorderThickness="0,0,0,1"
+                                CornerRadius="10,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="السياسات المسجلة" Style="{StaticResource EduSubsectionTitle}"/>
+                                <TextBlock Text="حدد سياسة لتعديلها أو تغيير حالتها"
+                                           Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Grid.Row="1">
+                            <DataGrid ItemsSource="{Binding Policies}"
+                                      SelectedItem="{Binding SelectedPolicy}"
+                                      AutoGenerateColumns="False" IsReadOnly="True"
+                                      CanUserAddRows="False" SelectionMode="Single"
+                                      HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                      HorizontalGridLinesBrush="#EDF1F6"
+                                      VerticalGridLinesBrush="Transparent"
+                                      BorderThickness="0" RowHeight="48" ColumnHeaderHeight="38">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="النطاق" Width="1.6*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding ScopeText}"
+                                                               Style="{StaticResource EduBodyStrong}"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding FlagText}"
+                                                               Style="{StaticResource EduCaption}"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="النوع" Binding="{Binding KindText}" Width="*"/>
+                                    <DataGridTextColumn Header="القيمة" Binding="{Binding ValueText}" Width="Auto"/>
+                                    <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="10" Padding="9,3">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{StaticResource PositiveSoftBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                    <Setter Property="Background" Value="#EEF1F5"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding StateText}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{StaticResource PositiveBrush}"/>
+                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                        <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="📄" FontSize="25" HorizontalAlignment="Center"/>
+                                <TextBlock Text="لا توجد سياسات بعد"
+                                           Style="{StaticResource EduBodyStrong}" Margin="0,6,0,0"/>
+                                <TextBlock Text="استخدم زر سياسة جديدة لبدء الإعداد"
+                                           Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Grid.Row="2" Background="#FAFBFD"
+                                BorderBrush="#E8EDF3" BorderThickness="0,1,0,0"
+                                CornerRadius="0,0,10,10" Padding="14,10">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="تعديل المحدد"
+                                        Command="{Binding EditPolicyCommand}"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="تفعيل / تعطيل المحدد"
+                                        Command="{Binding ToggleActiveCommand}"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Padding="14,7"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- محرر السياسة -->
+                <Border Style="{StaticResource Card}" Padding="18">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="بيانات السياسة" Style="{StaticResource EduSubsectionTitle}"/>
+                                <TextBlock Text="إنشاء سياسة جديدة أو تعديل السياسة المحددة"
+                                           Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" CornerRadius="10" Padding="10,4"
+                                    Background="#EEF5FC" VerticalAlignment="Center">
+                                <TextBlock Foreground="{StaticResource AccentDarkBrush}">
                                     <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="فعّالة"/>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource EduCaption}">
+                                            <Setter Property="Text" Value="وضع التعديل"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsActive}" Value="False">
-                                                    <Setter Property="Text" Value="معطّلة"/>
-                                                    <Setter Property="Foreground" Value="Gray"/>
+                                                <DataTrigger Binding="{Binding IsCreateMode}" Value="True">
+                                                    <Setter Property="Text" Value="سياسة جديدة"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+                            </Border>
+                        </Grid>
 
-            <TextBlock Text="لا سياسات بعد — أنشئ أول سياسة من الأسفل"
-                       Foreground="Gray" HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <TextBlock Text="نوع السياسة *" Style="{StaticResource EduFieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding KindOptions}" DisplayMemberPath="Label"
+                                  SelectedItem="{Binding SelectedKind}"
+                                  Height="40" Padding="10,6" Margin="0,0,0,14"/>
 
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
-                <Button Content="✏️ تعديل" Command="{Binding EditPolicyCommand}" Padding="14,6" Margin="0,0,8,0"/>
-                <Button Command="{Binding ToggleActiveCommand}" Padding="14,6">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Content" Value="✔ تفعيل"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedPolicy.IsActive}" Value="True">
-                                    <Setter Property="Content" Value="🚫 تعطيل"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-            </StackPanel>
-        </Grid>
-
-        <!-- المحرر المضمّن: إنشاء أو تعديل المحدد -->
-        <Border Grid.Row="2" Background="#F7F9FC" BorderBrush="#D5DEEA" BorderThickness="1"
-                CornerRadius="6" Padding="14">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="210">
-                <StackPanel MinWidth="600">
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,10,10">
-                            <TextBlock Text="النوع *" Margin="0,0,0,4"/>
-                            <ComboBox ItemsSource="{Binding KindOptions}" DisplayMemberPath="Label"
-                                      SelectedItem="{Binding SelectedKind}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="0,0,0,10"
-                                    Visibility="{Binding IsTeacher, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="النطاق *" Margin="0,0,0,4"/>
+                        <StackPanel Visibility="{Binding IsTeacher, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="النطاق *" Style="{StaticResource EduFieldLabel}"/>
                             <ComboBox ItemsSource="{Binding ScopeOptions}" DisplayMemberPath="Label"
                                       SelectedItem="{Binding SelectedScope}"
-                                      IsEnabled="{Binding IsCreateMode}"/>
+                                      IsEnabled="{Binding IsCreateMode}"
+                                      Height="40" Padding="10,6" Margin="0,0,0,14"/>
                         </StackPanel>
-                    </Grid>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,10,10"
-                                    Visibility="{Binding IsRateKind, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="القيمة (دج) *" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding RateText, UpdateSourceTrigger=PropertyChanged}"/>
+                        <StackPanel Visibility="{Binding IsRateKind, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="القيمة بالدينار *" Style="{StaticResource EduFieldLabel}"/>
+                            <TextBox Text="{Binding RateText, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="40" Padding="10,6" Margin="0,0,0,14"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="0,0,0,10"
-                                    Visibility="{Binding IsPercentageKind, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="النسبة (%) *" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding PercentageText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <StackPanel Visibility="{Binding IsPercentageKind, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="النسبة المئوية *" Style="{StaticResource EduFieldLabel}"/>
+                            <TextBox Text="{Binding PercentageText, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="40" Padding="10,6" Margin="0,0,0,14"/>
                         </StackPanel>
-                    </Grid>
 
-                    <CheckBox Content="يُحتسب الغياب غير المبرر في الأجر (D-114)"
-                              IsChecked="{Binding CountsUnjustifiedAbsent}" Margin="0,0,0,10"
-                              Visibility="{Binding IsTeacher, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <Border Background="#F7F9FC" BorderBrush="#E3E8F0"
+                                BorderThickness="1" CornerRadius="8" Padding="12,9"
+                                Visibility="{Binding IsTeacher, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <CheckBox Content="احتساب الغياب غير المبرر في الأجر"
+                                      IsChecked="{Binding CountsUnjustifiedAbsent}"/>
+                        </Border>
 
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="💾 حفظ السياسة" Command="{Binding SaveCommand}"
-                                Padding="18,7" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                        <Button Content="➕ سياسة جديدة" Command="{Binding NewCommand}" Padding="18,7"/>
+                        <Button Content="حفظ السياسة"
+                                Command="{Binding SaveCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                Padding="20,9" HorizontalAlignment="Left" Margin="0,16,0,0"/>
                     </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
-
-        <!-- التذييل المثبّت: البانر + الإغلاق -->
-        <Grid Grid.Row="3" Margin="0,14,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <Border Background="#FDE7E9" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="4"
-                    Padding="10,8" Margin="0,0,0,10"
-                    Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C42B1C" TextWrapping="Wrap"/>
-            </Border>
-
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left">
-                <Button Content="إغلاق" Command="{Binding CloseCommand}" Padding="22,8"/>
+                </Border>
             </StackPanel>
-        </Grid>
+        </ScrollViewer>
+
+        <!-- تذييل ثابت -->
+        <Border Grid.Row="2" Background="White" BorderBrush="#E3E8F0"
+                BorderThickness="0,1,0,0" Padding="22,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Background="{StaticResource NegativeSoftBrush}"
+                        BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="8"
+                        Padding="12,9" Margin="0,0,14,0"
+                        Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="{StaticResource NegativeBrush}" TextWrapping="Wrap"/>
+                </Border>
+
+                <Button Grid.Column="1" Content="إغلاق"
+                        Command="{Binding CloseCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        Padding="20,9"/>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

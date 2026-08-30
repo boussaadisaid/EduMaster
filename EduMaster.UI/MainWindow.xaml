@@ -1,62 +1,59 @@
-﻿<Controls:MetroWindow x:Class="EduMaster.UI.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
-        Title="EduMaster" Width="1280" Height="780" MinWidth="1100" MinHeight="680"
-        WindowStartupLocation="CenterScreen"
-        FlowDirection="RightToLeft">
+﻿<Controls:MetroWindow x:Class="EduMaster.UI.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls" Title="EduMaster" Width="1280" Height="780" MinWidth="1100" MinHeight="680" WindowState="Maximized" WindowStartupLocation="CenterScreen" FlowDirection="RightToLeft" FontFamily="{StaticResource EduFontRegular}">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240"/>
+            <ColumnDefinition Width="256"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-
-        <!-- F7: الشريط الجانبي الداكن — البند النشط مضاء بلسان لوني (Tag = مفتاح الشاشة عبر محوّل المساواة) · تجميع منطقي بفواصل -->
         <Border Background="{StaticResource SidebarBrush}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <TextBlock Text="🎓 EduMaster" FontSize="22" FontWeight="Bold" Foreground="White" Margin="18,20,18,2"/>
-                    <TextBlock Text="إدارة المدرسة باحتراف" FontSize="11.5" Foreground="{StaticResource SidebarMutedBrush}" Margin="18,0,18,16"/>
-
-                    <Button Content="🏠  الرئيسية" Tag="Home" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToHomeCommand}"/>
-
-                    <TextBlock Text="التشغيل" Style="{StaticResource NavGroupHeader}"/>
-                    <Button Content="👥  الأشخاص" Tag="People" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToPeopleCommand}"/>
-                    <Button Content="🎓  الطلاب" Tag="Students" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToStudentsCommand}"/>
-                    <Button Content="👨‍🏫  الأساتذة" Tag="Teachers" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToTeachersCommand}"/>
-                    <Button Content="👔  الموظفون" Tag="Employees" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToEmployeesCommand}"/>
-                    <Button Content="🧑‍🤝‍🧑  الأفواج" Tag="ClassGroups" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToClassGroupsCommand}"/>
-                    <Button Content="🗓  جدول استعمال الزمن" Tag="Timetable" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToTimetableCommand}"/>
-                    <Button Content="✅  الحصص" Tag="Sessions" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToSessionsCommand}"/>
-
-                    <TextBlock Text="المالية والتقارير" Style="{StaticResource NavGroupHeader}"/>
-                    <Button Content="💰  المالية" Tag="Finance" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToFinanceCommand}"/>
-                    <Button Content="💼  الأجور" Tag="Payroll" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToPayrollCommand}"/>
-                    <Button Content="📊  التقارير" Tag="Reports" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToReportsCommand}"/>
-
-                    <TextBlock Text="الإعدادات" Style="{StaticResource NavGroupHeader}"/>
-                    <Button Content="📅  السنوات الدراسية" Tag="AcademicYears" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToAcademicYearsCommand}"/>
-                    <Button Content="🏫  البنية الأكاديمية" Tag="AcademicStructure" Style="{StaticResource NavButton}"
-                            Command="{Binding NavigateToAcademicStructureCommand}"/>
-                </StackPanel>
-            </ScrollViewer>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Padding="18,20,18,16" BorderBrush="#33445B" BorderThickness="0,0,0,1">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="42" Height="42" CornerRadius="11" Background="{StaticResource AccentBrush}" Margin="0,0,11,0">
+                                <TextBlock Text="🎓" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="EduMaster" FontFamily="{StaticResource EduFontSemiBold}" FontSize="21" Foreground="White"/>
+                                <TextBlock Text="إدارة المدرسة" FontSize="11.5" Foreground="{StaticResource SidebarMutedBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,8">
+                    <StackPanel>
+                        <Button Content="🏠  الرئيسية" Tag="Home" Style="{StaticResource NavButton}" Command="{Binding NavigateToHomeCommand}"/>
+                        <TextBlock Text="التشغيل اليومي" Style="{StaticResource NavGroupHeader}"/>
+                        <Button Content="👥  الأشخاص" Tag="People" Style="{StaticResource NavButton}" Command="{Binding NavigateToPeopleCommand}"/>
+                        <Button Content="🎓  الطلاب" Tag="Students" Style="{StaticResource NavButton}" Command="{Binding NavigateToStudentsCommand}"/>
+                        <Button Content="👨‍🏫  الأساتذة" Tag="Teachers" Style="{StaticResource NavButton}" Command="{Binding NavigateToTeachersCommand}"/>
+                        <Button Content="👔  الموظفون" Tag="Employees" Style="{StaticResource NavButton}" Command="{Binding NavigateToEmployeesCommand}"/>
+                        <Button Content="🧑‍🤝‍🧑  الأفواج" Tag="ClassGroups" Style="{StaticResource NavButton}" Command="{Binding NavigateToClassGroupsCommand}"/>
+                        <Button Content="🗓  جدول استعمال الزمن" Tag="Timetable" Style="{StaticResource NavButton}" Command="{Binding NavigateToTimetableCommand}"/>
+                        <Button Content="✅  الحصص" Tag="Sessions" Style="{StaticResource NavButton}" Command="{Binding NavigateToSessionsCommand}"/>
+                        <TextBlock Text="المالية والمتابعة" Style="{StaticResource NavGroupHeader}"/>
+                        <Button Content="💰  المالية" Tag="Finance" Style="{StaticResource NavButton}" Command="{Binding NavigateToFinanceCommand}"/>
+                        <Button Content="💼  الأجور" Tag="Payroll" Style="{StaticResource NavButton}" Command="{Binding NavigateToPayrollCommand}"/>
+                        <Button Content="📊  التقارير" Tag="Reports" Style="{StaticResource NavButton}" Command="{Binding NavigateToReportsCommand}"/>
+                        <TextBlock Text="الإعدادات" Style="{StaticResource NavGroupHeader}"/>
+                        <Button Content="📅  السنوات الدراسية" Tag="AcademicYears" Style="{StaticResource NavButton}" Command="{Binding NavigateToAcademicYearsCommand}"/>
+                        <Button Content="🏫  البنية الأكاديمية" Tag="AcademicStructure" Style="{StaticResource NavButton}" Command="{Binding NavigateToAcademicStructureCommand}"/>
+                    </StackPanel>
+                </ScrollViewer>
+                <Border Grid.Row="2" Padding="18,13" BorderBrush="#33445B" BorderThickness="0,1,0,0">
+                    <StackPanel>
+                        <TextBlock Text="EduMaster" Foreground="{StaticResource SidebarTextBrush}" FontSize="12"/>
+                        <TextBlock Text="نظام إدارة مدرسي متكامل" Foreground="{StaticResource SidebarMutedBrush}" FontSize="10.5" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Border>
-
-        <!-- منطقة المحتوى: الشاشة تُحسم بنوع الـVM عبر DataTemplates -->
-        <Grid Grid.Column="1" Background="{StaticResource PageBackgroundBrush}">
+        <Border Grid.Column="1" Background="{StaticResource PageBackgroundBrush}" BorderBrush="#E3E8F0" BorderThickness="1,0,0,0">
             <ContentPresenter Content="{Binding CurrentViewModel}"/>
-        </Grid>
+        </Border>
     </Grid>
 </Controls:MetroWindow>

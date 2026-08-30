@@ -1,299 +1,301 @@
-﻿<UserControl x:Class="EduMaster.UI.Academic.AcademicStructureView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FlowDirection="RightToLeft">
+﻿<UserControl x:Class="EduMaster.UI.Academic.AcademicStructureView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft">
     <UserControl.Resources>
         <Style x:Key="StatusCell" TargetType="TextBlock">
             <Setter Property="Text" Value="فعّال"/>
+            <Setter Property="Foreground" Value="{StaticResource PositiveBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsActive}" Value="False">
                     <Setter Property="Text" Value="معطّل"/>
-                    <Setter Property="Foreground" Value="Gray"/>
+                    <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
-
-    <Grid Margin="28">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
-        <TextBlock Text="البنية الأكاديمية" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,14"/>
-
+        <StackPanel Margin="0,0,0,18">
+            <TextBlock Text="البنية الأكاديمية" Style="{StaticResource EduPageTitle}"/>
+            <TextBlock Text="المستويات والشعب والمواد والقاعات والأسعار وإعدادات المدرسة" Style="{StaticResource EduBodyMuted}" Margin="0,4,0,0"/>
+        </StackPanel>
         <TabControl Grid.Row="1">
-
-            <!-- التبويب 1: المستويات والشعب (Master-Detail كامل العرض) -->
             <TabItem Header="المستويات والشعب">
                 <Grid Margin="0,16,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-
-                    <!-- المستويات -->
-                    <Grid Margin="0,0,16,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Text="المستويات الدراسية" FontWeight="SemiBold" FontSize="15"/>
-                        <DataGrid Grid.Row="1" Margin="0,8,0,0"
-                                  ItemsSource="{Binding Levels}" SelectedItem="{Binding SelectedLevel}"
-                                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                                  SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="2*"/>
-                                <DataGridTextColumn Header="الترتيب" Binding="{Binding SortOrder}" Width="*"/>
-                                <DataGridTemplateColumn Header="الحالة" Width="*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Style="{StaticResource StatusCell}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button Content="➕ مستوى جديد" Command="{Binding AddLevelCommand}"        Padding="16,6" Margin="0,0,8,0"/>
-                            <Button Content="✏️ تعديل"      Command="{Binding EditLevelCommand}"       Padding="16,6" Margin="0,0,8,0"/>
-                            <Button Content="🚫 تعطيل"      Command="{Binding DeactivateLevelCommand}" Padding="16,6" Margin="0,0,8,0"/>
-                            <Button Content="✔ تفعيل"       Command="{Binding ActivateLevelCommand}"   Padding="16,6"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- الشعب — تتبع المستوى المحدد -->
-                    <Grid Grid.Column="1">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Text="{Binding SelectedLevel.Name, StringFormat='شعب: {0}', TargetNullValue='شعب المستوى المحدد'}"
-                                   FontWeight="SemiBold" FontSize="15"/>
-                        <DataGrid Grid.Row="1" Margin="0,8,0,0"
-                                  ItemsSource="{Binding Streams}" SelectedItem="{Binding SelectedStream}"
-                                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                                  SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="2*"/>
-                                <DataGridTemplateColumn Header="الحالة" Width="*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Style="{StaticResource StatusCell}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button Content="➕ شعبة جديدة" Command="{Binding AddStreamCommand}"        Padding="16,6" Margin="0,0,8,0"/>
-                            <Button Content="✏️ تعديل"      Command="{Binding EditStreamCommand}"       Padding="16,6" Margin="0,0,8,0"/>
-                            <Button Content="🚫 تعطيل"      Command="{Binding DeactivateStreamCommand}" Padding="16,6" Margin="0,0,8,0"/>
-                            <Button Content="✔ تفعيل"       Command="{Binding ActivateStreamCommand}"   Padding="16,6"/>
-                        </StackPanel>
-                    </Grid>
+                    <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,14,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Border Padding="16,12" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1" CornerRadius="10,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="المستويات الدراسية" Style="{StaticResource EduSubsectionTitle}"/>
+                                    <TextBlock Text="الترتيب العام للمراحل" Style="{StaticResource EduCaption}"/>
+                                </StackPanel>
+                            </Border>
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding Levels}" SelectedItem="{Binding SelectedLevel}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" BorderThickness="0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="الترتيب" Binding="{Binding SortOrder}" Width="Auto"/>
+                                    <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Style="{StaticResource StatusCell}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Border Grid.Row="2" Background="#FAFBFD" Padding="12,10" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
+                                <WrapPanel>
+                                    <Button Content="مستوى جديد" Command="{Binding AddLevelCommand}" Style="{StaticResource PrimaryButton}" Padding="12,7" Margin="0,0,6,0"/>
+                                    <Button Content="تعديل" Command="{Binding EditLevelCommand}" Style="{StaticResource SecondaryButton}" Padding="12,7" Margin="0,0,6,0"/>
+                                    <Button Content="تعطيل" Command="{Binding DeactivateLevelCommand}" Style="{StaticResource SecondaryButton}" Padding="12,7" Margin="0,0,6,0"/>
+                                    <Button Content="تفعيل" Command="{Binding ActivateLevelCommand}" Style="{StaticResource SecondaryButton}" Padding="12,7"/>
+                                </WrapPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Border Padding="16,12" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1" CornerRadius="10,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding SelectedLevel.Name, StringFormat='شعب {0}', TargetNullValue='شعب المستوى المحدد'}" Style="{StaticResource EduSubsectionTitle}"/>
+                                    <TextBlock Text="الشعب التابعة للمستوى" Style="{StaticResource EduCaption}"/>
+                                </StackPanel>
+                            </Border>
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding Streams}" SelectedItem="{Binding SelectedStream}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" BorderThickness="0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Style="{StaticResource StatusCell}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Border Grid.Row="2" Background="#FAFBFD" Padding="12,10" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
+                                <WrapPanel>
+                                    <Button Content="شعبة جديدة" Command="{Binding AddStreamCommand}" Style="{StaticResource PrimaryButton}" Padding="12,7" Margin="0,0,6,0"/>
+                                    <Button Content="تعديل" Command="{Binding EditStreamCommand}" Style="{StaticResource SecondaryButton}" Padding="12,7" Margin="0,0,6,0"/>
+                                    <Button Content="تعطيل" Command="{Binding DeactivateStreamCommand}" Style="{StaticResource SecondaryButton}" Padding="12,7" Margin="0,0,6,0"/>
+                                    <Button Content="تفعيل" Command="{Binding ActivateStreamCommand}" Style="{StaticResource SecondaryButton}" Padding="12,7"/>
+                                </WrapPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
                 </Grid>
             </TabItem>
-
-            <!-- التبويب 2: المواد -->
             <TabItem Header="المواد">
-                <Grid Margin="0,16,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Text="المواد" FontWeight="SemiBold" FontSize="15"/>
-                    <DataGrid Grid.Row="1" Margin="0,8,0,0"
-                              ItemsSource="{Binding Subjects}" SelectedItem="{Binding SelectedSubject}"
-                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                              SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="2*"/>
-                            <DataGridTemplateColumn Header="الحالة" Width="*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Style="{StaticResource StatusCell}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
-                        <Button Content="➕ مادة جديدة" Command="{Binding AddSubjectCommand}"        Padding="16,6" Margin="0,0,8,0"/>
-                        <Button Content="✏️ تعديل"     Command="{Binding EditSubjectCommand}"       Padding="16,6" Margin="0,0,8,0"/>
-                        <Button Content="🚫 تعطيل"     Command="{Binding DeactivateSubjectCommand}" Padding="16,6" Margin="0,0,8,0"/>
-                        <Button Content="✔ تفعيل"      Command="{Binding ActivateSubjectCommand}"   Padding="16,6"/>
-                    </StackPanel>
-                </Grid>
+                <Border Style="{StaticResource Card}" Padding="0" Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Padding="16,12" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1" CornerRadius="10,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="المواد الدراسية" Style="{StaticResource EduSubsectionTitle}"/>
+                                <TextBlock Text="المواد المتاحة للأفواج والأسعار" Style="{StaticResource EduCaption}"/>
+                            </StackPanel>
+                        </Border>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Subjects}" SelectedItem="{Binding SelectedSubject}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" BorderThickness="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="اسم المادة" Binding="{Binding Name}" Width="2*"/>
+                                <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Style="{StaticResource StatusCell}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Border Grid.Row="2" Background="#FAFBFD" Padding="14,10" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0">
+                            <WrapPanel>
+                                <Button Content="مادة جديدة" Command="{Binding AddSubjectCommand}" Style="{StaticResource PrimaryButton}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="تعديل" Command="{Binding EditSubjectCommand}" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="تعطيل" Command="{Binding DeactivateSubjectCommand}" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="تفعيل" Command="{Binding ActivateSubjectCommand}" Style="{StaticResource SecondaryButton}" Padding="14,7"/>
+                            </WrapPanel>
+                        </Border>
+                    </Grid>
+                </Border>
             </TabItem>
-
-            <!-- التبويب 3: القاعات -->
             <TabItem Header="القاعات">
-                <Grid Margin="0,16,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Text="القاعات" FontWeight="SemiBold" FontSize="15"/>
-                    <DataGrid Grid.Row="1" Margin="0,8,0,0"
-                              ItemsSource="{Binding Rooms}" SelectedItem="{Binding SelectedRoom}"
-                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                              SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="2*"/>
-                            <DataGridTextColumn Header="السعة" Binding="{Binding Capacity, TargetNullValue='—'}" Width="*"/>
-                            <DataGridTemplateColumn Header="الحالة" Width="*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Style="{StaticResource StatusCell}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
-                        <Button Content="➕ قاعة جديدة" Command="{Binding AddRoomCommand}"        Padding="16,6" Margin="0,0,8,0"/>
-                        <Button Content="✏️ تعديل"     Command="{Binding EditRoomCommand}"       Padding="16,6" Margin="0,0,8,0"/>
-                        <Button Content="🚫 تعطيل"     Command="{Binding DeactivateRoomCommand}" Padding="16,6" Margin="0,0,8,0"/>
-                        <Button Content="✔ تفعيل"      Command="{Binding ActivateRoomCommand}"   Padding="16,6"/>
-                    </StackPanel>
-                </Grid>
+                <Border Style="{StaticResource Card}" Padding="0" Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Padding="16,12" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1" CornerRadius="10,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="القاعات" Style="{StaticResource EduSubsectionTitle}"/>
+                                <TextBlock Text="الأماكن والسعات المتاحة للجدولة" Style="{StaticResource EduCaption}"/>
+                            </StackPanel>
+                        </Border>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Rooms}" SelectedItem="{Binding SelectedRoom}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" BorderThickness="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="اسم القاعة" Binding="{Binding Name}" Width="2*"/>
+                                <DataGridTextColumn Header="السعة" Binding="{Binding Capacity, TargetNullValue='—'}" Width="*"/>
+                                <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Style="{StaticResource StatusCell}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Border Grid.Row="2" Background="#FAFBFD" Padding="14,10" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0">
+                            <WrapPanel>
+                                <Button Content="قاعة جديدة" Command="{Binding AddRoomCommand}" Style="{StaticResource PrimaryButton}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="تعديل" Command="{Binding EditRoomCommand}" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="تعطيل" Command="{Binding DeactivateRoomCommand}" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="تفعيل" Command="{Binding ActivateRoomCommand}" Style="{StaticResource SecondaryButton}" Padding="14,7"/>
+                            </WrapPanel>
+                        </Border>
+                    </Grid>
+                </Border>
             </TabItem>
-
-            <!-- التبويب 4: الأسعار (F2 — الشريحة 2.2 · D-67) -->
             <TabItem Header="الأسعار">
-                <Grid Margin="0,16,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Text="أسعار الحصص" FontWeight="SemiBold" FontSize="15"/>
-
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
-                        <TextBlock Text="السنة:" VerticalAlignment="Center" Foreground="Gray"/>
-                        <ComboBox ItemsSource="{Binding PriceYearFilters}" DisplayMemberPath="Label"
-                                  SelectedItem="{Binding SelectedPriceYearFilter}" Width="180" Margin="8,0,0,0"/>
-                    </StackPanel>
-
-                    <DataGrid Grid.Row="2" Margin="0,8,0,0"
-                              ItemsSource="{Binding Prices}" SelectedItem="{Binding SelectedPrice}"
-                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                              SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="المستوى" Binding="{Binding LevelName}" Width="*"/>
-                            <DataGridTextColumn Header="المادة" Binding="{Binding SubjectName}" Width="*"/>
-                            <DataGridTextColumn Header="سعر الحصة" Binding="{Binding UnitPriceCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="*"/>
-                            <DataGridTextColumn Header="السنة" Binding="{Binding AcademicYearName}" Width="*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-
-                    <TextBlock Grid.Row="2" Text="لا توجد أسعار في هذا الفلتر بعد — اضغط «سعر جديد» لإضافة أول سعر"
-                               Foreground="Gray" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Visibility="{Binding PricesEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,12,0,0">
-                        <Button Content="➕ سعر جديد"  Command="{Binding AddPriceCommand}"    Padding="16,6" Margin="0,0,8,0"/>
-                        <Button Content="✏️ تعديل"    Command="{Binding EditPriceCommand}"   Padding="16,6" Margin="0,0,8,0"/>
-                        <Button Content="🗑 حذف"      Command="{Binding DeletePriceCommand}" Padding="16,6"/>
-                    </StackPanel>
-                </Grid>
+                <Border Style="{StaticResource Card}" Padding="0" Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Padding="16,12" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1" CornerRadius="10,10,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="220"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="أسعار الحصص" Style="{StaticResource EduSubsectionTitle}"/>
+                                    <TextBlock Text="سعر كل مادة حسب السنة والمستوى" Style="{StaticResource EduCaption}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="فلتر السنة" Style="{StaticResource EduFieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding PriceYearFilters}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedPriceYearFilter}" Height="38" Padding="8,5"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Grid Grid.Row="1">
+                            <DataGrid ItemsSource="{Binding Prices}" SelectedItem="{Binding SelectedPrice}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" BorderThickness="0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="المستوى" Binding="{Binding LevelName}" Width="*"/>
+                                    <DataGridTextColumn Header="المادة" Binding="{Binding SubjectName}" Width="*"/>
+                                    <DataGridTextColumn Header="سعر الحصة" Binding="{Binding UnitPriceCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="*"/>
+                                    <DataGridTextColumn Header="السنة" Binding="{Binding AcademicYearName}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Text="لا توجد أسعار في هذا الفلتر" Style="{StaticResource EduBodyMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding PricesEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        </Grid>
+                        <Border Grid.Row="2" Background="#FAFBFD" Padding="14,10" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0">
+                            <WrapPanel>
+                                <Button Content="سعر جديد" Command="{Binding AddPriceCommand}" Style="{StaticResource PrimaryButton}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="تعديل" Command="{Binding EditPriceCommand}" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="حذف" Command="{Binding DeletePriceCommand}" Style="{StaticResource SecondaryButton}" Padding="14,7"/>
+                            </WrapPanel>
+                        </Border>
+                    </Grid>
+                </Border>
             </TabItem>
-
-            <!-- التبويب 5: المدرسة (F6 — الشريحة 6.3: الهوية للمطبوعات — ط-7/D-130) -->
-            <TabItem Header="🏫 المدرسة">
+            <TabItem Header="المدرسة">
                 <Grid Margin="0,16,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="280"/>
                     </Grid.ColumnDefinitions>
-
-                    <!-- الحقول -->
-                    <StackPanel MaxWidth="520">
-                        <TextBlock Text="هوية المدرسة على المطبوعات" FontWeight="SemiBold" FontSize="15"/>
-                        <TextBlock Text="تظهر في ترويسة الإيصالات والتقارير المطبوعة — عند فراغ الاسم يُطبع اسم المنتج: EduMaster."
-                                   Foreground="Gray" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,12"/>
-
-                        <TextBlock Text="اسم المدرسة *" Margin="0,0,0,4"/>
-                        <TextBox Text="{Binding SchoolName, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
-
-                        <TextBlock Text="الهاتف" Margin="0,10,0,4"/>
-                        <TextBox Text="{Binding SchoolPhone, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
-
-                        <TextBlock Text="العنوان" Margin="0,10,0,4"/>
-                        <TextBox Text="{Binding SchoolAddress, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
-
-                        <Border Background="#FDE7E9" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="4"
-                                Padding="10,8" Margin="0,12,0,0"
-                                Visibility="{Binding HasSchoolErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="{Binding SchoolErrorMessage}" Foreground="#C42B1C" TextWrapping="Wrap"/>
-                        </Border>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                            <Button Content="💾 حفظ معلومات المدرسة" Command="{Binding SaveSchoolInfoCommand}"
-                                    Padding="18,8" FontWeight="SemiBold"/>
+                    <Border Style="{StaticResource Card}" Padding="20" Margin="0,0,14,0">
+                        <StackPanel MaxWidth="560">
+                            <TextBlock Text="هوية المدرسة" Style="{StaticResource EduSectionTitle}"/>
+                            <TextBlock Text="تظهر هذه المعلومات في ترويسة الإيصالات والتقارير المطبوعة." Style="{StaticResource EduBodyMuted}" Margin="0,4,0,18"/>
+                            <TextBlock Text="اسم المدرسة *" Style="{StaticResource EduFieldLabel}"/>
+                            <TextBox Text="{Binding SchoolName, UpdateSourceTrigger=PropertyChanged}" Height="40" Padding="10,6" Margin="0,0,0,14"/>
+                            <TextBlock Text="الهاتف" Style="{StaticResource EduFieldLabel}"/>
+                            <TextBox Text="{Binding SchoolPhone, UpdateSourceTrigger=PropertyChanged}" Height="40" Padding="10,6" Margin="0,0,0,14"/>
+                            <TextBlock Text="العنوان" Style="{StaticResource EduFieldLabel}"/>
+                            <TextBox Text="{Binding SchoolAddress, UpdateSourceTrigger=PropertyChanged}" Height="40" Padding="10,6"/>
+                            <Border Background="{StaticResource NegativeSoftBrush}" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="8" Padding="12,9" Margin="0,14,0,0" Visibility="{Binding HasSchoolErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="{Binding SchoolErrorMessage}" Foreground="{StaticResource NegativeBrush}" TextWrapping="Wrap"/>
+                            </Border>
+                            <Button Content="حفظ معلومات المدرسة" Command="{Binding SaveSchoolInfoCommand}" Style="{StaticResource PrimaryButton}" Padding="18,9" HorizontalAlignment="Left" Margin="0,16,0,0"/>
                         </StackPanel>
-                    </StackPanel>
-
-                    <!-- اللوغو -->
-                    <StackPanel Grid.Column="1" Margin="28,0,0,0" Width="220">
-                        <TextBlock Text="اللوغو (اختياري)" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,8"/>
-                        <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Width="180" Height="180"
-                                HorizontalAlignment="Right" Background="#FAFAFA">
-                            <Grid>
-                                <TextBlock Text="لا لوغو" Foreground="Gray" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           Visibility="{Binding HasNoLogoPreview, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                <Image Source="{Binding LogoPreview}" Stretch="Uniform"
-                                       Visibility="{Binding HasLogoPreview, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                            </Grid>
-                        </Border>
-                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <Button Content="📂 اختيار…" Click="PickLogo_Click" Padding="12,6" Margin="0,0,8,0"/>
-                            <Button Content="✕ إزالة" Command="{Binding RemoveLogoCommand}" Padding="12,6"/>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="لوغو المدرسة" Style="{StaticResource EduSubsectionTitle}"/>
+                            <TextBlock Text="اختياري ويظهر على المطبوعات" Style="{StaticResource EduCaption}" Margin="0,3,0,14"/>
+                            <Border BorderBrush="#E3E8F0" BorderThickness="1" CornerRadius="10" Width="190" Height="190" Background="#F7F9FC" HorizontalAlignment="Center">
+                                <Grid>
+                                    <TextBlock Text="لا يوجد لوغو" Style="{StaticResource EduBodyMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding HasNoLogoPreview, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <Image Source="{Binding LogoPreview}" Stretch="Uniform" Margin="12" Visibility="{Binding HasLogoPreview, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Border>
+                            <Button Content="اختيار صورة…" Click="PickLogo_Click" Style="{StaticResource PrimaryButton}" Margin="0,14,0,8"/>
+                            <Button Content="إزالة اللوغو" Command="{Binding RemoveLogoCommand}" Style="{StaticResource SecondaryButton}"/>
+                            <TextBlock Text="JPG أو PNG بحد أقصى 5MB. يثبت التغيير عند الحفظ." Style="{StaticResource EduCaption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                         </StackPanel>
-                        <TextBlock Text="jpg / png بحد أقصى 5MB · يُثبَّت مع زر «حفظ معلومات المدرسة»"
-                                   Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                    </StackPanel>
+                    </Border>
                 </Grid>
             </TabItem>
-
-            <!-- 6.5 — ن-ب: تبويب النسخ الاحتياطي (داخل شاشة الإعدادات القائمة — روح D-29) -->
-            <TabItem Header="💾 النسخ الاحتياطي">
-                <StackPanel Margin="0,16,0,0" MaxWidth="560">
-                    <TextBlock Text="نسخة كاملة: قاعدة البيانات + صور الأشخاص" FontWeight="SemiBold" FontSize="15"/>
-                    <TextBlock Text="كل نسخة = مجلد مؤرخ فيه ملف القاعدة (.bak) وحزمة الصور (Photos.zip) · تُحفظ أحدث 10 نسخ والأقدم يُحذف تلقائياً · الاستعادة تبقى عملية تقني عبر أدوات SQL Server."
-                               Foreground="Gray" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,12"/>
-
-                    <TextBlock Text="{Binding BackupStatusText}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10"/>
-
-                    <TextBlock Text="مجلد النسخ" Margin="0,0,0,4"/>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox Text="{Binding BackupRoot, UpdateSourceTrigger=PropertyChanged}" Padding="8,6" MinWidth="340"/>
-                        <Button Content="💾 حفظ المجلد" Command="{Binding SaveBackupFolderCommand}" Padding="12,6" Margin="8,0,0,0"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                        <Button Content="💾 أنشئ نسخة الآن" Command="{Binding RunBackupCommand}" Padding="20,9" FontWeight="SemiBold"/>
-                        <Button Content="📂 فتح مجلد النسخ" Command="{Binding OpenBackupFolderCommand}" Padding="12,6" Margin="8,0,0,0"/>
-                        <Button Content="📄 فتح مجلد السجلات" Command="{Binding OpenLogsFolderCommand}" Padding="12,6" Margin="6,0,0,0"/>
-                    </StackPanel>
-
-                    <TextBlock Text="جارٍ إنشاء النسخة…" Foreground="Gray" FontSize="12" Margin="0,10,0,0"
-                               Visibility="{Binding BackupBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                </StackPanel>
+            <TabItem Header="النسخ الاحتياطي">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="300"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" Padding="20" Margin="0,0,14,0">
+                        <StackPanel MaxWidth="620">
+                            <TextBlock Text="النسخ الاحتياطي" Style="{StaticResource EduSectionTitle}"/>
+                            <TextBlock Text="نسخة كاملة من قاعدة البيانات وصور الأشخاص، مع الاحتفاظ بأحدث 10 نسخ." Style="{StaticResource EduBodyMuted}" Margin="0,4,0,18" TextWrapping="Wrap"/>
+                            <Border Background="#EEF5FC" BorderBrush="#D5E5F4" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,16">
+                                <TextBlock Text="{Binding BackupStatusText}" Style="{StaticResource EduBodyStrong}" Foreground="{StaticResource AccentDarkBrush}" TextWrapping="Wrap"/>
+                            </Border>
+                            <TextBlock Text="مجلد النسخ" Style="{StaticResource EduFieldLabel}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding BackupRoot, UpdateSourceTrigger=PropertyChanged}" Height="40" Padding="10,6"/>
+                                <Button Grid.Column="1" Content="حفظ المجلد" Command="{Binding SaveBackupFolderCommand}" Style="{StaticResource SecondaryButton}" Padding="14,8" Margin="8,0,0,0"/>
+                            </Grid>
+                            <Button Content="إنشاء نسخة الآن" Command="{Binding RunBackupCommand}" Style="{StaticResource PrimaryButton}" Padding="20,9" HorizontalAlignment="Left" Margin="0,18,0,0"/>
+                            <TextBlock Text="جارٍ إنشاء النسخة…" Style="{StaticResource EduBodyMuted}" Margin="0,10,0,0" Visibility="{Binding BackupBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="وصول سريع" Style="{StaticResource EduSubsectionTitle}"/>
+                            <TextBlock Text="افتح الملفات والسجلات مباشرة" Style="{StaticResource EduCaption}" Margin="0,3,0,14"/>
+                            <Button Content="فتح مجلد النسخ" Command="{Binding OpenBackupFolderCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,0,8"/>
+                            <Button Content="فتح مجلد السجلات" Command="{Binding OpenLogsFolderCommand}" Style="{StaticResource SecondaryButton}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </TabItem>
-
         </TabControl>
     </Grid>
 </UserControl>

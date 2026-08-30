@@ -3,231 +3,408 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
              FlowDirection="RightToLeft">
-    <Grid Margin="28">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="400"/>
-        </Grid.ColumnDefinitions>
+    <UserControl.Resources>
+        <!-- أنماط محلية: تحديث شاشة الطلاب فقط مع الحفاظ على خط Cairo العام -->
+        <Style x:Key="StudentsGrid" TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#EDF1F6"/>
+            <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#FAFBFD"/>
+            <Setter Property="RowHeight" Value="46"/>
+            <Setter Property="ColumnHeaderHeight" Value="42"/>
+        </Style>
 
-        <!-- العمود الأيمن: قائمة الطلاب (كما هي) -->
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+        <Style x:Key="CompactGrid" TargetType="DataGrid" BasedOn="{StaticResource StudentsGrid}">
+            <Setter Property="RowHeight" Value="40"/>
+            <Setter Property="ColumnHeaderHeight" Value="38"/>
+        </Style>
 
-            <DockPanel Margin="0,0,0,14">
-                <Button Content="➕ طالب جديد" Command="{Binding AddCommand}"
-                        DockPanel.Dock="Left" Padding="18,8" FontWeight="SemiBold"/>
-                <TextBlock Text="الطلاب" FontSize="24" FontWeight="SemiBold"/>
-            </DockPanel>
+        <Style x:Key="ToolbarButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Padding" Value="13,7"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
 
-            <TextBox Grid.Row="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     Controls:TextBoxHelper.Watermark="🔍 ابحث بالاسم أو الهاتف أو اسم ولي الأمر…"
-                     Padding="10,8" Margin="0,0,0,14"/>
+        <Style x:Key="ToolbarPrimaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="Padding" Value="18,8"/>
+        </Style>
 
-            <DataGrid Grid.Row="2"
-                      ItemsSource="{Binding Students}"
-                      SelectedItem="{Binding SelectedStudent}"
-                      AutoGenerateColumns="False" IsReadOnly="True"
-                      CanUserAddRows="False" SelectionMode="Single"
-                      HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="الاسم الكامل" Binding="{Binding FullName}" Width="2*"/>
-                    <DataGridTextColumn Header="الصنف" Binding="{Binding CategoryText}" Width="*"/>
-                    <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="*"/>
-                    <DataGridTextColumn Header="ولي الأمر" Binding="{Binding GuardianFullName, TargetNullValue='—'}" Width="*"/>
-                    <DataGridTemplateColumn Header="الحالة" Width="*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock>
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="فعّال"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsActive}" Value="False">
-                                                    <Setter Property="Text" Value="معطّل"/>
-                                                    <Setter Property="Foreground" Value="Gray"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ToolbarButton}">
+            <Setter Property="Foreground" Value="{StaticResource NegativeBrush}"/>
+            <Setter Property="BorderBrush" Value="#F2C9C5"/>
+            <Setter Property="Background" Value="#FFF8F7"/>
+        </Style>
 
-            <TextBlock Grid.Row="2" Text="لا يوجد طلاب بعد — اضغط «طالب جديد» لإضافة أول طالب"
-                       Foreground="Gray" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <TextBlock Grid.Row="2" Text="جارٍ التحميل…" Foreground="Gray"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        <Style x:Key="PanelSectionTitle" TargetType="TextBlock" BasedOn="{StaticResource EduSubsectionTitle}">
+            <Setter Property="Margin" Value="0,0,0,2"/>
+        </Style>
+    </UserControl.Resources>
 
-            <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,14,0,0">
-                <Button Content="✏️ تعديل"        Command="{Binding EditCommand}"       Padding="14,6" Margin="0,0,8,0"/>
-                <Button Content="🚫 تعطيل"       Command="{Binding DeactivateCommand}" Padding="14,6" Margin="0,0,8,0"/>
-                <Button Content="✔ تفعيل"        Command="{Binding ActivateCommand}"   Padding="14,6" Margin="0,0,8,0"/>
-                <Button Content="🗑 إزالة الملف"  Command="{Binding RemoveFileCommand}" Padding="14,6"/>
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- رأس الشاشة -->
+        <Grid Margin="0,0,0,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="الطلاب" Style="{StaticResource EduPageTitle}"/>
+                <TextBlock Text="إدارة الملفات والتسجيلات والأفواج والحساب المالي من مكان واحد"
+                           Style="{StaticResource EduBodyMuted}" Margin="0,4,0,0"/>
             </StackPanel>
+
+            <Button Grid.Column="1" Content="＋  طالب جديد" Command="{Binding AddCommand}"
+                    Style="{StaticResource ToolbarPrimaryButton}"/>
         </Grid>
 
-        <!-- العمود الأيسر: لوحة الطالب — تسجيلاته + أفواجه بالرصيد + مستحقاته بالمتبقي (D-70/D-84/F4) -->
-        <Border Grid.Column="1" Margin="16,0,0,0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="14,12">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="390"/>
+                <ColumnDefinition Width="455"/>
+            </Grid.ColumnDefinitions>
 
-                <TextBlock Text="{Binding SelectedStudent.FullName, StringFormat='تسجيلات: {0}', TargetNullValue='التسجيلات السنوية'}"
-                           FontWeight="SemiBold" FontSize="15"/>
+            <!-- قائمة الطلاب -->
+            <Border Style="{StaticResource Card}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <DataGrid Grid.Row="1" Margin="0,8,0,0"
-                          ItemsSource="{Binding Enrollments}"
-                          SelectedItem="{Binding SelectedEnrollment}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" SelectionMode="Single"
-                          HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="السنة" Binding="{Binding AcademicYearName}" Width="*"/>
-                        <DataGridTextColumn Header="المستوى" Binding="{Binding LevelName}" Width="*"/>
-                        <DataGridTextColumn Header="الشعبة" Binding="{Binding StreamDisplay}" Width="*"/>
-                        <DataGridTextColumn Header="الحقوق" Binding="{Binding AgreedRegistrationFeeCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="*"/>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="Auto"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                    <Grid Margin="18,18,18,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="1" Text="اختر طالباً من القائمة لعرض تسجيلاته وأفواجه ومستحقاته"
-                           Foreground="Gray" FontSize="13" TextWrapping="Wrap"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding NoStudentSelected, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                <TextBlock Grid.Row="1" Text="لا تسجيلات بعد — اضغط «تسجيل سنوي» لأول تسجيل"
-                           Foreground="Gray" FontSize="13" TextWrapping="Wrap"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding EnrollmentsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <Border Background="#F6F8FB" BorderBrush="#E3E8F0" BorderThickness="1"
+                                CornerRadius="8" Padding="4,1">
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Controls:TextBoxHelper.Watermark="ابحث بالاسم أو الهاتف أو ولي الأمر…"
+                                     Background="Transparent" BorderThickness="0" Padding="10,8"/>
+                        </Border>
 
-                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
-                    <Button Content="➕ تسجيل سنوي" Command="{Binding AddEnrollmentCommand}"      Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="✏️ تعديل"      Command="{Binding EditEnrollmentCommand}"     Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="↩ انسحاب"     Command="{Binding WithdrawEnrollmentCommand}" Padding="12,6"/>
-                </StackPanel>
+                        <Button Grid.Column="1" Content="↻" Command="{Binding RefreshCommand}"
+                                ToolTip="تحديث القائمة" Style="{StaticResource ToolbarButton}"
+                                MinWidth="40" Padding="10,7" Margin="10,0,0,0"/>
+                    </Grid>
 
-                <TextBlock Grid.Row="3" Text="أفواجه" FontWeight="SemiBold" FontSize="15" Margin="0,14,0,0"/>
+                    <Grid Grid.Row="1" Margin="1,0">
+                        <DataGrid Style="{StaticResource StudentsGrid}"
+                                  ItemsSource="{Binding Students}"
+                                  SelectedItem="{Binding SelectedStudent}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="الطالب" Width="2.1*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding FullName}" Style="{StaticResource EduBodyStrong}"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding GuardianFullName, StringFormat='ولي الأمر: {0}', TargetNullValue='ولي الأمر: —'}"
+                                                           Style="{StaticResource EduCaption}" Margin="0,2,0,0"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="الصنف" Binding="{Binding CategoryText}" Width="*"/>
+                                <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone, TargetNullValue='—'}" Width="*"/>
+                                <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="10" Padding="9,3" HorizontalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="{StaticResource PositiveSoftBrush}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                <Setter Property="Background" Value="#EEF1F5"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock>
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource EduCaption}">
+                                                            <Setter Property="Text" Value="فعّال"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource PositiveBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                    <Setter Property="Text" Value="معطّل"/>
+                                                                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
 
-                <DataGrid Grid.Row="4" Margin="0,8,0,0"
-                          ItemsSource="{Binding StudentGroups}"
-                          SelectedItem="{Binding SelectedGroupEnrollment}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" SelectionMode="Single"
-                          HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="الفوج" Binding="{Binding ClassGroupName}" Width="2*"/>
-                        <DataGridTextColumn Header="السعر" Binding="{Binding AgreedUnitPriceCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
-                        <DataGridTemplateColumn Header="الرصيد" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <!-- D-92/D-98: المتبقي — أحمر غامق عند السالب -->
-                                    <TextBlock Text="{Binding Balance}" FontWeight="SemiBold" HorizontalAlignment="Center">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsNegativeBalance}" Value="True">
-                                                        <Setter Property="Foreground" Value="#C42B1C"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="Auto"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Border Width="52" Height="52" CornerRadius="26" Background="#EAF3FC" Margin="0,0,0,10">
+                                <TextBlock Text="🎓" FontSize="23" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="لا يوجد طلاب بعد" Style="{StaticResource EduBodyStrong}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="أضف أول طالب لبدء إدارة ملفه" Style="{StaticResource EduBodyMuted}"
+                                       Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                        </StackPanel>
 
-                <TextBlock Grid.Row="4" Text="لا أفواج بعد — اضغط «إلحاق بفوج» لأول إلحاق"
-                           Foreground="Gray" FontSize="13" TextWrapping="Wrap"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding StudentGroupsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <ProgressBar IsIndeterminate="True" Width="120" Height="4"/>
+                            <TextBlock Text="جارٍ تحميل الطلاب…" Style="{StaticResource EduBodyMuted}" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Grid>
 
-                <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,10,0,0">
-                    <Button Content="➕ إلحاق بفوج"  Command="{Binding EnrollInGroupCommand}"            Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="🎟 شراء حصص"    Command="{Binding PurchaseSessionsCommand}"         Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="↩ انسحاب"      Command="{Binding WithdrawGroupEnrollmentCommand}" Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="🔀 نقل"         Command="{Binding TransferGroupEnrollmentCommand}" Padding="12,6"/>
-                </StackPanel>
+                    <Border Grid.Row="2" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0"
+                            Padding="14,11" CornerRadius="0,0,10,10">
+                        <WrapPanel>
+                            <Button Content="✎  تعديل" Command="{Binding EditCommand}" Style="{StaticResource ToolbarButton}"/>
+                            <Button Content="تعطيل" Command="{Binding DeactivateCommand}" Style="{StaticResource ToolbarButton}"/>
+                            <Button Content="تفعيل" Command="{Binding ActivateCommand}" Style="{StaticResource ToolbarButton}"/>
+                            <Button Content="إزالة الملف" Command="{Binding RemoveFileCommand}" Style="{StaticResource DangerButton}"/>
+                        </WrapPanel>
+                    </Border>
+                </Grid>
+            </Border>
 
-                <!-- F4: المالية — المتبقي العمودي + قبض + استرجاع + تسوية (D-104…D-109) -->
-                <DockPanel Grid.Row="6" Margin="0,14,0,0">
-                    <TextBlock Text="{Binding FinanceSummaryText}" DockPanel.Dock="Left" Foreground="Gray" FontSize="12" VerticalAlignment="Center"/>
-                    <TextBlock Text="💰 المالية" FontWeight="SemiBold" FontSize="15"/>
-                </DockPanel>
+            <!-- مساحة عمل الطالب المحدد -->
+            <Border Grid.Column="1" Margin="16,0,0,0" Style="{StaticResource Card}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                <DataGrid Grid.Row="7" Margin="0,8,0,0"
-                          ItemsSource="{Binding Charges}"
-                          SelectedItem="{Binding SelectedCharge}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" SelectionMode="Single"
-                          HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                    <Border Background="#F8FAFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1"
+                            Padding="18,15" CornerRadius="10,10,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="42" Height="42" CornerRadius="21" Background="#E5F1FC" Margin="0,0,0,0">
+                                <TextBlock Text="👤" FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedStudent.FullName, TargetNullValue='ملف الطالب'}"
+                                           Style="{StaticResource EduSectionTitle}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="التسجيلات والأفواج والمالية" Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
 
-                    <DataGrid.RowStyle>
-                        <Style TargetType="DataGridRow">
-                            <Setter Property="ToolTip" Value="{Binding AdjustmentNote, TargetNullValue=''}"/>
-                        </Style>
-                    </DataGrid.RowStyle>
+                    <Grid Grid.Row="1">
+                        <TabControl Margin="14,8,14,14" Background="Transparent" BorderThickness="0">
+                            <!-- التسجيلات السنوية -->
+                            <TabItem Header="التسجيلات">
+                                <Grid Margin="2,14,2,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
+                                    <StackPanel Margin="2,0,2,10">
+                                        <TextBlock Text="التسجيلات السنوية" Style="{StaticResource PanelSectionTitle}"/>
+                                        <TextBlock Text="المسار الدراسي والحقوق السنوية للطالب" Style="{StaticResource EduCaption}"/>
+                                    </StackPanel>
 
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="النوع" Binding="{Binding KindText}" Width="Auto"/>
-                        <DataGridTextColumn Header="المصدر" Binding="{Binding SourceDescription}" Width="2*"/>
-                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingForDisplayCentimes, Converter={StaticResource CentimesToDinarsConverter}, TargetNullValue='—'}" Width="Auto"/>
-                        <DataGridTextColumn Header="الأصلي" Binding="{Binding OriginalAmountCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
-                        <DataGridTemplateColumn Header="الحالة" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding StatusText}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsActive}" Value="False">
-                                                        <Setter Property="Foreground" Value="Gray"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <!-- سبب التسوية يظهر تحويمةً على الصف (D-108) -->
+                                    <Grid Grid.Row="1">
+                                        <DataGrid Style="{StaticResource CompactGrid}"
+                                                  ItemsSource="{Binding Enrollments}"
+                                                  SelectedItem="{Binding SelectedEnrollment}">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="السنة" Binding="{Binding AcademicYearName}" Width="*"/>
+                                                <DataGridTextColumn Header="المستوى" Binding="{Binding LevelName}" Width="*"/>
+                                                <DataGridTextColumn Header="الشعبة" Binding="{Binding StreamDisplay}" Width="*"/>
+                                                <DataGridTextColumn Header="الحقوق" Binding="{Binding AgreedRegistrationFeeCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
+                                                <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="Auto"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
 
-                    </DataGrid.Columns>
-                </DataGrid>
+                                        <TextBlock Text="لا تسجيلات بعد — أضف أول تسجيل سنوي"
+                                                   Style="{StaticResource EduBodyMuted}" TextWrapping="Wrap"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Visibility="{Binding EnrollmentsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </Grid>
 
-                <TextBlock Grid.Row="7" Text="لا مستحقات — تتولد تلقائياً مع التسجيل السنوي وشراء الحصص (D-103)"
-                           Foreground="Gray" FontSize="13" TextWrapping="Wrap"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding ChargesEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <WrapPanel Grid.Row="2" Margin="0,12,0,0">
+                                        <Button Content="＋  تسجيل سنوي" Command="{Binding AddEnrollmentCommand}" Style="{StaticResource ToolbarPrimaryButton}" Margin="0,0,8,0"/>
+                                        <Button Content="✎  تعديل" Command="{Binding EditEnrollmentCommand}" Style="{StaticResource ToolbarButton}"/>
+                                        <Button Content="انسحاب" Command="{Binding WithdrawEnrollmentCommand}" Style="{StaticResource DangerButton}"/>
+                                    </WrapPanel>
+                                </Grid>
+                            </TabItem>
 
-                <StackPanel Grid.Row="8" Orientation="Horizontal" Margin="0,10,0,0">
-                    <Button Content="💵 قبض دفعة"   Command="{Binding ReceivePaymentCommand}" Padding="12,6" FontWeight="SemiBold" Margin="0,0,6,0"/>
-                    <Button Content="↩ استرجاع"     Command="{Binding RefundCommand}"         Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="✕ إلغاء مستحق" Command="{Binding CancelChargeCommand}"   Padding="12,6" Margin="0,0,6,0"/>
-                    <Button Content="➖ تخفيض"        Command="{Binding ReduceChargeCommand}"   Padding="12,6"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+                            <!-- الأفواج والحصص -->
+                            <TabItem Header="الأفواج">
+                                <Grid Margin="2,14,2,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Margin="2,0,2,10">
+                                        <TextBlock Text="الأفواج والحصص" Style="{StaticResource PanelSectionTitle}"/>
+                                        <TextBlock Text="الأفواج الملتحق بها الطالب ورصيد حصصه" Style="{StaticResource EduCaption}"/>
+                                    </StackPanel>
+
+                                    <Grid Grid.Row="1">
+                                        <DataGrid Style="{StaticResource CompactGrid}"
+                                                  ItemsSource="{Binding StudentGroups}"
+                                                  SelectedItem="{Binding SelectedGroupEnrollment}">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="الفوج" Binding="{Binding ClassGroupName}" Width="2*"/>
+                                                <DataGridTextColumn Header="السعر" Binding="{Binding AgreedUnitPriceCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
+                                                <DataGridTemplateColumn Header="الرصيد" Width="Auto">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding Balance}" HorizontalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource EduBodyStrong}">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsNegativeBalance}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{StaticResource NegativeBrush}"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="Auto"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+
+                                        <TextBlock Text="لا أفواج بعد — ألحق الطالب بأول فوج"
+                                                   Style="{StaticResource EduBodyMuted}" TextWrapping="Wrap"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Visibility="{Binding StudentGroupsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </Grid>
+
+                                    <WrapPanel Grid.Row="2" Margin="0,12,0,0">
+                                        <Button Content="＋  إلحاق بفوج" Command="{Binding EnrollInGroupCommand}" Style="{StaticResource ToolbarPrimaryButton}" Margin="0,0,8,0"/>
+                                        <Button Content="شراء حصص" Command="{Binding PurchaseSessionsCommand}" Style="{StaticResource ToolbarButton}"/>
+                                        <Button Content="نقل" Command="{Binding TransferGroupEnrollmentCommand}" Style="{StaticResource ToolbarButton}"/>
+                                        <Button Content="انسحاب" Command="{Binding WithdrawGroupEnrollmentCommand}" Style="{StaticResource DangerButton}"/>
+                                    </WrapPanel>
+                                </Grid>
+                            </TabItem>
+
+                            <!-- المالية -->
+                            <TabItem Header="المالية">
+                                <Grid Margin="2,14,2,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Grid Margin="2,0,2,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="الحساب المالي" Style="{StaticResource PanelSectionTitle}"/>
+                                            <TextBlock Text="المستحقات والتسويات المسجلة" Style="{StaticResource EduCaption}"/>
+                                        </StackPanel>
+                                        <Border Grid.Column="1" Background="#EAF3FC" CornerRadius="8" Padding="10,6" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding FinanceSummaryText}" Foreground="{StaticResource AccentDarkBrush}"
+                                                       Style="{StaticResource EduCaption}"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <Grid Grid.Row="1">
+                                        <DataGrid Style="{StaticResource CompactGrid}"
+                                                  ItemsSource="{Binding Charges}"
+                                                  SelectedItem="{Binding SelectedCharge}">
+                                            <DataGrid.RowStyle>
+                                                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                                    <Setter Property="ToolTip" Value="{Binding AdjustmentNote, TargetNullValue=''}"/>
+                                                </Style>
+                                            </DataGrid.RowStyle>
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="النوع" Binding="{Binding KindText}" Width="Auto"/>
+                                                <DataGridTextColumn Header="المصدر" Binding="{Binding SourceDescription}" Width="2*"/>
+                                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingForDisplayCentimes, Converter={StaticResource CentimesToDinarsConverter}, TargetNullValue='—'}" Width="Auto"/>
+                                                <DataGridTextColumn Header="الأصلي" Binding="{Binding OriginalAmountCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="Auto"/>
+                                                <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding StatusText}">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                                <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+
+                                        <TextBlock Text="لا مستحقات — ستظهر تلقائياً عند التسجيل أو شراء الحصص"
+                                                   Style="{StaticResource EduBodyMuted}" TextWrapping="Wrap"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Visibility="{Binding ChargesEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </Grid>
+
+                                    <WrapPanel Grid.Row="2" Margin="0,12,0,0">
+                                        <Button Content="قبض دفعة" Command="{Binding ReceivePaymentCommand}" Style="{StaticResource ToolbarPrimaryButton}" Margin="0,0,8,0"/>
+                                        <Button Content="استرجاع" Command="{Binding RefundCommand}" Style="{StaticResource ToolbarButton}"/>
+                                        <Button Content="تخفيض" Command="{Binding ReduceChargeCommand}" Style="{StaticResource ToolbarButton}"/>
+                                        <Button Content="إلغاء مستحق" Command="{Binding CancelChargeCommand}" Style="{StaticResource DangerButton}"/>
+                                    </WrapPanel>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+
+                        <!-- حالة عدم تحديد طالب -->
+                        <Border Background="White" Panel.ZIndex="5"
+                                Visibility="{Binding NoStudentSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="32">
+                                <Border Width="64" Height="64" CornerRadius="32" Background="#EEF5FC" Margin="0,0,0,14">
+                                    <TextBlock Text="👤" FontSize="27" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="اختر طالباً" Style="{StaticResource EduSectionTitle}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="ستظهر هنا تسجيلاته وأفواجه وحسابه المالي"
+                                           Style="{StaticResource EduBodyMuted}" TextWrapping="Wrap" TextAlignment="Center"
+                                           Margin="0,6,0,0" MaxWidth="260"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

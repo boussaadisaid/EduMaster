@@ -16,17 +16,19 @@ public sealed class TeacherEditorViewModel : BaseViewModel, IDialogViewModel
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IUserNotifier _notifier;
     private readonly IImageStore _imageStore;
+    private readonly IDialogService _dialogs;
 
     private int? _editingTeacherId;   // معرف الملف — null = إنشاء
     private int _editingPersonId;     // معرف الشخص (لوضع التحرير وقناة الصورة)
     private string? _photoSourcePath;
     private bool _photoRemoved;
 
-    public TeacherEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier, IImageStore imageStore)
+    public TeacherEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier, IImageStore imageStore, IDialogService dialogs)
     {
         _scopeFactory = scopeFactory;
         _notifier = notifier;
         _imageStore = imageStore;
+        _dialogs = dialogs;
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
         CancelCommand = new AsyncRelayCommand(() =>
@@ -197,6 +199,16 @@ public sealed class TeacherEditorViewModel : BaseViewModel, IDialogViewModel
 
             if (_editingTeacherId is null)
             {
+                // تحذير غير مانع قبل إنشاء سجل شخص جديد للدور — نفس آلية محرر الأشخاص.
+                var duplicateResult = await scope.ServiceProvider.GetRequiredService<FindPersonDuplicateHandler>()
+                    .ExecuteAsync(new FindPersonDuplicateRequest(FirstName, LastName, FatherName));
+                if (duplicateResult.IsSuccess && duplicateResult.Value is not null
+                    && !await _dialogs.ConfirmAsync(
+                        "تنبيه تكرار محتمل",
+                        $"يوجد شخص قائم بنفس الاسم: «{duplicateResult.Value.FullName}». هل تريد متابعة إنشاء أستاذ جديد كسجل شخص منفصل؟",
+                        "تابع بالإنشاء"))
+                    return;
+
                 var handler = scope.ServiceProvider.GetRequiredService<CreateTeacherHandler>();
                 var result = await handler.ExecuteAsync(new CreateTeacherRequest(
                     FirstName, LastName, FatherName, birthDate, SelectedGender?.Value,

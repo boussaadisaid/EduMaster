@@ -1,77 +1,112 @@
-﻿<UserControl x:Class="EduMaster.UI.ClassGroups.TransferGroupEnrollmentView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FlowDirection="RightToLeft">
-    <Grid Margin="24">
+﻿<UserControl x:Class="EduMaster.UI.ClassGroups.TransferGroupEnrollmentView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft" Width="760" Height="600">
+    <Grid Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <!-- الحقول: مسقوفة بمرور داخلي (D-82) -->
             <RowDefinition Height="Auto"/>
-            <!-- التذييل: مثبّت دائماً (D-41) -->
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="480">
-            <StackPanel MinWidth="620">
-
-                <TextBlock Text="{Binding StudentName, StringFormat='الطالب: {0}'}" FontWeight="SemiBold"/>
-                <TextBlock Text="{Binding CurrentGroupName, StringFormat='من فوج: {0}'}" Foreground="Gray" Margin="0,2,0,10"/>
-
-                <TextBlock Text="الأفواج المطابقة (نفس السنة والمستوى · الشعبة المناسبة · فعّالة · غير ممتلئة):"
-                           FontWeight="SemiBold" Margin="0,0,0,6"/>
-                <DataGrid ItemsSource="{Binding Targets}" SelectedItem="{Binding SelectedTarget}"
-                          AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                          SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
-                          MaxHeight="200">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="الفوج" Binding="{Binding Name}" Width="2*"/>
-                        <DataGridTextColumn Header="المادة" Binding="{Binding SubjectName}" Width="*"/>
-                        <DataGridTextColumn Header="الأستاذ" Binding="{Binding TeacherFullName, TargetNullValue='—'}" Width="*"/>
-                        <DataGridTextColumn Header="الشعب" Binding="{Binding StreamsDisplay}" Width="*"/>
-                        <DataGridTextColumn Header="المسجَّلون" Binding="{Binding EnrolledDisplay}" Width="Auto"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-                <TextBlock Text="لا أفواج مطابقة متاحة لهذا الطالب الآن" Foreground="Gray" FontSize="13"
-                           Margin="0,6,0,0"
-                           Visibility="{Binding TargetsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                <!-- السعر على الهدف (D-77) -->
-                <StackPanel Margin="0,10,0,0">
-                    <TextBlock Text="{Binding SuggestedPriceText}" Foreground="Gray" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,6"/>
+        <StackPanel Orientation="Horizontal" Margin="22,20,22,16">
+            <Border Width="48" Height="48" CornerRadius="24" Background="#EAF3FC" Margin="0,0,12,0">
+                <TextBlock Text="🔀" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="نقل إلى فوج آخر" Style="{StaticResource EduSectionTitle}"/>
+                <TextBlock Text="نقل التسجيل مع تثبيت سعر الفوج الهدف" Style="{StaticResource EduBodyMuted}" Margin="0,2,0,0"/>
+            </StackPanel>
+        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,0,22,10">
+            <StackPanel>
+                <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,10,0">
-                            <TextBlock Text="سعر الحصة المتفق في الهدف (دج)" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding AgreedPriceText, UpdateSourceTrigger=PropertyChanged}"/>
+                        <StackPanel>
+                            <TextBlock Text="الطالب" Style="{StaticResource EduCaption}"/>
+                            <TextBlock Text="{Binding StudentName}" Style="{StaticResource EduBodyStrong}" Margin="0,2,0,0"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
-                            <TextBlock Text="ملاحظة خصم (اختياري)" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding DiscountNote, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="الفوج الحالي" Style="{StaticResource EduCaption}"/>
+                            <TextBlock Text="{Binding CurrentGroupName}" Style="{StaticResource EduBodyStrong}" Margin="0,2,0,0"/>
                         </StackPanel>
                     </Grid>
-                </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="245"/>
+                        </Grid.RowDefinitions>
+                        <Border Padding="16,12" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1" CornerRadius="10,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="الأفواج المطابقة" Style="{StaticResource EduSubsectionTitle}"/>
+                                <TextBlock Text="نفس السنة والمستوى، شعبة مناسبة، فعّالة وغير ممتلئة" Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Grid Grid.Row="1">
+                            <DataGrid ItemsSource="{Binding Targets}" SelectedItem="{Binding SelectedTarget}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EDF1F6" VerticalGridLinesBrush="Transparent" BorderThickness="0" RowHeight="48" ColumnHeaderHeight="38">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="الفوج" Width="1.5*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource EduBodyStrong}"/>
+                                                    <TextBlock Text="{Binding SubjectName}" Style="{StaticResource EduCaption}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="الأستاذ" Binding="{Binding TeacherFullName, TargetNullValue='—'}" Width="*"/>
+                                    <DataGridTextColumn Header="الشعب" Binding="{Binding StreamsDisplay}" Width="*"/>
+                                    <DataGridTextColumn Header="المسجلون" Binding="{Binding EnrolledDisplay}" Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding TargetsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="لا توجد أفواج مطابقة" Style="{StaticResource EduBodyStrong}"/>
+                                <TextBlock Text="لا يتوفر هدف مناسب لهذا الطالب حالياً" Style="{StaticResource EduCaption}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource Card}" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="بيانات التسجيل في الفوج الهدف" Style="{StaticResource EduSubsectionTitle}"/>
+                        <Border Background="#EEF5FC" CornerRadius="8" Padding="12,9" Margin="0,10,0,14">
+                            <TextBlock Text="{Binding SuggestedPriceText}" Style="{StaticResource EduCaption}" Foreground="{StaticResource AccentDarkBrush}" TextWrapping="Wrap"/>
+                        </Border>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,7,0">
+                                <TextBlock Text="سعر الحصة المتفق (دج)" Style="{StaticResource EduFieldLabel}"/>
+                                <TextBox Text="{Binding AgreedPriceText, UpdateSourceTrigger=PropertyChanged}" Height="40" Padding="10,6"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="7,0,0,0">
+                                <TextBlock Text="ملاحظة الخصم" Style="{StaticResource EduFieldLabel}"/>
+                                <TextBox Text="{Binding DiscountNote, UpdateSourceTrigger=PropertyChanged}" Height="40" Padding="10,6"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
-
-        <!-- التذييل المثبّت: البانر + الأزرار -->
-        <Grid Grid.Row="1" Margin="0,14,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <Border Background="#FDE7E9" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="4"
-                    Padding="10,8" Margin="0,0,0,10"
-                    Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C42B1C" TextWrapping="Wrap"/>
-            </Border>
-
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left">
-                <Button Content="🔀 نقل" Command="{Binding SaveCommand}" Padding="22,8" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                <Button Content="إلغاء" Command="{Binding CancelCommand}" Padding="22,8"/>
-            </StackPanel>
-        </Grid>
+        <Border Grid.Row="2" Background="White" BorderBrush="#E3E8F0" BorderThickness="0,1,0,0" Padding="22,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Background="{StaticResource NegativeSoftBrush}" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="8" Padding="12,9" Margin="0,0,14,0" Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource NegativeBrush}" TextWrapping="Wrap"/>
+                </Border>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="تأكيد النقل" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Padding="20,9" Margin="0,0,8,0"/>
+                    <Button Content="إلغاء" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Padding="20,9"/>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

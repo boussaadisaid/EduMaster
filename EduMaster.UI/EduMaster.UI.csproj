@@ -11,6 +11,9 @@
   <ItemGroup>
     <None Remove="appsettings.json" />
     <None Remove="Assets\school-login.jpg" />
+    <None Remove="Fonts\Cairo-Bold.ttf" />
+    <None Remove="Fonts\Cairo-Regular.ttf" />
+    <None Remove="Fonts\Cairo-SemiBold.ttf" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +44,9 @@
     <Resource Include="Assets\Images\school-login.jpg">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="Fonts\Cairo-Bold.ttf" />
+    <Resource Include="Fonts\Cairo-Regular.ttf" />
+    <Resource Include="Fonts\Cairo-SemiBold.ttf" />
   </ItemGroup>
 
 </Project>

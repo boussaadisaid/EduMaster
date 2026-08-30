@@ -17,17 +17,19 @@ public sealed class EmployeeEditorViewModel : BaseViewModel, IDialogViewModel
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IUserNotifier _notifier;
     private readonly IImageStore _imageStore;
+    private readonly IDialogService _dialogs;
 
     private int? _editingEmployeeId;   // معرف الملف — null = إنشاء
     private int _editingPersonId;      // معرف الشخص (لوضع التحرير وقناة الصورة)
     private string? _photoSourcePath;
     private bool _photoRemoved;
 
-    public EmployeeEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier, IImageStore imageStore)
+    public EmployeeEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier, IImageStore imageStore, IDialogService dialogs)
     {
         _scopeFactory = scopeFactory;
         _notifier = notifier;
         _imageStore = imageStore;
+        _dialogs = dialogs;
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
         CancelCommand = new AsyncRelayCommand(() =>
@@ -204,6 +206,16 @@ public sealed class EmployeeEditorViewModel : BaseViewModel, IDialogViewModel
 
             if (_editingEmployeeId is null)
             {
+                // تحذير غير مانع قبل إنشاء سجل شخص جديد للدور — نفس آلية محرر الأشخاص.
+                var duplicateResult = await scope.ServiceProvider.GetRequiredService<FindPersonDuplicateHandler>()
+                    .ExecuteAsync(new FindPersonDuplicateRequest(FirstName, LastName, FatherName));
+                if (duplicateResult.IsSuccess && duplicateResult.Value is not null
+                    && !await _dialogs.ConfirmAsync(
+                        "تنبيه تكرار محتمل",
+                        $"يوجد شخص قائم بنفس الاسم: «{duplicateResult.Value.FullName}». هل تريد متابعة إنشاء موظف جديد كسجل شخص منفصل؟",
+                        "تابع بالإنشاء"))
+                    return;
+
                 var handler = scope.ServiceProvider.GetRequiredService<CreateEmployeeHandler>();
                 var result = await handler.ExecuteAsync(new CreateEmployeeRequest(
                     FirstName, LastName, FatherName, birthDate, SelectedGender?.Value,

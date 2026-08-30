@@ -48,12 +48,12 @@ public sealed class DatabaseSeeder
 
             var passwordHash = _hasher.Hash("admin123");
             var account = UserAccount.Create(
-                personId: person.Id,                 // ⬅️ SetId داخل AddAsync جعلته متاحاً هنا
+                personId: person.Id,                 
                 username: "admin",
                 passwordHash: passwordHash,
                 createdAtUtc: _clock.UtcNow,
                 createdByUserId: null,                
-                mustChangePassword: false);          // TODO: true عندما نبني شاشة تغيير كلمة المرور
+                mustChangePassword: true);          
             await _users.AddAsync(account, cancellationToken);
 
             await _unitOfWork.CommitAsync(cancellationToken);

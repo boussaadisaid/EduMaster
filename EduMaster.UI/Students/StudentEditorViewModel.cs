@@ -18,6 +18,7 @@ public sealed class StudentEditorViewModel : BaseViewModel, IDialogViewModel
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IUserNotifier _notifier;
     private readonly IImageStore _imageStore;
+    private readonly IDialogService _dialogs;
 
     private int? _editingStudentId;   // معرف الملف — null = إنشاء
     private int _editingPersonId;     // معرف الشخص (لوضع التحرير وقناة الصورة)
@@ -26,11 +27,12 @@ public sealed class StudentEditorViewModel : BaseViewModel, IDialogViewModel
     private bool _photoRemoved;       // أزيلت صورة موجودة
     private CancellationTokenSource? _guardianSearchCts;
 
-    public StudentEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier, IImageStore imageStore)
+    public StudentEditorViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier, IImageStore imageStore, IDialogService dialogs)
     {
         _scopeFactory = scopeFactory;
         _notifier = notifier;
         _imageStore = imageStore;
+        _dialogs = dialogs;
 
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsSaving);
         CancelCommand = new AsyncRelayCommand(() =>
@@ -309,6 +311,16 @@ public sealed class StudentEditorViewModel : BaseViewModel, IDialogViewModel
 
             if (_editingStudentId is null)
             {
+                // تحذير غير مانع قبل إنشاء سجل شخص جديد للدور — نفس آلية محرر الأشخاص.
+                var duplicateResult = await scope.ServiceProvider.GetRequiredService<FindPersonDuplicateHandler>()
+                    .ExecuteAsync(new FindPersonDuplicateRequest(FirstName, LastName, FatherName));
+                if (duplicateResult.IsSuccess && duplicateResult.Value is not null
+                    && !await _dialogs.ConfirmAsync(
+                        "تنبيه تكرار محتمل",
+                        $"يوجد شخص قائم بنفس الاسم: «{duplicateResult.Value.FullName}». هل تريد متابعة إنشاء طالب جديد كسجل شخص منفصل؟",
+                        "تابع بالإنشاء"))
+                    return;
+
                 var handler = scope.ServiceProvider.GetRequiredService<CreateStudentHandler>();
                 var result = await handler.ExecuteAsync(new CreateStudentRequest(
                     FirstName, LastName, FatherName, birthDate, SelectedGender?.Value,

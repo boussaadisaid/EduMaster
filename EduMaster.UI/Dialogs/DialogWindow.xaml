@@ -4,6 +4,7 @@
         xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
         SizeToContent="WidthAndHeight" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft">
+        FlowDirection="RightToLeft"
+                      FontFamily="{StaticResource EduFontRegular}">
     <ContentPresenter Content="{Binding}"/>
 </Controls:MetroWindow>
