@@ -109,39 +109,46 @@
                     </Border>
                 </Grid>
             </Border>
-            <StackPanel Grid.Column="1">
-                <Border Style="{StaticResource Card}" Padding="18" Margin="0,0,0,14">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Border Width="42" Height="42" CornerRadius="21" Background="#EAF3FC" Margin="0,0,10,0">
-                                <TextBlock Text="🔑" FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <!-- تمت إضافة ScrollViewer هنا فقط: عمود ثابت العرض (330) يحوي StackPanel عمودياً بسيطاً،
+                 فلا توجد مشكلة انهيار عمود Star كما في حالة EmployeesView سابقاً.
+                 هذا يمنع اختفاء الأزرار عند تكبير مقياس العرض (150%) لأن المحتوى الزائد
+                 سيصبح قابلاً للتمرير بدل أن يُقصّ خارج حدود الخلية. -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <Border Style="{StaticResource Card}" Padding="18" Margin="0,0,0,14">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <Border Width="42" Height="42" CornerRadius="21" Background="#EAF3FC" Margin="0,0,10,0">
+                                    <TextBlock Text="🔑" FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="حساب الدخول" Style="{StaticResource EduSubsectionTitle}"/>
+                                    <TextBlock Text="الحساب المرتبط بالشخص المحدد" Style="{StaticResource EduCaption}"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Background="#F7F9FC" BorderBrush="#E3E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding AccountStatusText}" Style="{StaticResource EduBodyStrong}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding SelectedAccount.Username, StringFormat='اسم المستخدم: {0}', TargetNullValue=''}" Style="{StaticResource EduCaption}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
                             </Border>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="حساب الدخول" Style="{StaticResource EduSubsectionTitle}"/>
-                                <TextBlock Text="الحساب المرتبط بالشخص المحدد" Style="{StaticResource EduCaption}"/>
-                            </StackPanel>
+                            <Button Content="إنشاء حساب" Command="{Binding CreateAccountCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,0,8"/>
+                            <Button Content="فك القفل" Command="{Binding UnlockAccountCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,0,8"/>
+                            <Button Content="إعادة تعيين كلمة المرور" Command="{Binding ResetPasswordCommand}" Style="{StaticResource SecondaryButton}"/>
                         </StackPanel>
-                        <Border Background="#F7F9FC" BorderBrush="#E3E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="{Binding AccountStatusText}" Style="{StaticResource EduBodyStrong}" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding SelectedAccount.Username, StringFormat='اسم المستخدم: {0}', TargetNullValue=''}" Style="{StaticResource EduCaption}" Margin="0,4,0,0" TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </Border>
-                        <Button Content="إنشاء حساب" Command="{Binding CreateAccountCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,0,8"/>
-                        <Button Content="فك القفل" Command="{Binding UnlockAccountCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,0,8"/>
-                        <Button Content="إعادة تعيين كلمة المرور" Command="{Binding ResetPasswordCommand}" Style="{StaticResource SecondaryButton}"/>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource Card}" Padding="18">
-                    <StackPanel>
-                        <TextBlock Text="إضافة دور" Style="{StaticResource EduSubsectionTitle}"/>
-                        <TextBlock Text="أنشئ ملفاً وظيفياً للشخص المحدد دون تكرار بياناته" Style="{StaticResource EduCaption}" TextWrapping="Wrap" Margin="0,3,0,12"/>
-                        <Button Content="إضافة كطالب" Command="{Binding AssignStudentRoleCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,0,8"/>
-                        <Button Content="إضافة كأستاذ" Command="{Binding AssignTeacherRoleCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,0,8"/>
-                        <Button Content="إضافة كموظف" Command="{Binding AssignEmployeeRoleCommand}" Style="{StaticResource SecondaryButton}"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Padding="18">
+                        <StackPanel>
+                            <TextBlock Text="إضافة دور" Style="{StaticResource EduSubsectionTitle}"/>
+                            <TextBlock Text="أنشئ ملفاً وظيفياً للشخص المحدد دون تكرار بياناته" Style="{StaticResource EduCaption}" TextWrapping="Wrap" Margin="0,3,0,12"/>
+                            <Button Content="إضافة كطالب" Command="{Binding AssignStudentRoleCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,0,8"/>
+                            <Button Content="إضافة كأستاذ" Command="{Binding AssignTeacherRoleCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,0,8"/>
+                            <Button Content="إضافة كموظف" Command="{Binding AssignEmployeeRoleCommand}" Style="{StaticResource SecondaryButton}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
     </Grid>
 </UserControl>

@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="EduMaster.UI.Billing.PaymentDialogView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft" Width="740" Height="650">
+﻿<UserControl x:Class="EduMaster.UI.Billing.PaymentDialogView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft" Width="740" MaxHeight="650">
     <Grid Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

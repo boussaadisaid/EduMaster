@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="EduMaster.UI.Billing.RefundDialogView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft" Width="560" Height="470">
+﻿<UserControl x:Class="EduMaster.UI.Billing.RefundDialogView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft" Width="560" MaxHeight="470">
     <Grid Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

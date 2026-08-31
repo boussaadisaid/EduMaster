@@ -90,37 +90,37 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Background="#F6F8FB" BorderBrush="#E3E8F0" BorderThickness="1"
-                                CornerRadius="8" Padding="4,1">
+                            CornerRadius="8" Padding="4,1">
                             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     Controls:TextBoxHelper.Watermark="ابحث بالاسم أو الهاتف أو الوظيفة…"
-                                     Background="Transparent" BorderThickness="0" Padding="10,8"/>
+                                 Controls:TextBoxHelper.Watermark="ابحث بالاسم أو الهاتف أو الوظيفة…"
+                                 Background="Transparent" BorderThickness="0" Padding="10,8"/>
                         </Border>
 
                         <Button Grid.Column="1" Content="↻" Command="{Binding RefreshCommand}"
-                                ToolTip="تحديث القائمة" Style="{StaticResource ToolbarButton}"
-                                MinWidth="40" Padding="10,7" Margin="10,0,0,0"/>
+                            ToolTip="تحديث القائمة" Style="{StaticResource ToolbarButton}"
+                            MinWidth="40" Padding="10,7" Margin="10,0,0,0"/>
                     </Grid>
 
                     <Grid Grid.Row="1" Margin="1,0">
                         <DataGrid Style="{StaticResource EmployeesGrid}"
-                                  ItemsSource="{Binding Employees}"
-                                  SelectedItem="{Binding SelectedEmployee}">
+                              ItemsSource="{Binding Employees}"
+                              SelectedItem="{Binding SelectedEmployee}">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="الموظف" Width="2*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding FullName}" Style="{StaticResource EduBodyStrong}"
-                                                           TextTrimming="CharacterEllipsis"/>
+                                                       TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text="{Binding JobTitle, StringFormat='الوظيفة: {0}'}"
-                                                           Style="{StaticResource EduCaption}" Margin="0,2,0,0"
-                                                           TextTrimming="CharacterEllipsis"/>
+                                                       Style="{StaticResource EduCaption}" Margin="0,2,0,0"
+                                                       TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone, TargetNullValue='—'}" Width="*"/>
-                                <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                                <DataGridTemplateColumn Header="الحالة" Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border CornerRadius="10" Padding="9,3" HorizontalAlignment="Center">
@@ -156,17 +156,17 @@
                         </DataGrid>
 
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <Border Width="56" Height="56" CornerRadius="28" Background="#EAF3FC" Margin="0,0,0,10">
                                 <TextBlock Text="👔" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="لا يوجد موظفون بعد" Style="{StaticResource EduBodyStrong}" HorizontalAlignment="Center"/>
                             <TextBlock Text="أضف أول موظف لبدء إدارة ملفه"
-                                       Style="{StaticResource EduBodyMuted}" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                                   Style="{StaticResource EduBodyMuted}" Margin="0,4,0,0" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <ProgressBar IsIndeterminate="True" Width="120" Height="4"/>
                             <TextBlock Text="جارٍ تحميل الموظفين…" Style="{StaticResource EduBodyMuted}" Margin="0,10,0,0"/>
                         </StackPanel>
@@ -174,7 +174,7 @@
 
                     <!-- لا تعطيل هنا: التعطيل على الشخص من شاشة الأشخاص (D-31) -->
                     <Border Grid.Row="2" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0"
-                            Padding="14,11" CornerRadius="0,0,10,10">
+                        Padding="14,11" CornerRadius="0,0,10,10">
                         <WrapPanel>
                             <Button Content="✎  تعديل" Command="{Binding EditCommand}" Style="{StaticResource ToolbarButton}"/>
                             <Button Content="💼  سياسة الأجر" Command="{Binding OpenPayPolicyCommand}" Style="{StaticResource ToolbarButton}"/>
@@ -195,7 +195,7 @@
                     </Grid.RowDefinitions>
 
                     <Border Background="#F8FAFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1"
-                            Padding="18,15" CornerRadius="10,10,0,0">
+                        Padding="18,15" CornerRadius="10,10,0,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -206,7 +206,7 @@
                             </Border>
                             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding SelectedEmployee.FullName, TargetNullValue='سجل أيام العمل'}"
-                                           Style="{StaticResource EduSectionTitle}" TextTrimming="CharacterEllipsis"/>
+                                       Style="{StaticResource EduSectionTitle}" TextTrimming="CharacterEllipsis"/>
                                 <TextBlock Text="التسجيل اليومي المعتمد لاحتساب الأجر" Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Grid>
@@ -215,11 +215,11 @@
                     <StackPanel Grid.Row="1" Margin="18,16,18,0">
                         <!-- بوّابة الشهري الثابت: تنبيه + تعطيل المدخلات -->
                         <Border Background="{StaticResource WarningSoftBrush}" BorderBrush="#E9D7A5" BorderThickness="1"
-                                CornerRadius="8" Padding="11,8" Margin="0,0,0,12"
-                                Visibility="{Binding IsMonthlyPolicy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            CornerRadius="8" Padding="11,8" Margin="0,0,0,12"
+                            Visibility="{Binding IsMonthlyPolicy, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="أجر شهري ثابت — تسجيل الأيام لا يدخل في الاحتساب"
-                                       Foreground="{StaticResource WarningBrush}" Style="{StaticResource EduCaption}"
-                                       TextWrapping="Wrap"/>
+                                   Foreground="{StaticResource WarningBrush}" Style="{StaticResource EduCaption}"
+                                   TextWrapping="Wrap"/>
                         </Border>
 
                         <Grid IsEnabled="{Binding CanLogWorkDays}">
@@ -234,19 +234,20 @@
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                 <TextBlock Text="ملاحظة اختيارية" Style="{StaticResource EduFieldLabel}"/>
                                 <TextBox Text="{Binding NewWorkNote, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="38" Padding="9,6"/>
+                                     Height="38" Padding="9,6"/>
                             </StackPanel>
                         </Grid>
 
                         <Button Content="＋  تسجيل يوم العمل" Command="{Binding AddWorkDayCommand}"
-                                Style="{StaticResource ToolbarPrimaryButton}" Margin="0,10,0,0"
-                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                            IsEnabled="{Binding CanLogWorkDays}"
+                            Style="{StaticResource ToolbarPrimaryButton}" Margin="0,10,0,0"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                     </StackPanel>
 
                     <Grid Grid.Row="2" Margin="18,14,18,0">
                         <DataGrid Style="{StaticResource WorkLogGrid}"
-                                  ItemsSource="{Binding WorkLog}"
-                                  SelectedItem="{Binding SelectedWorkLog}">
+                              ItemsSource="{Binding WorkLog}"
+                              SelectedItem="{Binding SelectedWorkLog}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="التاريخ" Binding="{Binding DateText}" Width="Auto"/>
                                 <DataGridTextColumn Header="الملاحظة" Binding="{Binding NoteText}" Width="*"/>
@@ -254,9 +255,9 @@
                         </DataGrid>
 
                         <TextBlock Text="لا أيام مسجلة — سجّل أول يوم من الأعلى"
-                                   Style="{StaticResource EduBodyMuted}" TextWrapping="Wrap"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Visibility="{Binding WorkLogEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                               Style="{StaticResource EduBodyMuted}" TextWrapping="Wrap"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding WorkLogEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </Grid>
 
                     <Grid Grid.Row="3" Margin="18,12,18,16">
@@ -265,22 +266,22 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Button Content="حذف اليوم المحدد" Command="{Binding RemoveWorkDayCommand}"
-                                Style="{StaticResource DangerButton}" HorizontalAlignment="Right"/>
+                            Style="{StaticResource DangerButton}" HorizontalAlignment="Right"/>
                         <TextBlock Grid.Row="1" Text="التصحيح يتم بحذف اليوم ثم إعادة تسجيله"
-                                   Style="{StaticResource EduCaption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                               Style="{StaticResource EduCaption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                     </Grid>
 
                     <!-- حالة عدم تحديد موظف -->
                     <Border Grid.RowSpan="4" Background="White" CornerRadius="10" Panel.ZIndex="5"
-                            Visibility="{Binding NoEmployeeSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        Visibility="{Binding NoEmployeeSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="30">
                             <Border Width="64" Height="64" CornerRadius="32" Background="#EEF5FC" Margin="0,0,0,14">
                                 <TextBlock Text="🗓" FontSize="27" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="اختر موظفاً" Style="{StaticResource EduSectionTitle}" HorizontalAlignment="Center"/>
                             <TextBlock Text="ستظهر هنا أيام عمله ومدخل التسجيل اليومي"
-                                       Style="{StaticResource EduBodyMuted}" TextWrapping="Wrap" TextAlignment="Center"
-                                       Margin="0,6,0,0" MaxWidth="250"/>
+                                   Style="{StaticResource EduBodyMuted}" TextWrapping="Wrap" TextAlignment="Center"
+                                   Margin="0,6,0,0" MaxWidth="250"/>
                         </StackPanel>
                     </Border>
                 </Grid>

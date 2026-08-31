@@ -61,6 +61,7 @@
                 <DataGrid Grid.Row="1" ItemsSource="{Binding Rows}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EDF1F6" VerticalGridLinesBrush="Transparent" BorderThickness="0" RowHeight="52" ColumnHeaderHeight="40">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="الطالب" Binding="{Binding FullName}" Width="2*" IsReadOnly="True"/>
+
                         <DataGridTemplateColumn Header="الحالة" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -71,9 +72,10 @@
                                                     <Setter Property="MinHeight" Value="32"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsPresent}" Value="True">
-                                                            <Setter Property="Background" Value="{StaticResource PositiveSoftBrush}"/>
-                                                            <Setter Property="Foreground" Value="{StaticResource PositiveBrush}"/>
-                                                            <Setter Property="BorderBrush" Value="#B7DFB7"/>
+                                                            <Setter Property="Background" Value="#BBF0C4"/>
+                                                            <Setter Property="Foreground" Value="#15803D"/>
+                                                            <Setter Property="BorderBrush" Value="#7FCF8F"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -85,9 +87,10 @@
                                                     <Setter Property="MinHeight" Value="32"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsAbsent}" Value="True">
-                                                            <Setter Property="Background" Value="{StaticResource NegativeSoftBrush}"/>
-                                                            <Setter Property="Foreground" Value="{StaticResource NegativeBrush}"/>
-                                                            <Setter Property="BorderBrush" Value="#F1B8BE"/>
+                                                            <Setter Property="Background" Value="#F5A3A3"/>
+                                                            <Setter Property="Foreground" Value="#B91C1C"/>
+                                                            <Setter Property="BorderBrush" Value="#E27878"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -99,9 +102,10 @@
                                                     <Setter Property="MinHeight" Value="32"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsJustified}" Value="True">
-                                                            <Setter Property="Background" Value="{StaticResource WarningSoftBrush}"/>
-                                                            <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
-                                                            <Setter Property="BorderBrush" Value="#E9D7A5"/>
+                                                            <Setter Property="Background" Value="#FCD780"/>
+                                                            <Setter Property="Foreground" Value="#92400E"/>
+                                                            <Setter Property="BorderBrush" Value="#E8B84B"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -111,6 +115,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+                        
                         <DataGridTemplateColumn Header="ملاحظة" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

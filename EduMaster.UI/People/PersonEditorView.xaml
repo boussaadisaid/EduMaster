@@ -1,4 +1,7 @@
-﻿<UserControl x:Class="EduMaster.UI.People.PersonEditorView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft" Width="650" Height="590">
+﻿<UserControl x:Class="EduMaster.UI.People.PersonEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+             FlowDirection="RightToLeft" Width="650" MaxHeight="590">
     <Grid Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

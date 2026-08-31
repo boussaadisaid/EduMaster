@@ -109,29 +109,45 @@
                                     <DataTemplate>
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Topic, TargetNullValue='بلا موضوع'}" Style="{StaticResource EduBodyStrong}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock><Run Text="{Binding DurationMinutes, Mode=OneWay}"/><Run Text=" د · "/><Run Text="{Binding ActiveEnrolledCount, Mode=OneWay}"/><Run Text=" متوقع · "/><Run Text="{Binding SourceText, Mode=OneWay}"/></TextBlock>
+                                            <TextBlock Style="{StaticResource EduCaption}" Margin="0,2,0,0">
+                                                <Run Text="{Binding DurationMinutes, Mode=OneWay}"/><Run Text=" د · "/><Run Text="{Binding ActiveEnrolledCount, Mode=OneWay}"/><Run Text=" متوقع · "/><Run Text="{Binding SourceText, Mode=OneWay}"/>
+                                            </TextBlock>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="الحالة" Width="Auto">
+                            <DataGridTemplateColumn Header="الحالة" Width="80">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="10" Padding="9,3">
+                                        <Border CornerRadius="10" Padding="10,4">
                                             <Border.Style>
                                                 <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#EEF5FC"/>
+                                                    <Setter Property="Background" Value="#BFDBFE"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding StatusText}" Value="مُقامة">
-                                                            <Setter Property="Background" Value="{StaticResource PositiveSoftBrush}"/>
+                                                            <Setter Property="Background" Value="#BBF0C4"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding StatusText}" Value="ملغاة">
-                                                            <Setter Property="Background" Value="#EEF1F5"/>
+                                                            <Setter Property="Background" Value="#E2E4E9"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
-                                            <TextBlock Text="{Binding StatusText}" Style="{StaticResource EduCaption}"/>
+                                            <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" FontSize="12">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#1D4ED8"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding StatusText}" Value="مُقامة">
+                                                                <Setter Property="Foreground" Value="#15803D"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding StatusText}" Value="ملغاة">
+                                                                <Setter Property="Foreground" Value="#374151"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
                                         </Border>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
