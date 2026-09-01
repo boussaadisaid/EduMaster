@@ -10,6 +10,7 @@ using EduMaster.Application.Billing;
 using EduMaster.Application.ClassGroups;
 using EduMaster.Application.Employees;
 using EduMaster.Application.Enrollments;
+using EduMaster.Application.Expenses;
 using EduMaster.Application.Payroll;
 using EduMaster.Application.People;
 using EduMaster.Application.Pricing;
@@ -165,6 +166,17 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<RegisterPayoutHandler>();
             services.AddTransient<GetPayrollBalancesHandler>();
             services.AddTransient<GetPayeePayoutsHandler>();
+
+            // Expenses — المصاريف التشغيلية
+            services.AddTransient<GetExpenseCategoriesHandler>();
+            services.AddTransient<CreateExpenseCategoryHandler>();
+            services.AddTransient<UpdateExpenseCategoryHandler>();
+            services.AddTransient<DeactivateExpenseCategoryHandler>();
+            services.AddTransient<ActivateExpenseCategoryHandler>();
+            services.AddTransient<GetExpensesHandler>();
+            services.AddTransient<AddExpenseHandler>();
+            services.AddTransient<UpdateExpenseHandler>();
+            services.AddTransient<RemoveExpenseHandler>();
 
             // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم باثنين — جديد 6.1-ب
             services.AddTransient<GetPaymentMovementReportHandler>();

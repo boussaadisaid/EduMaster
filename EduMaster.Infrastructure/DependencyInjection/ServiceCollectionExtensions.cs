@@ -7,6 +7,7 @@ using EduMaster.Infrastructure.Billing;
 using EduMaster.Infrastructure.ClassGroups;
 using EduMaster.Infrastructure.Employees;
 using EduMaster.Infrastructure.Enrollments;
+using EduMaster.Infrastructure.Expenses;
 using EduMaster.Infrastructure.Files;
 using EduMaster.Infrastructure.Payroll;
 using EduMaster.Infrastructure.People;
@@ -84,6 +85,11 @@ namespace EduMaster.Infrastructure.DependencyInjection
 
             // Payroll (F5 — الشريحة 5.3: الصرف)   //  سطر التحقق: القسم بواحد — جديد 5.3-ج
             services.AddScoped<IPayoutRepository, PayoutRepository>();
+
+            // Expenses — المصاريف التشغيلية
+            services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
+            services.AddScoped<IExpenseRepository, ExpenseRepository>();
+
 
             // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم بواحد — جديد 6.1-ب
             services.AddScoped<IReportRepository, ReportRepository>();

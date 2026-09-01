@@ -6,6 +6,7 @@ using EduMaster.UI.ClassGroups;
 using EduMaster.UI.Common.MVVM;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Employees;
+using EduMaster.UI.Expenses;
 using EduMaster.UI.Payroll;
 using EduMaster.UI.People;
 using EduMaster.UI.Reports;
@@ -103,6 +104,14 @@ namespace EduMaster.UI
                 CurrentScreenKey = "Payroll";
                 await vm.InitializeAsync();
             });
+            // F5 — المصاريف التشغيلية
+            NavigateToExpensesCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<ExpenseViewModel>();
+                CurrentViewModel = vm;
+                CurrentScreenKey = "Expenses";
+                await vm.InitializeAsync();
+            });
             // F6 — الشريحة 6.1: التقارير (D-127)
             NavigateToReportsCommand = new AsyncRelayCommand(async () =>
             {
@@ -118,6 +127,7 @@ namespace EduMaster.UI
                 CurrentScreenKey = "AcademicStructure";
                 await vm.InitializeAsync();
             });
+           
             CurrentViewModel = _services.GetRequiredService<HomeViewModel>();      // الشاشة الافتتاحية
 
             // 6.5 — ن-4: تذكير النسخ الاحتياطي عند الدخول — قناة fire-and-forget محصّنة (D-69)
@@ -148,8 +158,10 @@ namespace EduMaster.UI
         public AsyncRelayCommand NavigateToSessionsCommand { get; }
         public AsyncRelayCommand NavigateToFinanceCommand { get; }
         public AsyncRelayCommand NavigateToPayrollCommand { get; }   // جديد هـ-2
+        public AsyncRelayCommand NavigateToExpensesCommand { get; }
         public AsyncRelayCommand NavigateToReportsCommand { get; }   // جديد 6.1-ج
         public AsyncRelayCommand NavigateToAcademicStructureCommand { get; }
+        
 
         /// <summary>تذكير النسخ الاحتياطي عند الدخول (6.5 — ن-4): لا نسخة أبداً أو مضى عليها >7 أيام ← تحذيري — القرار في السياسة النقية المختبَرة · فشل الفحص يُسجَّل إنجليزياً ولا يُزعج الدخول (D-69)</summary>
         private async Task CheckBackupReminderAsync()
