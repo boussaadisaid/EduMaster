@@ -17,13 +17,14 @@ public sealed class RegisterRefundHandlerTests
     {
         var payments = new FakePaymentRepository { NextReceiptNo = 42, UnallocatedValue = availableCredit };
         var uow = new FakeUnitOfWork();
-        var handler = new RegisterRefundHandler(payments, new FakeClock(), new FakeCurrentUserService(), uow,
-            NullLogger<RegisterRefundHandler>.Instance);
+        var treasuryAccounts = new FakeTreasuryAccountRepository();
+        var handler = new RegisterRefundHandler(payments, new FakeClock(), new FakeCurrentUserService(),
+            treasuryAccounts, uow, NullLogger<RegisterRefundHandler>.Instance);
         return (handler, payments, uow);
     }
 
     private static RegisterRefundRequest Refund(long amount, string reason = "استرجاع زائدة بعد التسوية") =>
-        new(StudentId: 2, AmountCentimes: amount, PaidOn: new DateOnly(2026, 8, 23), Reason: reason);
+        new(StudentId: 2, TreasuryAccountId: 1, AmountCentimes: amount, PaidOn: new DateOnly(2026, 8, 23), Reason: reason);
 
     [Fact]
     public async Task WithinCredit_WritesRefundReceipt_InOneCommit_WithoutAllocations()
@@ -91,7 +92,7 @@ public sealed class RegisterRefundHandlerTests
         var (handler, payments, uow) = Build(availableCredit: 50000);
 
         var result = await handler.ExecuteAsync(
-            new RegisterRefundRequest(2, 30000, new DateOnly(2026, 8, 30), "سبب"));   // اليوم المزيّف 2026-08-23
+            new RegisterRefundRequest(2, 1, 30000, new DateOnly(2026, 8, 30), "سبب"));   // اليوم المزيّف 2026-08-23
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);

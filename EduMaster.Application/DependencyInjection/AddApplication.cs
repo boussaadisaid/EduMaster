@@ -9,8 +9,8 @@ using EduMaster.Application.Backup;
 using EduMaster.Application.Billing;
 using EduMaster.Application.ClassGroups;
 using EduMaster.Application.Employees;
-using EduMaster.Application.Enrollments;
 using EduMaster.Application.Expenses;
+using EduMaster.Application.Enrollments;
 using EduMaster.Application.Payroll;
 using EduMaster.Application.People;
 using EduMaster.Application.Pricing;
@@ -20,6 +20,7 @@ using EduMaster.Application.Scheduling;
 using EduMaster.Application.Settings;
 using EduMaster.Application.Students;
 using EduMaster.Application.Teachers;
+using EduMaster.Application.Treasury;
 using EduMaster.Application.Users;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -177,6 +178,20 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<AddExpenseHandler>();
             services.AddTransient<UpdateExpenseHandler>();
             services.AddTransient<RemoveExpenseHandler>();
+
+            // Treasury — الخزينة
+            services.AddTransient<GetTreasuryAccountsHandler>();
+            services.AddTransient<CreateTreasuryAccountHandler>();
+            services.AddTransient<UpdateTreasuryAccountHandler>();
+            services.AddTransient<DeactivateTreasuryAccountHandler>();
+            services.AddTransient<ActivateTreasuryAccountHandler>();
+            services.AddTransient<AddTreasuryTransactionHandler>();
+            services.AddTransient<UpdateTreasuryTransactionHandler>();
+            services.AddTransient<RemoveTreasuryTransactionHandler>();
+            services.AddTransient<AddTreasuryTransferHandler>();
+            services.AddTransient<RemoveTreasuryTransferHandler>();
+            services.AddTransient<GetTreasuryMovementsHandler>();
+            services.AddTransient<GetTreasurySummaryHandler>();
 
             // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم باثنين — جديد 6.1-ب
             services.AddTransient<GetPaymentMovementReportHandler>();

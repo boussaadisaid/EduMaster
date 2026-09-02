@@ -36,26 +36,11 @@
                         <Button Content="🗓  جدول استعمال الزمن" Tag="Timetable" Style="{StaticResource NavButton}" Command="{Binding NavigateToTimetableCommand}"/>
                         <Button Content="✅  الحصص" Tag="Sessions" Style="{StaticResource NavButton}" Command="{Binding NavigateToSessionsCommand}"/>
                         <TextBlock Text="المالية والمتابعة" Style="{StaticResource NavGroupHeader}"/>
-                        <Button Content="💰  المالية"
-        Tag="Finance"
-        Style="{StaticResource NavButton}"
-        Command="{Binding NavigateToFinanceCommand}"/>
-
-                        <Button Content="💼  الأجور"
-        Tag="Payroll"
-        Style="{StaticResource NavButton}"
-        Command="{Binding NavigateToPayrollCommand}"/>
-
-                        <Button Content="💸  المصاريف"
-        Tag="Expenses"
-        Style="{StaticResource NavButton}"
-        Command="{Binding NavigateToExpensesCommand}"/>
-
-                        <Button Content="📊  التقارير"
-        Tag="Reports"
-        Style="{StaticResource NavButton}"
-        Command="{Binding NavigateToReportsCommand}"/>
-                        
+                        <Button Content="💰  المالية" Tag="Finance" Style="{StaticResource NavButton}" Command="{Binding NavigateToFinanceCommand}"/>
+                        <Button Content="💼  الأجور" Tag="Payroll" Style="{StaticResource NavButton}" Command="{Binding NavigateToPayrollCommand}"/>
+                        <Button Content="🏦  الخزينة" Tag="Treasury" Style="{StaticResource NavButton}" Command="{Binding NavigateToTreasuryCommand}"/>
+                        <Button Content="💸  المصاريف" Tag="Expenses" Style="{StaticResource NavButton}" Command="{Binding NavigateToExpensesCommand}"/>
+                        <Button Content="📊  التقارير" Tag="Reports" Style="{StaticResource NavButton}" Command="{Binding NavigateToReportsCommand}"/>
                         <TextBlock Text="الإعدادات" Style="{StaticResource NavGroupHeader}"/>
                         <Button Content="📅  السنوات الدراسية" Tag="AcademicYears" Style="{StaticResource NavButton}" Command="{Binding NavigateToAcademicYearsCommand}"/>
                         <Button Content="🏫  البنية الأكاديمية" Tag="AcademicStructure" Style="{StaticResource NavButton}" Command="{Binding NavigateToAcademicStructureCommand}"/>

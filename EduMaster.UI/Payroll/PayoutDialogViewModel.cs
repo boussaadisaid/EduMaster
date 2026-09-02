@@ -1,6 +1,7 @@
 ﻿using EduMaster.Application.Common;
 using EduMaster.Application.Employees;
 using EduMaster.Application.Payroll;
+using EduMaster.Application.Treasury;
 using EduMaster.Application.Teachers;
 using EduMaster.Domain.Payroll;
 using EduMaster.UI.Common;
@@ -44,6 +45,12 @@ public sealed class PayoutDialogViewModel : BaseViewModel, IDialogViewModel
     }
 
     public string Title => "💵 صرف أجر";
+    public ObservableCollection<TreasuryAccountItem> TreasuryAccounts { get; } = new();
+    private TreasuryAccountItem? _selectedTreasuryAccount;
+    public TreasuryAccountItem? SelectedTreasuryAccount { get => _selectedTreasuryAccount; set => SetProperty(ref _selectedTreasuryAccount, value); }
+    private DateTime? _payoutDate = DateTime.Today;
+    public DateTime? PayoutDate { get => _payoutDate; set => SetProperty(ref _payoutDate, value); }
+
     public event EventHandler<bool>? CloseRequested;
 
     private string _headerText = "💵 صرف أجر";
@@ -150,6 +157,7 @@ public sealed class PayoutDialogViewModel : BaseViewModel, IDialogViewModel
         PayeeName = payeeName;
         HeaderText = $"💵 صرف أجر — {payeeName}";
 
+        await LoadTreasuryAccountsAsync();
         await ReloadAsync();
 
         AmountText = _balanceCentimes > 0 ? MoneyInput.FormatDinars(_balanceCentimes) : string.Empty;   // المقترح = البقية
@@ -205,8 +213,26 @@ public sealed class PayoutDialogViewModel : BaseViewModel, IDialogViewModel
         _payeeId = payee.Id;
         PayeeName = payee.Name;
 
+        await LoadTreasuryAccountsAsync();
         await ReloadAsync();
         AmountText = _balanceCentimes > 0 ? MoneyInput.FormatDinars(_balanceCentimes) : string.Empty;
+    }
+
+    private async Task LoadTreasuryAccountsAsync()
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var result = await scope.ServiceProvider.GetRequiredService<GetTreasuryAccountsHandler>().ExecuteAsync(true);
+        if (!result.IsSuccess)
+        {
+            _notifier.ShowError(result.ErrorMessage!);
+            return;
+        }
+
+        TreasuryAccounts.Clear();
+        foreach (var account in result.Value!)
+            TreasuryAccounts.Add(account);
+
+        SelectedTreasuryAccount ??= TreasuryAccounts.FirstOrDefault();
     }
 
     private async Task ReloadAsync()
@@ -264,6 +290,16 @@ public sealed class PayoutDialogViewModel : BaseViewModel, IDialogViewModel
             _notifier.ShowWarning("اختر المستفيد أولاً.");
             return;
         }
+        if (SelectedTreasuryAccount is null)
+        {
+            _notifier.ShowWarning("اختر الحساب المالي الذي سيُصرف منه المبلغ.");
+            return;
+        }
+        if (PayoutDate is null || PayoutDate.Value.Date > DateTime.Today)
+        {
+            _notifier.ShowWarning("اختر تاريخ صرف صحيحاً لا يتجاوز اليوم.");
+            return;
+        }
         if (!MoneyInput.TryParseDinars(AmountText, out var amount) || amount <= 0)
         {
             _notifier.ShowWarning("أدخل مبلغاً صحيحاً بالدينار أكبر من صفر.");
@@ -281,7 +317,7 @@ public sealed class PayoutDialogViewModel : BaseViewModel, IDialogViewModel
             _payeeKind,
             _payeeKind == PayeeKind.Teacher ? _payeeId : null,
             _payeeKind == PayeeKind.Employee ? _payeeId : null,
-            _runId, amount, NoteText));
+            _runId, SelectedTreasuryAccount?.Id ?? 0, PayoutDate is null ? DateOnly.FromDateTime(DateTime.Today) : DateOnly.FromDateTime(PayoutDate.Value), amount, NoteText));
 
         if (result.IsSuccess)
         {
@@ -313,6 +349,8 @@ public sealed class PayoutDialogViewModel : BaseViewModel, IDialogViewModel
             _payeeKind == PayeeKind.Teacher ? _payeeId : null,
             _payeeKind == PayeeKind.Employee ? _payeeId : null,
             receipt.PayrollRunId,   // نفس مرجع الأصل — معلوماتي
+            receipt.TreasuryAccountId,
+            DateOnly.FromDateTime(DateTime.Today),
             -receipt.AmountCentimes,
             $"تصحيح إيصال رقم {receipt.ReceiptNo}"));
 

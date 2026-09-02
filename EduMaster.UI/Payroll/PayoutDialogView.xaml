@@ -47,7 +47,22 @@
                         <Border Background="#F7F9FC" BorderBrush="#E3E8F0" BorderThickness="1" CornerRadius="8" Padding="14,11" Margin="0,10,0,16">
                             <TextBlock Text="{Binding BreakdownText}" Style="{StaticResource EduBodyStrong}" TextWrapping="Wrap"/>
                         </Border>
-                        <Grid>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="180"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Text="الحساب المالي *" Style="{StaticResource EduFieldLabel}"/>
+                                <ComboBox ItemsSource="{Binding TreasuryAccounts}" SelectedItem="{Binding SelectedTreasuryAccount}" DisplayMemberPath="Name" Height="40" Padding="10,6"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0,8,0">
+                                <TextBlock Text="تاريخ الصرف *" Style="{StaticResource EduFieldLabel}"/>
+                                <DatePicker SelectedDate="{Binding PayoutDate}" Language="ar-DZ" Height="40"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="220"/>
                                 <ColumnDefinition Width="*"/>
@@ -130,7 +145,7 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAtUtc, StringFormat='yyyy-MM-dd'}" Width="Auto"/>
+                                    <DataGridTextColumn Header="تاريخ الصرف" Binding="{Binding PayoutDate}" Width="Auto"/>
                                     <DataGridTextColumn Header="الملاحظة" Binding="{Binding Note, TargetNullValue='—'}" Width="*"/>
                                 </DataGrid.Columns>
                             </DataGrid>

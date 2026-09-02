@@ -19,7 +19,7 @@ public sealed record PayeeBalanceItem(PayeeKind PayeeKind, int PayeeId, string P
 }
 
 /// <summary>صف إيصال صرف في سجل المستفيد — السالب = قيد تصحيح (س-5).</summary>
-public sealed record PayoutItem(int Id, int ReceiptNo, long AmountCentimes, string? Note, int? PayrollRunId, DateTime CreatedAtUtc)
+public sealed record PayoutItem(int Id, int ReceiptNo, long AmountCentimes, string? Note, int? PayrollRunId, int TreasuryAccountId, DateOnly PayoutDate, DateTime CreatedAtUtc)
 {
     public bool IsCorrection => AmountCentimes < 0;
 }

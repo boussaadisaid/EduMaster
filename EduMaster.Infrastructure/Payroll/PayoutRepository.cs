@@ -18,14 +18,15 @@ public sealed class PayoutRepository : IPayoutRepository
 
     // ⚠ D-81: ترتيب السجل = ترتيب أعمدة الـSELECT حرفياً
     private sealed record PayoutRow(int Id, int ReceiptNo, byte PayeeKind, int? TeacherId, int? EmployeeId,
-        int? PayrollRunId, long AmountCentimes, string? Note, DateTime CreatedAtUtc, int? CreatedByUserId);
+        int? PayrollRunId, int TreasuryAccountId, DateTime PayoutDate, long AmountCentimes, string? Note, DateTime CreatedAtUtc, int? CreatedByUserId);
 
     private sealed record PayeeTotalRow(byte PayeeKind, int? PayeeId, long Total);
 
-    private const string Columns = "Id, ReceiptNo, PayeeKind, TeacherId, EmployeeId, PayrollRunId, AmountCentimes, Note, CreatedAtUtc, CreatedByUserId";
+    private const string Columns = "Id, ReceiptNo, PayeeKind, TeacherId, EmployeeId, PayrollRunId, TreasuryAccountId, PayoutDate, AmountCentimes, Note, CreatedAtUtc, CreatedByUserId";
 
     private static Payout Map(PayoutRow row) => Payout.Load(
         row.Id, row.ReceiptNo, (PayeeKind)row.PayeeKind, row.TeacherId, row.EmployeeId, row.PayrollRunId,
+        row.TreasuryAccountId, DateOnly.FromDateTime(row.PayoutDate),
         row.AmountCentimes, row.Note, row.CreatedAtUtc, row.CreatedByUserId);
 
     public async Task AddAsync(Payout payout, CancellationToken cancellationToken = default)
@@ -33,9 +34,9 @@ public sealed class PayoutRepository : IPayoutRepository
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-INSERT INTO dbo.Payouts (ReceiptNo, PayeeKind, TeacherId, EmployeeId, PayrollRunId, AmountCentimes, Note, CreatedAtUtc, CreatedByUserId)
+INSERT INTO dbo.Payouts (ReceiptNo, PayeeKind, TeacherId, EmployeeId, PayrollRunId, TreasuryAccountId, PayoutDate, AmountCentimes, Note, CreatedAtUtc, CreatedByUserId)
 OUTPUT INSERTED.Id
-VALUES (@ReceiptNo, @PayeeKind, @TeacherId, @EmployeeId, @PayrollRunId, @AmountCentimes, @Note, @CreatedAtUtc, @CreatedByUserId);";
+VALUES (@ReceiptNo, @PayeeKind, @TeacherId, @EmployeeId, @PayrollRunId, @TreasuryAccountId, @PayoutDate, @AmountCentimes, @Note, @CreatedAtUtc, @CreatedByUserId);";
 
         var newId = await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, new
@@ -45,6 +46,8 @@ VALUES (@ReceiptNo, @PayeeKind, @TeacherId, @EmployeeId, @PayrollRunId, @AmountC
                 payout.TeacherId,
                 payout.EmployeeId,
                 payout.PayrollRunId,
+                payout.TreasuryAccountId,
+                PayoutDate = payout.PayoutDate.ToDateTime(TimeOnly.MinValue),
                 payout.AmountCentimes,
                 payout.Note,
                 payout.CreatedAtUtc,

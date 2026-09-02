@@ -26,7 +26,7 @@ public sealed class GetPayeePayoutsHandler
             var payouts = await _payouts.GetForPayeeAsync(request.PayeeKind, request.PayeeId, cancellationToken);
 
             var items = payouts
-                .Select(p => new PayoutItem(p.Id, p.ReceiptNo, p.AmountCentimes, p.Note, p.PayrollRunId, p.CreatedAtUtc))
+                .Select(p => new PayoutItem(p.Id, p.ReceiptNo, p.AmountCentimes, p.Note, p.PayrollRunId, p.TreasuryAccountId, p.PayoutDate, p.CreatedAtUtc))
                 .ToList();
 
             return OperationResult<IReadOnlyList<PayoutItem>>.Success(items);

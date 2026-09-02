@@ -103,13 +103,14 @@ public sealed class RegisterPayoutHandlerTests
         };
         var teachers = new TeacherRepoFake { TeacherToReturn = teacherExists ? BuildTeacher(payeeId) : null };
         var uow = new FakeUnitOfWork();
+        var treasuryAccounts = new FakeTreasuryAccountRepository();
         var handler = new RegisterPayoutHandler(payouts, lines, teachers, new EmployeeRepoFake(),
-            new FakeClock(), new FakeCurrentUserService(), uow, NullLogger<RegisterPayoutHandler>.Instance);
+            treasuryAccounts, new FakeClock(), new FakeCurrentUserService(), uow, NullLogger<RegisterPayoutHandler>.Instance);
         return (handler, payouts, uow);
     }
 
     private static RegisterPayoutRequest PayTeacher(long amountCentimes, string? note = null, int teacherId = 7)
-        => new(PayeeKind.Teacher, teacherId, null, null, amountCentimes, note);
+        => new(PayeeKind.Teacher, teacherId, null, null, 1, new DateOnly(2026, 8, 23), amountCentimes, note);
 
     // ---------- الاختبارات ----------
     [Fact]

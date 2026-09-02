@@ -14,6 +14,7 @@ namespace EduMaster.Domain.Billing
         public int ReceiptNo { get; private set; }
         public int StudentId { get; private set; }
         public int? PaidByPersonId { get; private set; }
+        public int TreasuryAccountId { get; private set; }
         public PaymentKind Kind { get; private set; }
         public long AmountCentimes { get; private set; }
         public DateOnly PaidOn { get; private set; }
@@ -25,13 +26,17 @@ namespace EduMaster.Domain.Billing
 
         private bool _idSet;
 
-        private Payment(int studentId, int? paidByPersonId, PaymentKind kind, long amountCentimes, DateOnly paidOn,
+        private Payment(int studentId, int? paidByPersonId, int treasuryAccountId, PaymentKind kind, long amountCentimes, DateOnly paidOn,
             string? note, int receiptNo, DateTime createdAtUtc, int? createdByUserId, DateTime? updatedAtUtc, int? updatedByUserId)
         {
             if (studentId <= 0)
                 throw new DomainException("الإيصال يجب أن يتبع طالباً.");
             if (!Enum.IsDefined(kind))
                 throw new DomainException("نوع الإيصال غير صالح.");
+            if (treasuryAccountId <= 0)
+                throw new DomainException("الإيصال يجب أن يرتبط بحساب مالي.");
+            if (treasuryAccountId <= 0)
+                throw new DomainException("الإيصال يجب أن يرتبط بحساب مالي.");
             if (amountCentimes <= 0)
                 throw new DomainException("مبلغ الإيصال يجب أن يكون أكبر من صفر.");
             if (receiptNo <= 0)
@@ -41,6 +46,7 @@ namespace EduMaster.Domain.Billing
 
             StudentId = studentId;
             PaidByPersonId = paidByPersonId;
+            TreasuryAccountId = treasuryAccountId;
             Kind = kind;
             AmountCentimes = amountCentimes;
             PaidOn = paidOn;
@@ -53,10 +59,10 @@ namespace EduMaster.Domain.Billing
         }
 
         /// <summary>receiptNo يُحسب داخل معاملة التسجيل (GetNextReceiptNoAsync) — والفهرس الفريد يحرسه (D-105)</summary>
-        public static Payment Create(int studentId, int? paidByPersonId, PaymentKind kind, long amountCentimes, DateOnly paidOn,
+        public static Payment Create(int studentId, int? paidByPersonId, int treasuryAccountId, PaymentKind kind, long amountCentimes, DateOnly paidOn,
             string? note, int receiptNo, DateTime utcNow, int? createdByUserId)
         {
-            return new Payment(studentId, paidByPersonId, kind, amountCentimes, paidOn, note,
+            return new Payment(studentId, paidByPersonId, treasuryAccountId, kind, amountCentimes, paidOn, note,
                 receiptNo, utcNow, createdByUserId, null, null);
         }
 

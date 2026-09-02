@@ -41,6 +41,8 @@
                                 <DatePicker SelectedDate="{Binding PaidOn}" Height="40"/>
                             </StackPanel>
                         </Grid>
+                        <TextBlock Text="الحساب المالي *" Style="{StaticResource EduFieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding TreasuryAccounts}" SelectedItem="{Binding SelectedTreasuryAccount}" DisplayMemberPath="Name" Height="40" Margin="0,0,0,12"/>
                         <TextBlock Text="سبب الاسترجاع *" Style="{StaticResource EduFieldLabel}"/>
                         <TextBox Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}" Height="40" Padding="10,6"/>
                         <TextBlock Text="يسجل الاسترجاع إيصال صرف موثقاً وينقص الزائدة الدائنة فوراً." Style="{StaticResource EduCaption}" Margin="0,6,0,0" TextWrapping="Wrap"/>

@@ -20,6 +20,8 @@ public sealed class Payout
     public int? EmployeeId { get; private set; }
 
     public int? PayrollRunId { get; private set; }   // «ضمن كشف…» — معلوماتي: الصرف على الرصيد الجاري لا على السطر
+    public int TreasuryAccountId { get; private set; }
+    public DateOnly PayoutDate { get; private set; }
     public long AmountCentimes { get; private set; }  // موجب = صرف · سالب = قيد تصحيح (بملاحظة إلزامية)
     public string? Note { get; private set; }
 
@@ -32,10 +34,12 @@ public sealed class Payout
 
     public static Payout Create(
         PayeeKind payeeKind, int? teacherId, int? employeeId, int? payrollRunId,
-        long amountCentimes, string? note, int receiptNo,
+        int treasuryAccountId, DateOnly payoutDate, long amountCentimes, string? note, int receiptNo,
         DateTime createdAtUtc, int? createdByUserId)
     {
         GuardPayee(payeeKind, teacherId, employeeId);
+        if (treasuryAccountId <= 0)
+            throw new DomainException("إيصال الصرف يجب أن يرتبط بحساب مالي.");
         if (amountCentimes == 0)
             throw new DomainException("مبلغ الإيصال لا يمكن أن يكون صفراً.");
         if (amountCentimes < 0 && string.IsNullOrWhiteSpace(note))
@@ -53,6 +57,8 @@ public sealed class Payout
             TeacherId = teacherId,
             EmployeeId = employeeId,
             PayrollRunId = payrollRunId,
+            TreasuryAccountId = treasuryAccountId,
+            PayoutDate = payoutDate,
             AmountCentimes = amountCentimes,
             Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
             ReceiptNo = receiptNo,
@@ -82,7 +88,7 @@ public sealed class Payout
 
     // إعادة تحميل من القاعدة — بلا حُراس (مرآة المخزَّن)
     private Payout(int id, int receiptNo, PayeeKind payeeKind, int? teacherId, int? employeeId, int? payrollRunId,
-        long amountCentimes, string? note, DateTime createdAtUtc, int? createdByUserId)
+        int treasuryAccountId, DateOnly payoutDate, long amountCentimes, string? note, DateTime createdAtUtc, int? createdByUserId)
     {
         Id = id; _idSet = true;
         ReceiptNo = receiptNo;
@@ -90,6 +96,8 @@ public sealed class Payout
         TeacherId = teacherId;
         EmployeeId = employeeId;
         PayrollRunId = payrollRunId;
+        TreasuryAccountId = treasuryAccountId;
+        PayoutDate = payoutDate;
         AmountCentimes = amountCentimes;
         Note = note;
         CreatedAtUtc = createdAtUtc;
@@ -97,6 +105,6 @@ public sealed class Payout
     }
 
     public static Payout Load(int id, int receiptNo, PayeeKind payeeKind, int? teacherId, int? employeeId, int? payrollRunId,
-        long amountCentimes, string? note, DateTime createdAtUtc, int? createdByUserId)
-        => new(id, receiptNo, payeeKind, teacherId, employeeId, payrollRunId, amountCentimes, note, createdAtUtc, createdByUserId);
+        int treasuryAccountId, DateOnly payoutDate, long amountCentimes, string? note, DateTime createdAtUtc, int? createdByUserId)
+        => new(id, receiptNo, payeeKind, teacherId, employeeId, payrollRunId, treasuryAccountId, payoutDate, amountCentimes, note, createdAtUtc, createdByUserId);
 }

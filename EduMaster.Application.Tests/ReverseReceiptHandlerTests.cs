@@ -13,7 +13,7 @@ namespace EduMaster.Application.Tests;
 public class ReverseReceiptHandlerTests
 {
     private static ReceiptReversalInfoRaw ReceiptInfo(bool alreadyReversed = false, byte kind = 1) =>
-        new(StudentId: 9, Kind: kind, AmountCentimes: 140000, ReceiptNo: 41, AlreadyReversed: alreadyReversed);
+        new(StudentId: 9, TreasuryAccountId: 1, Kind: kind, AmountCentimes: 140000, ReceiptNo: 41, AlreadyReversed: alreadyReversed);
 
     private static (ReverseReceiptHandler handler, FakePaymentRepository payments, FakeUnitOfWork uow) Build(
         ReceiptReversalInfoRaw? info)

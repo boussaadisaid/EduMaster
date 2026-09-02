@@ -60,7 +60,7 @@ public sealed class ReverseReceiptHandler
             var receiptNo = await _payments.GetNextReceiptNoAsync(cancellationToken);
 
             var reversal = Domain.Billing.Payment.Create(
-                info.StudentId, null, PaymentKind.Refund, info.AmountCentimes, _clock.Today,
+                info.StudentId, null, info.TreasuryAccountId, PaymentKind.Refund, info.AmountCentimes, _clock.Today,
                 $"↩ عكس الإيصال #{info.ReceiptNo:000000} — {request.Reason.Trim()}", receiptNo, utcNow, userId);
             await _payments.AddAsync(reversal, cancellationToken);
 

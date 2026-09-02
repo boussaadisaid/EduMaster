@@ -12,22 +12,24 @@ namespace EduMaster.Application.Billing;
 /// حارس «المبلغ ≤ الزائدة المتاحة» إلزامي (لا صرف من الهواء) · سبب إلزامي (مال خارج يُوثَّق) · لا تخصيص أبداً للصرف.
 /// يعيد رقم الإيصال للـToast.
 /// </summary>
-public sealed record RegisterRefundRequest(int StudentId, long AmountCentimes, DateOnly PaidOn, string Reason);
+public sealed record RegisterRefundRequest(int StudentId, int TreasuryAccountId, long AmountCentimes, DateOnly PaidOn, string Reason);
 
 public sealed class RegisterRefundHandler
 {
     private readonly IPaymentRepository _payments;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
+    private readonly ITreasuryAccountRepository _treasuryAccounts;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<RegisterRefundHandler> _logger;
 
-    public RegisterRefundHandler(IPaymentRepository payments, IClock clock, ICurrentUserService currentUser,
+    public RegisterRefundHandler(IPaymentRepository payments, IClock clock, ICurrentUserService currentUser, ITreasuryAccountRepository treasuryAccounts,
         IUnitOfWork unitOfWork, ILogger<RegisterRefundHandler> logger)
     {
         _payments = payments;
         _clock = clock;
         _currentUser = currentUser;
+        _treasuryAccounts = treasuryAccounts;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -45,6 +47,12 @@ public sealed class RegisterRefundHandler
 
         try
         {
+            var treasuryAccount = await _treasuryAccounts.GetByIdAsync(request.TreasuryAccountId, cancellationToken);
+            if (treasuryAccount is null)
+                return OperationResult<int>.Failure("الحساب المالي غير موجود.", ErrorType.NotFound);
+            if (!treasuryAccount.IsActive)
+                return OperationResult<int>.Failure("الحساب المالي معطّل.", ErrorType.BusinessRule);
+
             // الحارس الأهم: الصرف من الزائدة الدائنة فقط (D-108)
             var availableCredit = await _payments.GetUnallocatedForStudentAsync(request.StudentId, cancellationToken);
             if (request.AmountCentimes > availableCredit)
@@ -60,7 +68,7 @@ public sealed class RegisterRefundHandler
             var receiptNo = await _payments.GetNextReceiptNoAsync(cancellationToken);
 
             var refund = Domain.Billing.Payment.Create(
-                request.StudentId, null, PaymentKind.Refund, request.AmountCentimes, request.PaidOn,
+                request.StudentId, null, request.TreasuryAccountId, PaymentKind.Refund, request.AmountCentimes, request.PaidOn,
                 request.Reason, receiptNo, utcNow, userId);
             await _payments.AddAsync(refund, cancellationToken);
 

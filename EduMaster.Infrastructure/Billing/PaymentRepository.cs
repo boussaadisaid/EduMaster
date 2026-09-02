@@ -31,9 +31,9 @@ public sealed class PaymentRepository : IPaymentRepository
 
         // ⚠ حدود Dapper (D-112): PaidOn تبقى DateOnly في الدومين (تاريخ عمل نقي)، وتتحوّل إلى DateTime عند المعاملات
         const string sql = @"
-INSERT INTO Payments (ReceiptNo, StudentId, PaidByPersonId, Kind, AmountCentimes, PaidOn, Note, CreatedAtUtc, CreatedByUserId)
+INSERT INTO Payments (ReceiptNo, StudentId, PaidByPersonId, TreasuryAccountId, Kind, AmountCentimes, PaidOn, Note, CreatedAtUtc, CreatedByUserId)
 OUTPUT INSERTED.Id
-VALUES (@ReceiptNo, @StudentId, @PaidByPersonId, @Kind, @AmountCentimes, @PaidOn, @Note, @CreatedAtUtc, @CreatedByUserId);";
+VALUES (@ReceiptNo, @StudentId, @PaidByPersonId, @TreasuryAccountId, @Kind, @AmountCentimes, @PaidOn, @Note, @CreatedAtUtc, @CreatedByUserId);";
 
         var newId = await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, new
@@ -41,6 +41,7 @@ VALUES (@ReceiptNo, @StudentId, @PaidByPersonId, @Kind, @AmountCentimes, @PaidOn
                 payment.ReceiptNo,
                 payment.StudentId,
                 payment.PaidByPersonId,
+                payment.TreasuryAccountId,
                 Kind = (byte)payment.Kind,
                 payment.AmountCentimes,
                 PaidOn = payment.PaidOn.ToDateTime(TimeOnly.MinValue),
@@ -131,14 +132,14 @@ ORDER BY p.PaidOn, p.Id;";
     }
 
     // ⚠ D-81: بنفس ترتيب الاستعلام أدناه (6.6-ع-ب)
-    private sealed record ReceiptReversalRow(int StudentId, byte Kind, long AmountCentimes, int ReceiptNo);
+    private sealed record ReceiptReversalRow(int StudentId, int TreasuryAccountId, byte Kind, long AmountCentimes, int ReceiptNo);
 
     public async Task<ReceiptReversalInfoRaw?> GetReceiptReversalInfoAsync(int paymentId, CancellationToken cancellationToken = default)
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
         const string sqlReceipt = @"
-SELECT p.StudentId, p.Kind, p.AmountCentimes, p.ReceiptNo
+SELECT p.StudentId, p.TreasuryAccountId, p.Kind, p.AmountCentimes, p.ReceiptNo
 FROM Payments p
 WHERE p.Id = @PaymentId;";
 
@@ -163,7 +164,7 @@ THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END;";
                 transaction: _session.CurrentTransaction,
                 cancellationToken: cancellationToken));
 
-        return new ReceiptReversalInfoRaw(row.StudentId, row.Kind, row.AmountCentimes, row.ReceiptNo, alreadyReversed);
+        return new ReceiptReversalInfoRaw(row.StudentId, row.TreasuryAccountId, row.Kind, row.AmountCentimes, row.ReceiptNo, alreadyReversed);
     }
 
     public async Task DeleteAllocationsForPaymentAsync(int paymentId, CancellationToken cancellationToken = default)

@@ -6,8 +6,8 @@ using EduMaster.UI.ClassGroups;
 using EduMaster.UI.Common.Services;
 using EduMaster.UI.Dialogs;
 using EduMaster.UI.Employees;
-using EduMaster.UI.Enrollments;
 using EduMaster.UI.Expenses;
+using EduMaster.UI.Enrollments;
 using EduMaster.UI.Payroll;
 using EduMaster.UI.People;
 using EduMaster.UI.Pricing;
@@ -17,6 +17,7 @@ using EduMaster.UI.Scheduling;
 using EduMaster.UI.Services;
 using EduMaster.UI.Students;
 using EduMaster.UI.Teachers;
+using EduMaster.UI.Treasury;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EduMaster.UI.DependencyInjection
@@ -85,7 +86,9 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<AssignEmployeeRoleViewModel>();
             // Payroll (F5 — دفعة B-2)   //  سطر التحقق: القسم بواحد
             services.AddTransient<PayPolicyDialogViewModel>();
+
             services.AddTransient<PayrollRunsViewModel>();
+
             services.AddTransient<PayoutDialogViewModel>();
 
             // Expenses — المصاريف التشغيلية
@@ -93,6 +96,12 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<ExpenseEditorViewModel>();
             services.AddTransient<ExpenseCategoriesViewModel>();
 
+            // Treasury — الخزينة
+            services.AddTransient<TreasuryViewModel>();
+            services.AddTransient<TreasuryMovementEditorViewModel>();
+            services.AddTransient<TreasuryTransferDialogViewModel>();
+            services.AddTransient<TreasuryAccountsViewModel>();
+            services.AddTransient<TreasuryAccountEditorViewModel>();
             // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم بثلاثة
             services.AddTransient<ReportsViewModel>();
             services.AddTransient<PaymentMovementReportViewModel>();

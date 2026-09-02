@@ -7,6 +7,7 @@ using EduMaster.Application.Enrollments;
 using EduMaster.Application.Payroll;
 using EduMaster.Application.Students;
 using EduMaster.Application.Teachers;
+using EduMaster.Domain.Treasury;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,6 +42,38 @@ public sealed class FakeUnitOfWork : IUnitOfWork
 }
 
 /// <summary>مزيّف المشتريات — يلتقط ويمنح معرفاً (SetId متاح عبر InternalsVisibleTo) لأن مستحق الحزمة يحتاجه (D-103)</summary>
+/// <summary>مزيّف الحسابات المالية — يعيد حساباً فعالاً افتراضياً لتهيئة اختبارات القبض/الصرف بعد ربطها بالخزينة.</summary>
+public sealed class FakeTreasuryAccountRepository : ITreasuryAccountRepository
+{
+    public TreasuryAccount? AccountToReturn { get; set; }
+
+    public FakeTreasuryAccountRepository()
+    {
+        AccountToReturn = TreasuryAccount.Load(
+            id: 1, name: "الخزينة الرئيسية", isActive: true, openingBalanceCentimes: 0,
+            createdAtUtc: new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc),
+            createdByUserId: 1, updatedAtUtc: null, updatedByUserId: null);
+    }
+
+    public Task AddAsync(TreasuryAccount account, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();
+
+    public Task UpdateAsync(TreasuryAccount account, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();
+
+    public Task<TreasuryAccount?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        => Task.FromResult(id == 1 ? AccountToReturn : null);
+
+    public Task<IReadOnlyList<TreasuryAccount>> GetAllAsync(bool activeOnly, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();
+
+    public Task<bool> AnyWithNameAsync(string name, int? excludeId, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();
+
+    public Task<int> GetActiveCountAsync(CancellationToken cancellationToken = default)
+        => throw new NotImplementedException();
+}
+
 public sealed class FakeGroupSessionPurchaseRepository : IGroupSessionPurchaseRepository
 {
     public List<Domain.Scheduling.GroupSessionPurchase> Captured { get; } = new();

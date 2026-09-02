@@ -6,8 +6,8 @@ using EduMaster.Infrastructure.Backup;
 using EduMaster.Infrastructure.Billing;
 using EduMaster.Infrastructure.ClassGroups;
 using EduMaster.Infrastructure.Employees;
-using EduMaster.Infrastructure.Enrollments;
 using EduMaster.Infrastructure.Expenses;
+using EduMaster.Infrastructure.Enrollments;
 using EduMaster.Infrastructure.Files;
 using EduMaster.Infrastructure.Payroll;
 using EduMaster.Infrastructure.People;
@@ -17,6 +17,7 @@ using EduMaster.Infrastructure.Reports;
 using EduMaster.Infrastructure.Scheduling;
 using EduMaster.Infrastructure.Security;
 using EduMaster.Infrastructure.Settings;
+using EduMaster.Infrastructure.Treasury;
 using EduMaster.Infrastructure.Students;
 using EduMaster.Infrastructure.Teachers;
 using EduMaster.Infrastructure.Time;
@@ -90,6 +91,11 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
             services.AddScoped<IExpenseRepository, ExpenseRepository>();
 
+            // Treasury — الخزينة
+            services.AddScoped<ITreasuryAccountRepository, TreasuryAccountRepository>();
+            services.AddScoped<ITreasuryTransactionRepository, TreasuryTransactionRepository>();
+            services.AddScoped<ITreasuryTransferRepository, TreasuryTransferRepository>();
+            services.AddScoped<ITreasuryReadRepository, TreasuryReadRepository>();
 
             // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم بواحد — جديد 6.1-ب
             services.AddScoped<IReportRepository, ReportRepository>();

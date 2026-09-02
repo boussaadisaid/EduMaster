@@ -34,16 +34,18 @@ public sealed class GetExpensesHandler
     }
 }
 
-public sealed record AddExpenseRequest(int AcademicYearId, int ExpenseCategoryId, DateOnly ExpenseDate, long AmountCentimes, string? Note);
+public sealed record AddExpenseRequest(int AcademicYearId, int ExpenseCategoryId, int TreasuryAccountId, DateOnly ExpenseDate, long AmountCentimes, string? Note);
 public sealed class AddExpenseHandler
 {
     private readonly IExpenseRepository _expenses; private readonly IExpenseCategoryRepository _categories;
-    private readonly IAcademicYearRepository _years; private readonly IClock _clock; private readonly ICurrentUserService _currentUser;
+    private readonly IAcademicYearRepository _years; private readonly ITreasuryAccountRepository _treasuryAccounts; private readonly IClock _clock; private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork; private readonly ILogger<AddExpenseHandler> _logger;
-    public AddExpenseHandler(IExpenseRepository expenses, IExpenseCategoryRepository categories, IAcademicYearRepository years,
+    public AddExpenseHandler(IExpenseRepository expenses, IExpenseCategoryRepository categories, IAcademicYearRepository years, ITreasuryAccountRepository treasuryAccounts,
         IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<AddExpenseHandler> logger)
-        => (_expenses, _categories, _years, _clock, _currentUser, _unitOfWork, _logger) =
-           (expenses, categories, years, clock, currentUser, unitOfWork, logger);
+    {
+        _expenses = expenses; _categories = categories; _years = years; _treasuryAccounts = treasuryAccounts;
+        _clock = clock; _currentUser = currentUser; _unitOfWork = unitOfWork; _logger = logger;
+    }
 
     public async Task<OperationResult<int>> ExecuteAsync(AddExpenseRequest request, CancellationToken cancellationToken = default)
     {
@@ -51,10 +53,13 @@ public sealed class AddExpenseHandler
         {
             if (await _years.GetByIdAsync(request.AcademicYearId, cancellationToken) is null)
                 return OperationResult<int>.Failure("السنة الدراسية غير موجودة.", ErrorType.NotFound);
+            var account = await _treasuryAccounts.GetByIdAsync(request.TreasuryAccountId, cancellationToken);
+            if (account is null) return OperationResult<int>.Failure("الحساب المالي غير موجود.", ErrorType.NotFound);
+            if (!account.IsActive) return OperationResult<int>.Failure("الحساب المالي معطّل.", ErrorType.BusinessRule);
             var category = await _categories.GetByIdAsync(request.ExpenseCategoryId, cancellationToken);
             if (category is null) return OperationResult<int>.Failure("فئة المصروف غير موجودة.", ErrorType.NotFound);
             if (!category.IsActive) return OperationResult<int>.Failure("فئة المصروف معطّلة.", ErrorType.BusinessRule);
-            var expense = Expense.Create(request.AcademicYearId, request.ExpenseCategoryId, request.ExpenseDate,
+            var expense = Expense.Create(request.AcademicYearId, request.ExpenseCategoryId, request.TreasuryAccountId, request.ExpenseDate,
                 request.AmountCentimes, request.Note, _clock.UtcNow, _currentUser.UserAccountId);
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _expenses.AddAsync(expense, cancellationToken);
@@ -74,16 +79,18 @@ public sealed class AddExpenseHandler
     }
 }
 
-public sealed record UpdateExpenseRequest(int ExpenseId, int AcademicYearId, int ExpenseCategoryId, DateOnly ExpenseDate, long AmountCentimes, string? Note);
+public sealed record UpdateExpenseRequest(int ExpenseId, int AcademicYearId, int ExpenseCategoryId, int TreasuryAccountId, DateOnly ExpenseDate, long AmountCentimes, string? Note);
 public sealed class UpdateExpenseHandler
 {
     private readonly IExpenseRepository _expenses; private readonly IExpenseCategoryRepository _categories;
-    private readonly IAcademicYearRepository _years; private readonly IClock _clock; private readonly ICurrentUserService _currentUser;
+    private readonly IAcademicYearRepository _years; private readonly ITreasuryAccountRepository _treasuryAccounts; private readonly IClock _clock; private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork; private readonly ILogger<UpdateExpenseHandler> _logger;
-    public UpdateExpenseHandler(IExpenseRepository expenses, IExpenseCategoryRepository categories, IAcademicYearRepository years,
+    public UpdateExpenseHandler(IExpenseRepository expenses, IExpenseCategoryRepository categories, IAcademicYearRepository years, ITreasuryAccountRepository treasuryAccounts,
         IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<UpdateExpenseHandler> logger)
-        => (_expenses, _categories, _years, _clock, _currentUser, _unitOfWork, _logger) =
-           (expenses, categories, years, clock, currentUser, unitOfWork, logger);
+    {
+        _expenses = expenses; _categories = categories; _years = years; _treasuryAccounts = treasuryAccounts;
+        _clock = clock; _currentUser = currentUser; _unitOfWork = unitOfWork; _logger = logger;
+    }
     public async Task<OperationResult> ExecuteAsync(UpdateExpenseRequest request, CancellationToken cancellationToken = default)
     {
         try
@@ -92,11 +99,15 @@ public sealed class UpdateExpenseHandler
             if (expense is null || expense.IsDeleted) return OperationResult.Failure("المصروف غير موجود.", ErrorType.NotFound);
             if (await _years.GetByIdAsync(request.AcademicYearId, cancellationToken) is null)
                 return OperationResult.Failure("السنة الدراسية غير موجودة.", ErrorType.NotFound);
+            var account = await _treasuryAccounts.GetByIdAsync(request.TreasuryAccountId, cancellationToken);
+            if (account is null) return OperationResult.Failure("الحساب المالي غير موجود.", ErrorType.NotFound);
+            if (!account.IsActive && account.Id != expense.TreasuryAccountId)
+                return OperationResult.Failure("لا يمكن نقل المصروف إلى حساب مالي معطّل.", ErrorType.BusinessRule);
             var category = await _categories.GetByIdAsync(request.ExpenseCategoryId, cancellationToken);
             if (category is null) return OperationResult.Failure("فئة المصروف غير موجودة.", ErrorType.NotFound);
             if (!category.IsActive && category.Id != expense.ExpenseCategoryId)
                 return OperationResult.Failure("لا يمكن نقل المصروف إلى فئة معطّلة.", ErrorType.BusinessRule);
-            expense.Update(request.AcademicYearId, request.ExpenseCategoryId, request.ExpenseDate,
+            expense.Update(request.AcademicYearId, request.ExpenseCategoryId, request.TreasuryAccountId, request.ExpenseDate,
                 request.AmountCentimes, request.Note, _clock.UtcNow, _currentUser.UserAccountId);
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _expenses.UpdateAsync(expense, cancellationToken);

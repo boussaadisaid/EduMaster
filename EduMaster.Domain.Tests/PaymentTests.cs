@@ -16,7 +16,7 @@ public sealed class PaymentTests
     [Fact]
     public void Create_Valid_SetsFields_AndTrimsNote()
     {
-        var payment = Payment.Create(2, 9, PaymentKind.Receipt, 100000, Today, "  دفعة شهر  ", 1, Now, 1);
+        var payment = Payment.Create(2, 9, 1, PaymentKind.Receipt, 100000, Today, "  دفعة شهر  ", 1, Now, 1);
 
         Assert.Equal(2, payment.StudentId);
         Assert.Equal(9, payment.PaidByPersonId);        // الولي الدافع (D-104)
@@ -30,7 +30,7 @@ public sealed class PaymentTests
     [Fact]
     public void Create_WithoutPayer_IsAllowed()   // الطالب نفسه أو غير موسوم
     {
-        var payment = Payment.Create(2, null, PaymentKind.Receipt, 50000, Today, null, 1, Now, null);
+        var payment = Payment.Create(2, null, 1, PaymentKind.Receipt, 50000, Today, null, 1, Now, null);
 
         Assert.Null(payment.PaidByPersonId);
         Assert.Null(payment.Note);
@@ -41,19 +41,19 @@ public sealed class PaymentTests
     [InlineData(-5)]
     public void Create_NonPositiveAmount_Throws(long amount)
     {
-        Assert.Throws<DomainException>(() => Payment.Create(2, null, PaymentKind.Receipt, amount, Today, null, 1, Now, null));
+        Assert.Throws<DomainException>(() => Payment.Create(2, null, 1, PaymentKind.Receipt, amount, Today, null, 1, Now, null));
     }
 
     [Fact]
     public void Create_NonPositiveReceiptNo_Throws()
     {
-        Assert.Throws<DomainException>(() => Payment.Create(2, null, PaymentKind.Receipt, 50000, Today, null, 0, Now, null));
+        Assert.Throws<DomainException>(() => Payment.Create(2, null, 1, PaymentKind.Receipt, 50000, Today, null, 0, Now, null));
     }
 
     [Fact]
     public void Create_NonPositiveStudent_Throws()
     {
-        Assert.Throws<DomainException>(() => Payment.Create(0, null, PaymentKind.Receipt, 50000, Today, null, 1, Now, null));
+        Assert.Throws<DomainException>(() => Payment.Create(0, null, 1, PaymentKind.Receipt, 50000, Today, null, 1, Now, null));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class PaymentTests
     {
         var longNote = new string('م', 201);
 
-        Assert.Throws<DomainException>(() => Payment.Create(2, null, PaymentKind.Receipt, 50000, Today, longNote, 1, Now, null));
+        Assert.Throws<DomainException>(() => Payment.Create(2, null, 1, PaymentKind.Receipt, 50000, Today, longNote, 1, Now, null));
     }
 
     [Fact]

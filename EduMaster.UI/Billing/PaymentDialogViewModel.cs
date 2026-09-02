@@ -2,6 +2,7 @@
 using EduMaster.Application.Common;
 using EduMaster.Application.Printing;
 using EduMaster.Application.Settings;
+using EduMaster.Application.Treasury;
 using EduMaster.Application.Students;
 using EduMaster.Domain.Enums;
 using EduMaster.UI.Common;
@@ -106,6 +107,10 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
     // ---------- التخصيص ----------
     public ObservableCollection<PaymentAllocationRowViewModel> Rows { get; } = new();
 
+    public ObservableCollection<TreasuryAccountItem> TreasuryAccounts { get; } = new();
+    private TreasuryAccountItem? _selectedTreasuryAccount;
+    public TreasuryAccountItem? SelectedTreasuryAccount { get => _selectedTreasuryAccount; set => SetProperty(ref _selectedTreasuryAccount, value); }
+
     public bool HasOpenCharges => Rows.Count > 0;
 
     public bool NoOpenCharges => Rows.Count == 0;
@@ -156,6 +161,11 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
         ContextText = $"الطالب: {student.FullName}";
 
         await using var scope = _scopeFactory.CreateAsyncScope();
+        var treasuryHandler = scope.ServiceProvider.GetRequiredService<GetTreasuryAccountsHandler>();
+        var treasuryResult = await treasuryHandler.ExecuteAsync(true);
+        if (!treasuryResult.IsSuccess) { _notifier.ShowError(treasuryResult.ErrorMessage!); CloseRequested?.Invoke(this, false); return; }
+        TreasuryAccounts.Clear(); foreach (var a in treasuryResult.Value!) TreasuryAccounts.Add(a); SelectedTreasuryAccount = TreasuryAccounts.FirstOrDefault();
+
         var handler = scope.ServiceProvider.GetRequiredService<GetPaymentContextHandler>();
         var result = await handler.ExecuteAsync(student.Id);
 
@@ -249,6 +259,7 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
             ErrorMessage = "اختر تاريخ القبض.";
             return;
         }
+        if (SelectedTreasuryAccount is null) { ErrorMessage = "اختر الحساب المالي."; return; }
         if (PaidOn.Value.Date > DateTime.Today)
         {
             ErrorMessage = "تاريخ القبض لا يمكن أن يكون في المستقبل.";
@@ -283,6 +294,7 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
             var result = await handler.ExecuteAsync(new RegisterPaymentRequest(
                 _studentId,
                 PaidByGuardian ? _guardianPersonId : null,
+                SelectedTreasuryAccount.Id,
                 amountCentimes,
                 DateOnly.FromDateTime(PaidOn.Value),
                 string.IsNullOrWhiteSpace(Note) ? null : Note,

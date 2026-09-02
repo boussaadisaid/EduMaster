@@ -15,9 +15,10 @@
              xmlns:billing="clr-namespace:EduMaster.UI.Billing"
              xmlns:employees="clr-namespace:EduMaster.UI.Employees"
              xmlns:payroll="clr-namespace:EduMaster.UI.Payroll"
-             xmlns:expenses="clr-namespace:EduMaster.UI.Expenses"
+             xmlns:expenses="clr-namespace:EduMaster.UI.Expenses" xmlns:treasury="clr-namespace:EduMaster.UI.Treasury"
              xmlns:reports="clr-namespace:EduMaster.UI.Reports"
-             xmlns:common="clr-namespace:EduMaster.UI.Common">
+             xmlns:common="clr-namespace:EduMaster.UI.Common"
+             xmlns:commonConverters="clr-namespace:EduMaster.UI.Common.Converters">
 
     <Application.Resources>
         <ResourceDictionary>
@@ -184,6 +185,21 @@
                 <payroll:PayoutDialogView />
             </DataTemplate>
 
+            <DataTemplate DataType="{x:Type treasury:TreasuryViewModel}">
+                <treasury:TreasuryView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type treasury:TreasuryMovementEditorViewModel}">
+                <treasury:TreasuryMovementEditorView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type treasury:TreasuryTransferDialogViewModel}">
+                <treasury:TreasuryTransferDialogView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type treasury:TreasuryAccountsViewModel}">
+                <treasury:TreasuryAccountsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type treasury:TreasuryAccountEditorViewModel}">
+                <treasury:TreasuryAccountEditorView/>
+            </DataTemplate>
             <DataTemplate DataType="{x:Type expenses:ExpenseViewModel}">
                 <expenses:ExpenseView />
             </DataTemplate>
@@ -219,6 +235,7 @@
             <FontFamily x:Key="CairoFont">pack://application:,,,/Fonts/#Cairo</FontFamily>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <common:CentimesToDinarsConverter x:Key="CentimesToDinarsConverter"/>
+            <commonConverters:BooleanToArabicTextConverter x:Key="BooleanToArabicTextConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

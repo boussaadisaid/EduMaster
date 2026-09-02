@@ -1,0 +1,38 @@
+﻿<UserControl x:Class="EduMaster.UI.Treasury.TreasuryAccountEditorView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft" Width="520" MaxHeight="430">
+    <Grid Background="{StaticResource PageBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Margin="22,20,22,16">
+            <TextBlock Text="{Binding Title}" Style="{StaticResource EduSectionTitle}"/>
+            <TextBlock Text="اسم الحساب ورصيده الافتتاحي" Style="{StaticResource EduBodyMuted}" Margin="0,3,0,0"/>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Margin="22,0">
+            <Border Style="{StaticResource Card}" Padding="18">
+                <StackPanel>
+                    <TextBlock Text="اسم الحساب *" Style="{StaticResource EduFieldLabel}"/>
+                    <TextBox Text="{Binding Name,UpdateSourceTrigger=PropertyChanged}" Height="40" Margin="0,0,0,14"/>
+                    <TextBlock Text="الرصيد الافتتاحي (دج) *" Style="{StaticResource EduFieldLabel}"/>
+                    <TextBox Text="{Binding OpeningBalanceText,UpdateSourceTrigger=PropertyChanged}" Height="40"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        <Border Grid.Row="2" Background="White" BorderBrush="#E3E8F0" BorderThickness="0,1,0,0" Padding="22,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Background="{StaticResource NegativeSoftBrush}" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,0,14,0" Visibility="{Binding HasErrorMessage,Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource NegativeBrush}" TextWrapping="Wrap"/>
+                </Border>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="إلغاء" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Padding="14,8" Margin="0,0,8,0"/>
+                    <Button Content="حفظ" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Padding="18,8"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

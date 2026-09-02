@@ -7,6 +7,7 @@ public sealed record ExpenseListItem(
     int AcademicYearId,
     string AcademicYearName,
     int ExpenseCategoryId,
+    int TreasuryAccountId,
     string CategoryName,
     DateOnly ExpenseDate,
     long AmountCentimes,

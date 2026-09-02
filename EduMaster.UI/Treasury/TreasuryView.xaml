@@ -1,0 +1,137 @@
+﻿<UserControl x:Class="EduMaster.UI.Treasury.TreasuryView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" FlowDirection="RightToLeft">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="الخزينة" Style="{StaticResource EduPageTitle}"/>
+                <TextBlock Text="متابعة السيولة والحركات المالية للمدرسة" Style="{StaticResource EduBodyMuted}" Margin="0,4,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="الحسابات المالية" Command="{Binding ManageAccountsCommand}" Style="{StaticResource SecondaryButton}" Padding="14,8" Margin="0,0,8,0"/>
+                <Button Content="＋ دخل آخر" Command="{Binding AddIncomeCommand}" Style="{StaticResource PrimaryButton}" Padding="14,8" Margin="0,0,8,0"/>
+                <Button Content="－ مصروف آخر" Command="{Binding AddExpenseCommand}" Style="{StaticResource SecondaryButton}" Padding="14,8" Margin="0,0,8,0"/>
+                <Button Content="↔ تحويل" Command="{Binding TransferCommand}" Style="{StaticResource SecondaryButton}" Padding="14,8"/>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource Card}" Padding="14">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="الحساب" Style="{StaticResource EduFieldLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount}" DisplayMemberPath="Name" Width="210" Height="36"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource Card}" Padding="10" Margin="10,0,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="من" Style="{StaticResource EduFieldLabel}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <DatePicker SelectedDate="{Binding FromDate}" Language="ar-DZ" Height="36" Width="125"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="10" Margin="10,0,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="إلى" Style="{StaticResource EduFieldLabel}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <DatePicker SelectedDate="{Binding ToDate}" Language="ar-DZ" Height="36" Width="125"/>
+                </StackPanel>
+            </Border>
+            <Button Grid.Column="3" Content="↻" ToolTip="تحديث" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryButton}" Padding="12,8" Margin="10,0,0,0"/>
+        </Grid>
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <UniformGrid Rows="2" Columns="3" Margin="0,0,0,12">
+                <Border Style="{StaticResource Card}" Margin="0,0,8,8" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="الرصيد قبل الفترة" Style="{StaticResource EduFieldLabel}"/>
+                        <TextBlock Text="{Binding OpeningBalanceText}" Style="{StaticResource EduSectionTitle}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="4,0,4,8" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="إجمالي الداخل" Style="{StaticResource EduFieldLabel}"/>
+                        <TextBlock Text="{Binding PeriodIncomingText}" Foreground="{StaticResource PositiveBrush}" Style="{StaticResource EduSectionTitle}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="8,0,0,8" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="إجمالي الخارج" Style="{StaticResource EduFieldLabel}"/>
+                        <TextBlock Text="{Binding PeriodOutgoingText}" Foreground="{StaticResource NegativeBrush}" Style="{StaticResource EduSectionTitle}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,8,0" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="صافي الفترة" Style="{StaticResource EduFieldLabel}"/>
+                        <TextBlock Text="{Binding PeriodNetText}" Style="{StaticResource EduSectionTitle}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="4,0,4,0" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="الرصيد الختامي" Style="{StaticResource EduFieldLabel}"/>
+                        <TextBlock Text="{Binding ClosingBalanceText}" Style="{StaticResource EduSectionTitle}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="8,0,0,0" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="الفترة السريعة" Style="{StaticResource EduFieldLabel}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="اليوم" Command="{Binding TodayCommand}" Style="{StaticResource SecondaryButton}" Padding="10,5" Margin="0,0,5,0"/>
+                            <Button Content="هذا الأسبوع" Command="{Binding WeekCommand}" Style="{StaticResource SecondaryButton}" Padding="10,5" Margin="0,0,5,0"/>
+                            <Button Content="هذا الشهر" Command="{Binding MonthCommand}" Style="{StaticResource SecondaryButton}" Padding="10,5"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Padding="14,11" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1" CornerRadius="10,10,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="الحركات المالية" Style="{StaticResource EduSubsectionTitle}"/>
+                                <TextBlock Text="القبض والاسترجاع والأجور والمصاريف والحركات اليدوية والتحويلات" Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Grid Grid.Row="1">
+                        <DataGrid ItemsSource="{Binding Movements}" SelectedItem="{Binding SelectedMovement}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EDF1F6" VerticalGridLinesBrush="Transparent" BorderThickness="0" RowHeight="40" ColumnHeaderHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="التاريخ" Binding="{Binding MovementDate}" Width="110"/>
+                                <DataGridTextColumn Header="الحساب" Binding="{Binding AccountName}" Width="150"/>
+                                <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="*"/>
+                                <DataGridTextColumn Header="الداخل" Binding="{Binding IncomingCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="120"/>
+                                <DataGridTextColumn Header="الخارج" Binding="{Binding OutgoingCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="120"/>
+                                <DataGridTextColumn Header="الصافي" Binding="{Binding DeltaCentimes, Converter={StaticResource CentimesToDinarsConverter}}" Width="120"/>
+                                <DataGridTextColumn Header="الملاحظة" Binding="{Binding Note}" Width="180"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="لا توجد حركات مالية في الفترة المحددة." HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SidebarMutedBrush}" Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}" IsHitTestVisible="False"/>
+                        <TextBlock Text="جارٍ تحميل الخزينة..." HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SidebarMutedBrush}" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" IsHitTestVisible="False"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

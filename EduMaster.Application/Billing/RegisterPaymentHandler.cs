@@ -16,6 +16,7 @@ namespace EduMaster.Application.Billing;
 public sealed record RegisterPaymentRequest(
     int StudentId,
     int? PaidByPersonId,
+    int TreasuryAccountId,
     long AmountCentimes,
     DateOnly PaidOn,
     string? Note,
@@ -27,18 +28,20 @@ public sealed class RegisterPaymentHandler
     private readonly IChargeRepository _charges;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
+    private readonly ITreasuryAccountRepository _treasuryAccounts;
     private readonly IUnitOfWork _unitOfWork;
     private readonly CreditConsumptionService _creditConsumption;
     private readonly ILogger<RegisterPaymentHandler> _logger;
 
     public RegisterPaymentHandler(IPaymentRepository payments, IChargeRepository charges,
-        IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork,
+        IClock clock, ICurrentUserService currentUser, ITreasuryAccountRepository treasuryAccounts, IUnitOfWork unitOfWork,
         CreditConsumptionService creditConsumption, ILogger<RegisterPaymentHandler> logger)
     {
         _payments = payments;
         _charges = charges;
         _clock = clock;
         _currentUser = currentUser;
+        _treasuryAccounts = treasuryAccounts;
         _unitOfWork = unitOfWork;
         _creditConsumption = creditConsumption;
         _logger = logger;
@@ -69,6 +72,12 @@ public sealed class RegisterPaymentHandler
 
         try
         {
+            var treasuryAccount = await _treasuryAccounts.GetByIdAsync(request.TreasuryAccountId, cancellationToken);
+            if (treasuryAccount is null)
+                return OperationResult<int>.Failure("الحساب المالي غير موجود.", ErrorType.NotFound);
+            if (!treasuryAccount.IsActive)
+                return OperationResult<int>.Failure("الحساب المالي معطّل.", ErrorType.BusinessRule);
+
             // المفتوحة مرة واحدة — خريطة المتبقّي للفحص
             var openCharges = await _charges.GetOpenForStudentAsync(request.StudentId, cancellationToken);
             var openById = openCharges.ToDictionary(o => o.Id);
@@ -97,7 +106,7 @@ public sealed class RegisterPaymentHandler
             var receiptNo = await _payments.GetNextReceiptNoAsync(cancellationToken);
 
             var payment = Domain.Billing.Payment.Create(
-                request.StudentId, request.PaidByPersonId, PaymentKind.Receipt, request.AmountCentimes, request.PaidOn,
+                request.StudentId, request.PaidByPersonId, request.TreasuryAccountId, PaymentKind.Receipt, request.AmountCentimes, request.PaidOn,
                 request.Note, receiptNo, utcNow, userId);
             await _payments.AddAsync(payment, cancellationToken);
 

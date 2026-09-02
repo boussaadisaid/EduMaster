@@ -59,4 +59,4 @@ public sealed record PaymentListItem(
 public sealed record UnallocatedReceiptRaw(int PaymentId, long FreeCentimes);
 
 /// <summary>بطاقة إيصال لعكسه (6.6-ع-4) — AlreadyReversed باتفاق وسم الملاحظة المولَّد («↩ عكس الإيصال #…») لنفس الطالب والمبلغ</summary>
-public sealed record ReceiptReversalInfoRaw(int StudentId, byte Kind, long AmountCentimes, int ReceiptNo, bool AlreadyReversed);
+public sealed record ReceiptReversalInfoRaw(int StudentId, int TreasuryAccountId, byte Kind, long AmountCentimes, int ReceiptNo, bool AlreadyReversed);

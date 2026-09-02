@@ -11,23 +11,24 @@ public sealed class ExpenseRepository : IExpenseRepository
     private readonly IAdoDbSession _session;
     public ExpenseRepository(IAdoDbSession session) => _session = session;
 
-    private sealed record ExpenseRow(int Id, int AcademicYearId, int ExpenseCategoryId, DateTime ExpenseDate,
+    private sealed record ExpenseRow(int Id, int AcademicYearId, int ExpenseCategoryId, int TreasuryAccountId, DateTime ExpenseDate,
         long AmountCentimes, string? Note, bool IsDeleted, DateTime CreatedAtUtc, int? CreatedByUserId,
         DateTime? UpdatedAtUtc, int? UpdatedByUserId, DateTime? DeletedAtUtc, int? DeletedByUserId);
-    private sealed record ListRow(int Id, int AcademicYearId, string AcademicYearName, int ExpenseCategoryId,
+    private sealed record ListRow(int Id, int AcademicYearId, string AcademicYearName, int ExpenseCategoryId, int TreasuryAccountId,
         string CategoryName, DateTime ExpenseDate, long AmountCentimes, string? Note, DateTime CreatedAtUtc, DateTime? UpdatedAtUtc);
 
     public async Task AddAsync(Expense expense, CancellationToken cancellationToken = default)
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
         const string sql = @"INSERT INTO dbo.Expenses
-(AcademicYearId, ExpenseCategoryId, ExpenseDate, AmountCentimes, Note, IsDeleted, CreatedAtUtc, CreatedByUserId)
+(AcademicYearId, ExpenseCategoryId, TreasuryAccountId, ExpenseDate, AmountCentimes, Note, IsDeleted, CreatedAtUtc, CreatedByUserId)
 OUTPUT INSERTED.Id
-VALUES (@AcademicYearId, @ExpenseCategoryId, @ExpenseDate, @AmountCentimes, @Note, 0, @CreatedAtUtc, @CreatedByUserId);";
+VALUES (@AcademicYearId, @ExpenseCategoryId, @TreasuryAccountId, @ExpenseDate, @AmountCentimes, @Note, 0, @CreatedAtUtc, @CreatedByUserId);";
         var id = await connection.ExecuteScalarAsync<int>(new CommandDefinition(sql, new
         {
             expense.AcademicYearId,
             expense.ExpenseCategoryId,
+            expense.TreasuryAccountId,
             ExpenseDate = expense.ExpenseDate.ToDateTime(TimeOnly.MinValue),
             expense.AmountCentimes,
             expense.Note,
@@ -41,13 +42,14 @@ VALUES (@AcademicYearId, @ExpenseCategoryId, @ExpenseDate, @AmountCentimes, @Not
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
         const string sql = @"UPDATE dbo.Expenses
-SET AcademicYearId=@AcademicYearId, ExpenseCategoryId=@ExpenseCategoryId, ExpenseDate=@ExpenseDate,
+SET AcademicYearId=@AcademicYearId, ExpenseCategoryId=@ExpenseCategoryId, TreasuryAccountId=@TreasuryAccountId, ExpenseDate=@ExpenseDate,
     AmountCentimes=@AmountCentimes, Note=@Note, UpdatedAtUtc=@UpdatedAtUtc, UpdatedByUserId=@UpdatedByUserId
 WHERE Id=@Id AND IsDeleted=0;";
         var affected = await connection.ExecuteAsync(new CommandDefinition(sql, new
         {
             expense.AcademicYearId,
             expense.ExpenseCategoryId,
+            expense.TreasuryAccountId,
             ExpenseDate = expense.ExpenseDate.ToDateTime(TimeOnly.MinValue),
             expense.AmountCentimes,
             expense.Note,
@@ -61,12 +63,12 @@ WHERE Id=@Id AND IsDeleted=0;";
     public async Task<Expense?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
-        const string sql = @"SELECT Id, AcademicYearId, ExpenseCategoryId, ExpenseDate, AmountCentimes, Note, IsDeleted,
+        const string sql = @"SELECT Id, AcademicYearId, ExpenseCategoryId, TreasuryAccountId, ExpenseDate, AmountCentimes, Note, IsDeleted,
 CreatedAtUtc, CreatedByUserId, UpdatedAtUtc, UpdatedByUserId, DeletedAtUtc, DeletedByUserId
 FROM dbo.Expenses WHERE Id=@Id;";
         var row = await connection.QuerySingleOrDefaultAsync<ExpenseRow>(new CommandDefinition(sql, new { Id = id },
             transaction: _session.CurrentTransaction, cancellationToken: cancellationToken));
-        return row is null ? null : Expense.Load(row.Id, row.AcademicYearId, row.ExpenseCategoryId,
+        return row is null ? null : Expense.Load(row.Id, row.AcademicYearId, row.ExpenseCategoryId, row.TreasuryAccountId,
             DateOnly.FromDateTime(row.ExpenseDate), row.AmountCentimes, row.Note, row.IsDeleted,
             row.CreatedAtUtc, row.CreatedByUserId, row.UpdatedAtUtc, row.UpdatedByUserId,
             row.DeletedAtUtc, row.DeletedByUserId);
@@ -77,7 +79,7 @@ FROM dbo.Expenses WHERE Id=@Id;";
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
         const string sql = @"SELECT e.Id, e.AcademicYearId, y.Name AS AcademicYearName,
- e.ExpenseCategoryId, c.Name AS CategoryName, e.ExpenseDate, e.AmountCentimes, e.Note,
+ e.ExpenseCategoryId, e.TreasuryAccountId, c.Name AS CategoryName, e.ExpenseDate, e.AmountCentimes, e.Note,
  e.CreatedAtUtc, e.UpdatedAtUtc
 FROM dbo.Expenses e
 INNER JOIN dbo.AcademicYears y ON y.Id=e.AcademicYearId
@@ -94,7 +96,7 @@ ORDER BY e.ExpenseDate DESC, e.Id DESC;";
             To = to?.ToDateTime(TimeOnly.MinValue),
             CategoryId = categoryId
         }, transaction: _session.CurrentTransaction, cancellationToken: cancellationToken));
-        return rows.Select(r => new ExpenseListItem(r.Id, r.AcademicYearId, r.AcademicYearName, r.ExpenseCategoryId,
+        return rows.Select(r => new ExpenseListItem(r.Id, r.AcademicYearId, r.AcademicYearName, r.ExpenseCategoryId, r.TreasuryAccountId,
             r.CategoryName, DateOnly.FromDateTime(r.ExpenseDate), r.AmountCentimes, r.Note, r.CreatedAtUtc, r.UpdatedAtUtc)).ToList();
     }
 

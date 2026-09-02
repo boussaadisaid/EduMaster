@@ -2,6 +2,7 @@
 using EduMaster.Application.Common;
 using EduMaster.Application.Printing;
 using EduMaster.Application.Settings;
+using EduMaster.Application.Treasury;
 using EduMaster.Application.Students;
 using EduMaster.Domain.Enums;
 using EduMaster.UI.Common;
@@ -10,6 +11,7 @@ using EduMaster.UI.Common.Services;
 using EduMaster.UI.Printing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Collections.ObjectModel;
 
 namespace EduMaster.UI.Billing;
 
@@ -19,6 +21,10 @@ namespace EduMaster.UI.Billing;
 /// </summary>
 public sealed class RefundDialogViewModel : BaseViewModel, IDialogViewModel
 {
+    public ObservableCollection<TreasuryAccountItem> TreasuryAccounts { get; } = new();
+    private TreasuryAccountItem? _selectedTreasuryAccount;
+    public TreasuryAccountItem? SelectedTreasuryAccount { get => _selectedTreasuryAccount; set => SetProperty(ref _selectedTreasuryAccount, value); }
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IUserNotifier _notifier;
     private readonly IDialogService _dialogService;
@@ -111,6 +117,11 @@ public sealed class RefundDialogViewModel : BaseViewModel, IDialogViewModel
         ContextText = $"الطالب: {student.FullName}";
 
         await using var scope = _scopeFactory.CreateAsyncScope();
+        var treasuryHandler = scope.ServiceProvider.GetRequiredService<GetTreasuryAccountsHandler>();
+        var treasuryResult = await treasuryHandler.ExecuteAsync(true);
+        if (!treasuryResult.IsSuccess) { _notifier.ShowError(treasuryResult.ErrorMessage!); CloseRequested?.Invoke(this, false); return; }
+        TreasuryAccounts.Clear(); foreach (var a in treasuryResult.Value!) TreasuryAccounts.Add(a); SelectedTreasuryAccount = TreasuryAccounts.FirstOrDefault();
+
         var handler = scope.ServiceProvider.GetRequiredService<GetPaymentContextHandler>();
         var result = await handler.ExecuteAsync(student.Id);
 
@@ -152,6 +163,7 @@ public sealed class RefundDialogViewModel : BaseViewModel, IDialogViewModel
             ErrorMessage = "اختر تاريخ الصرف.";
             return;
         }
+        if (SelectedTreasuryAccount is null) { ErrorMessage = "اختر الحساب المالي."; return; }
         if (PaidOn.Value.Date > DateTime.Today)
         {
             ErrorMessage = "تاريخ الصرف لا يمكن أن يكون في المستقبل.";
@@ -169,7 +181,7 @@ public sealed class RefundDialogViewModel : BaseViewModel, IDialogViewModel
             await using var scope = _scopeFactory.CreateAsyncScope();
             var handler = scope.ServiceProvider.GetRequiredService<RegisterRefundHandler>();
             var result = await handler.ExecuteAsync(new RegisterRefundRequest(
-                _studentId, amountCentimes, DateOnly.FromDateTime(PaidOn.Value), Reason));
+                _studentId, SelectedTreasuryAccount.Id, amountCentimes, DateOnly.FromDateTime(PaidOn.Value), Reason));
 
             if (result.IsSuccess)
             {

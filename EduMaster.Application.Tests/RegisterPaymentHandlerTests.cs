@@ -36,14 +36,15 @@ public sealed class RegisterPaymentHandlerTests
             OpenToReturn = open ?? new List<OpenChargeItem>()
         };
         var uow = new FakeUnitOfWork();
-        var handler = new RegisterPaymentHandler(payments, charges, new FakeClock(), new FakeCurrentUserService(), uow,
-            new CreditConsumptionService(payments, charges),
+        var treasuryAccounts = new FakeTreasuryAccountRepository();
+        var handler = new RegisterPaymentHandler(payments, charges, new FakeClock(), new FakeCurrentUserService(),
+            treasuryAccounts, uow, new CreditConsumptionService(payments, charges),
             NullLogger<RegisterPaymentHandler>.Instance);
         return (handler, payments, charges, uow);
     }
 
     private static RegisterPaymentRequest Pay(long amount, params PaymentAllocationInput[] allocations) =>
-        new(StudentId: 2, PaidByPersonId: 9, AmountCentimes: amount, PaidOn: new DateOnly(2026, 8, 23), Note: null, Allocations: allocations);
+        new(StudentId: 2, PaidByPersonId: 9, TreasuryAccountId: 1, AmountCentimes: amount, PaidOn: new DateOnly(2026, 8, 23), Note: null, Allocations: allocations);
 
     [Fact]
     public async Task FullCoverage_WritesPaymentAndAllocation_InOneCommit_WithReceiptNo()
@@ -116,7 +117,7 @@ public sealed class RegisterPaymentHandlerTests
         var (handler, payments, _, uow) = Build();
 
         var result = await handler.ExecuteAsync(
-            new RegisterPaymentRequest(2, null, 50000, new DateOnly(2026, 8, 30), null, null));   // اليوم عند الساعة المزيّفة 2026-08-23
+            new RegisterPaymentRequest(2, null, 1, 50000, new DateOnly(2026, 8, 30), null, null));   // اليوم عند الساعة المزيّفة 2026-08-23
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);

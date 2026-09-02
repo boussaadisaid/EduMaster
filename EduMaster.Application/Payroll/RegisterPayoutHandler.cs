@@ -13,7 +13,7 @@ namespace EduMaster.Application.Payroll;
 /// رقم الإيصال MAX+1 داخل المعاملة والفريد يحرسه قاعدةً (مرآة D-105) — تسلسل موحّد للفريقين بلا فجوات.
 /// ملاحظة: التصحيح العكسي ليس handler رابعاً — هو هذا الـhandler نفسه بمبلغ سالب.
 /// </summary>
-public sealed record RegisterPayoutRequest(PayeeKind PayeeKind, int? TeacherId, int? EmployeeId, int? PayrollRunId, long AmountCentimes, string? Note);
+public sealed record RegisterPayoutRequest(PayeeKind PayeeKind, int? TeacherId, int? EmployeeId, int? PayrollRunId, int TreasuryAccountId, DateOnly PayoutDate, long AmountCentimes, string? Note);
 
 public sealed class RegisterPayoutHandler
 {
@@ -21,6 +21,7 @@ public sealed class RegisterPayoutHandler
     private readonly IPayrollLineRepository _lines;
     private readonly ITeacherRepository _teachers;
     private readonly IEmployeeRepository _employees;
+    private readonly ITreasuryAccountRepository _treasuryAccounts;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
@@ -31,6 +32,7 @@ public sealed class RegisterPayoutHandler
         IPayrollLineRepository lines,
         ITeacherRepository teachers,
         IEmployeeRepository employees,
+        ITreasuryAccountRepository treasuryAccounts,
         IClock clock,
         ICurrentUserService currentUser,
         IUnitOfWork unitOfWork,
@@ -40,6 +42,7 @@ public sealed class RegisterPayoutHandler
         _lines = lines;
         _teachers = teachers;
         _employees = employees;
+        _treasuryAccounts = treasuryAccounts;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
@@ -52,6 +55,15 @@ public sealed class RegisterPayoutHandler
 
         try
         {
+            if (request.PayoutDate > _clock.Today)
+                return OperationResult<int>.Failure("تاريخ الصرف لا يمكن أن يكون في المستقبل.", ErrorType.Validation);
+
+            var treasuryAccount = await _treasuryAccounts.GetByIdAsync(request.TreasuryAccountId, cancellationToken);
+            if (treasuryAccount is null)
+                return OperationResult<int>.Failure("الحساب المالي غير موجود.", ErrorType.NotFound);
+            if (request.AmountCentimes > 0 && !treasuryAccount.IsActive)
+                return OperationResult<int>.Failure("الحساب المالي معطّل.", ErrorType.BusinessRule);
+
             // وجود المستفيد (اتساق النوع مع المعرّف يحرسه الكيان — هنا الوجود فقط)
             int payeeId;
             if (request.PayeeKind == PayeeKind.Teacher)
@@ -93,7 +105,7 @@ public sealed class RegisterPayoutHandler
 
             var receiptNo = await _payouts.GetNextReceiptNoAsync(cancellationToken);   // داخل المعاملة — الفريد يحرس (D-105)
             var payout = Payout.Create(request.PayeeKind, request.TeacherId, request.EmployeeId, request.PayrollRunId,
-                request.AmountCentimes, request.Note, receiptNo, _clock.UtcNow, _currentUser.UserAccountId);
+                request.TreasuryAccountId, request.PayoutDate, request.AmountCentimes, request.Note, receiptNo, _clock.UtcNow, _currentUser.UserAccountId);
 
             await _payouts.AddAsync(payout, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);

@@ -18,6 +18,8 @@
                     <ComboBox ItemsSource="{Binding AcademicYears}" SelectedItem="{Binding SelectedYear}" DisplayMemberPath="Name" Height="40" Margin="0,0,0,14"/>
                     <TextBlock Text="الفئة *" Style="{StaticResource EduFieldLabel}"/>
                     <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" DisplayMemberPath="Name" Height="40" Margin="0,0,0,14"/>
+                    <TextBlock Text="الحساب المالي *" Style="{StaticResource EduFieldLabel}"/>
+                    <ComboBox ItemsSource="{Binding TreasuryAccounts}" SelectedItem="{Binding SelectedTreasuryAccount}" DisplayMemberPath="Name" Height="40" Margin="0,0,0,14"/>
                     <TextBlock Text="تاريخ المصروف *" Style="{StaticResource EduFieldLabel}"/>
                     <DatePicker SelectedDate="{Binding ExpenseDate}" Height="40" Margin="0,0,0,14"/>
                     <TextBlock Text="المبلغ بالدينار *" Style="{StaticResource EduFieldLabel}"/>
