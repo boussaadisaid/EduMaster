@@ -15,6 +15,7 @@ using EduMaster.UI.Printing;
 using EduMaster.UI.Reports;
 using EduMaster.UI.Scheduling;
 using EduMaster.UI.Services;
+using EduMaster.UI.Sms;
 using EduMaster.UI.Students;
 using EduMaster.UI.Teachers;
 using EduMaster.UI.Treasury;
@@ -102,6 +103,10 @@ namespace EduMaster.UI.DependencyInjection
             services.AddTransient<TreasuryTransferDialogViewModel>();
             services.AddTransient<TreasuryAccountsViewModel>();
             services.AddTransient<TreasuryAccountEditorViewModel>();
+            // SMS — TextBee
+            services.AddTransient<SmsViewModel>();
+            services.AddTransient<SmsTemplatesViewModel>();
+            services.AddTransient<SmsTemplateEditorViewModel>();
             // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم بثلاثة
             services.AddTransient<ReportsViewModel>();
             services.AddTransient<PaymentMovementReportViewModel>();

@@ -1,0 +1,31 @@
+﻿<UserControl x:Class="EduMaster.UI.Sms.SmsTemplateEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" Width="680" Height="520">
+    <Grid Background="{StaticResource PageBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <ScrollViewer Padding="22" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="اسم القالب" Style="{StaticResource EduFieldLabel}"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Height="38" Padding="9"/>
+                <TextBlock Text="نوع الرسالة" Style="{StaticResource EduFieldLabel}" Margin="0,14,0,0"/>
+                <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}" DisplayMemberPath="DisplayName" Height="38"/>
+                <TextBlock Text="نص القالب" Style="{StaticResource EduFieldLabel}" Margin="0,14,0,0"/>
+                <TextBox Text="{Binding Body, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="210" Padding="10"/>
+                <TextBlock Text="المتغيرات المتاحة: {StudentName}  {ParentName}  {Amount}  {RemainingSessions}  {SubjectName}  {Date}  {SchoolName}" Style="{StaticResource EduCaption}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                <Border Background="{StaticResource NegativeSoftBrush}" BorderBrush="#F1B8BE" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,12,0,0" Visibility="{Binding HasErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource NegativeBrush}" TextWrapping="Wrap"/>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+        <Border Grid.Row="1" Background="White" BorderBrush="#E3E8F0" BorderThickness="0,1,0,0" Padding="22,14">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="حفظ" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Padding="18,8"/>
+                <Button Content="إلغاء" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="8,0,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

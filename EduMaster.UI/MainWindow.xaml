@@ -41,6 +41,7 @@
                         <Button Content="🏦  الخزينة" Tag="Treasury" Style="{StaticResource NavButton}" Command="{Binding NavigateToTreasuryCommand}"/>
                         <Button Content="💸  المصاريف" Tag="Expenses" Style="{StaticResource NavButton}" Command="{Binding NavigateToExpensesCommand}"/>
                         <Button Content="📊  التقارير" Tag="Reports" Style="{StaticResource NavButton}" Command="{Binding NavigateToReportsCommand}"/>
+                        <Button Content="📩  الرسائل SMS" Tag="Sms" Style="{StaticResource NavButton}" Command="{Binding NavigateToSmsCommand}"/>
                         <TextBlock Text="الإعدادات" Style="{StaticResource NavGroupHeader}"/>
                         <Button Content="📅  السنوات الدراسية" Tag="AcademicYears" Style="{StaticResource NavButton}" Command="{Binding NavigateToAcademicYearsCommand}"/>
                         <Button Content="🏫  البنية الأكاديمية" Tag="AcademicStructure" Style="{StaticResource NavButton}" Command="{Binding NavigateToAcademicStructureCommand}"/>

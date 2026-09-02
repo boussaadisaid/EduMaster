@@ -146,7 +146,8 @@ WHERE Id = @Id;";
         // الفعّالة منها ولأفواج فعّالة فقط — مرتبة باليوم ثم الساعة (مصدر التوليد D-87)
         var rows = await connection.QueryAsync<SlotItemRow>(
             new CommandDefinition(SlotItemSelect + @"
-WHERE s.IsActive = 1 AND cg.IsActive = 1
+JOIN AcademicYears ay ON ay.Id = cg.AcademicYearId
+WHERE s.IsActive = 1 AND cg.IsActive = 1 AND ay.IsCurrent = 1
   AND (@GroupId IS NULL OR s.ClassGroupId = @GroupId)
 ORDER BY s.DayOfWeek, s.StartTime;",
                 new { GroupId = classGroupId },
@@ -163,7 +164,8 @@ ORDER BY s.DayOfWeek, s.StartTime;",
         // الجدول: لأفواج فعّالة — والمعطّلة تُدرج عند الطلب لتُفعَّل منها (D-86)
         var rows = await connection.QueryAsync<SlotItemRow>(
             new CommandDefinition(SlotItemSelect + @"
-WHERE cg.IsActive = 1
+JOIN AcademicYears ay ON ay.Id = cg.AcademicYearId
+WHERE cg.IsActive = 1 AND ay.IsCurrent = 1
   AND (@IncludeInactive = 1 OR s.IsActive = 1)
 ORDER BY s.DayOfWeek, s.StartTime;",
                 new { IncludeInactive = includeInactive },

@@ -136,12 +136,14 @@ SELECT cs.Id, cs.ClassGroupId, cg.Name AS GroupName, sb.Name AS SubjectName, l.N
        (SELECT COUNT(*) FROM ClassGroupEnrollments e WHERE e.ClassGroupId = cs.ClassGroupId AND e.Status = 1) AS ActiveEnrolledCount
 FROM ClassSessions cs
 JOIN ClassGroups cg ON cg.Id = cs.ClassGroupId
+JOIN AcademicYears ay ON ay.Id = cg.AcademicYearId
 JOIN Subjects sb ON sb.Id = cg.SubjectId
 JOIN Levels l ON l.Id = cg.LevelId
 LEFT JOIN Teachers t ON t.Id = CASE WHEN cs.Status = 2 THEN cs.TeacherId ELSE cg.TeacherId END AND t.IsDeleted = 0
 LEFT JOIN Persons tp ON tp.Id = t.PersonId AND tp.IsDeleted = 0
 LEFT JOIN Rooms r ON r.Id = cg.RoomId
 WHERE cs.StartsAt >= @From AND cs.StartsAt < @ToExclusive
+  AND ay.IsCurrent = 1
   AND (@GroupId IS NULL OR cs.ClassGroupId = @GroupId)
 ORDER BY cs.StartsAt, cg.Name;";
 

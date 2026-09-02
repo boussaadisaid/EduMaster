@@ -16,6 +16,7 @@ using EduMaster.Infrastructure.Pricing;
 using EduMaster.Infrastructure.Reports;
 using EduMaster.Infrastructure.Scheduling;
 using EduMaster.Infrastructure.Security;
+using EduMaster.Infrastructure.Sms;
 using EduMaster.Infrastructure.Settings;
 using EduMaster.Infrastructure.Treasury;
 using EduMaster.Infrastructure.Students;
@@ -96,6 +97,14 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddScoped<ITreasuryTransactionRepository, TreasuryTransactionRepository>();
             services.AddScoped<ITreasuryTransferRepository, TreasuryTransferRepository>();
             services.AddScoped<ITreasuryReadRepository, TreasuryReadRepository>();
+
+            // SMS — TextBee + local encrypted configuration
+            services.AddSingleton<ISmsSettingsStore, LocalSmsSettingsStore>();
+            services.AddSingleton<ISmsProvider>(sp => new TextBeeSmsProvider(
+                new HttpClient { BaseAddress = new Uri("https://api.textbee.dev/api/v1/") },
+                sp.GetRequiredService<ISmsSettingsStore>()));
+            services.AddScoped<ISmsTemplateRepository, SmsTemplateRepository>();
+            services.AddScoped<ISmsRepository, SmsRepository>();
 
             // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم بواحد — جديد 6.1-ب
             services.AddScoped<IReportRepository, ReportRepository>();

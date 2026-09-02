@@ -11,6 +11,7 @@ using EduMaster.UI.Payroll;
 using EduMaster.UI.People;
 using EduMaster.UI.Reports;
 using EduMaster.UI.Scheduling;
+using EduMaster.UI.Sms;
 using EduMaster.UI.Students;
 using EduMaster.UI.Teachers;
 using EduMaster.UI.Treasury;
@@ -121,6 +122,14 @@ namespace EduMaster.UI
                 CurrentScreenKey = "Payroll";
                 await vm.InitializeAsync();
             });
+            // SMS — TextBee
+            NavigateToSmsCommand = new AsyncRelayCommand(async () =>
+            {
+                var vm = _services.GetRequiredService<SmsViewModel>();
+                CurrentViewModel = vm;
+                CurrentScreenKey = "Sms";
+                await vm.InitializeAsync();
+            });
             // F6 — الشريحة 6.1: التقارير (D-127)
             NavigateToReportsCommand = new AsyncRelayCommand(async () =>
             {
@@ -169,6 +178,7 @@ namespace EduMaster.UI
         public AsyncRelayCommand NavigateToExpensesCommand { get; }   // جديد هـ-2
         public AsyncRelayCommand NavigateToTreasuryCommand { get; }
         public AsyncRelayCommand NavigateToReportsCommand { get; }   // جديد 6.1-ج
+        public AsyncRelayCommand NavigateToSmsCommand { get; }
         public AsyncRelayCommand NavigateToAcademicStructureCommand { get; }
 
         /// <summary>تذكير النسخ الاحتياطي عند الدخول (6.5 — ن-4): لا نسخة أبداً أو مضى عليها >7 أيام ← تحذيري — القرار في السياسة النقية المختبَرة · فشل الفحص يُسجَّل إنجليزياً ولا يُزعج الدخول (D-69)</summary>

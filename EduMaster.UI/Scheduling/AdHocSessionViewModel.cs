@@ -1,4 +1,5 @@
-﻿using EduMaster.Application.ClassGroups;
+﻿using EduMaster.Application.AcademicYears;
+using EduMaster.Application.ClassGroups;
 using EduMaster.Application.Common;
 using EduMaster.Application.Scheduling;
 using EduMaster.UI.Common.MVVM;
@@ -101,8 +102,22 @@ public sealed class AdHocSessionViewModel : BaseViewModel, IDialogViewModel
     private async Task LoadGroupsAsync()
     {
         await using var scope = _scopeFactory.CreateAsyncScope();
+        var years = await scope.ServiceProvider.GetRequiredService<GetAllAcademicYearsHandler>().ExecuteAsync();
+        if (!years.IsSuccess)
+        {
+            _notifier.ShowError(years.ErrorMessage!);
+            return;
+        }
+
+        var currentYearId = years.Value!.FirstOrDefault(y => y.IsCurrent)?.Id;
+        if (currentYearId is null)
+        {
+            _notifier.ShowWarning("لا توجد سنة دراسية حالية محددة.");
+            return;
+        }
+
         var handler = scope.ServiceProvider.GetRequiredService<GetClassGroupsHandler>();
-        var result = await handler.ExecuteAsync(null, null);
+        var result = await handler.ExecuteAsync(currentYearId, null);
         if (!result.IsSuccess)
         {
             _notifier.ShowError(result.ErrorMessage!);

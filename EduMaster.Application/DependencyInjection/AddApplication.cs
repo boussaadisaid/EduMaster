@@ -21,6 +21,7 @@ using EduMaster.Application.Settings;
 using EduMaster.Application.Students;
 using EduMaster.Application.Teachers;
 using EduMaster.Application.Treasury;
+using EduMaster.Application.Sms;
 using EduMaster.Application.Users;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -192,6 +193,19 @@ namespace EduMaster.Application.DependencyInjection
             services.AddTransient<RemoveTreasuryTransferHandler>();
             services.AddTransient<GetTreasuryMovementsHandler>();
             services.AddTransient<GetTreasurySummaryHandler>();
+
+            // SMS — TextBee foundation
+            services.AddTransient<GetSmsSettingsHandler>();
+            services.AddTransient<SaveSmsSettingsHandler>();
+            services.AddTransient<ClearSmsSettingsHandler>();
+            services.AddTransient<GetSmsDevicesHandler>();
+            services.AddTransient<GetSmsTemplatesHandler>();
+            services.AddTransient<CreateSmsTemplateHandler>();
+            services.AddTransient<UpdateSmsTemplateHandler>();
+            services.AddTransient<SetSmsTemplateActiveHandler>();
+            services.AddTransient<SendSmsBatchHandler>();
+            services.AddTransient<SyncSmsBatchHandler>();
+            services.AddTransient<GetSmsHistoryHandler>();
 
             // Reports (F6 — الشريحة 6.1)   //  سطر التحقق: القسم باثنين — جديد 6.1-ب
             services.AddTransient<GetPaymentMovementReportHandler>();

@@ -237,9 +237,16 @@ SELECT s.Id AS StudentId,
 FROM Charges c
 JOIN Students s ON s.Id = c.StudentId AND s.IsDeleted = 0
 JOIN Persons p ON p.Id = s.PersonId AND p.IsDeleted = 0
+LEFT JOIN AnnualEnrollments ae ON ae.Id = c.AnnualEnrollmentId
+LEFT JOIN AcademicYears ay ON ay.Id = ae.AcademicYearId
+LEFT JOIN GroupSessionPurchases pch ON pch.Id = c.GroupSessionPurchaseId
+LEFT JOIN ClassGroupEnrollments cge ON cge.Id = pch.ClassGroupEnrollmentId
+LEFT JOIN ClassGroups cg ON cg.Id = cge.ClassGroupId
+LEFT JOIN AcademicYears gay ON gay.Id = cg.AcademicYearId
 LEFT JOIN (SELECT ChargeId, SUM(AmountCentimes) AS SumAllocated FROM PaymentAllocations GROUP BY ChargeId) alloc
        ON alloc.ChargeId = c.Id
 WHERE c.Status = 1
+  AND (ay.IsCurrent = 1 OR gay.IsCurrent = 1)
   AND (@Pattern IS NULL OR p.FirstName LIKE @Pattern OR p.LastName LIKE @Pattern
        OR p.FatherName LIKE @Pattern OR p.Phone LIKE @Pattern)
 GROUP BY s.Id, p.FirstName, p.LastName, p.FatherName, p.Phone

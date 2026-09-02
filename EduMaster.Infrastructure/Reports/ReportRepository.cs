@@ -158,11 +158,12 @@ SELECT e.Id AS EnrollmentId, e.StudentId,
        sp.Phone AS StudentPhone
 FROM ClassGroupEnrollments e
 JOIN ClassGroups g ON g.Id = e.ClassGroupId
+JOIN AcademicYears ay ON ay.Id = g.AcademicYearId
 JOIN Subjects sb ON sb.Id = g.SubjectId
 JOIN Students st ON st.Id = e.StudentId
 JOIN Persons sp ON sp.Id = st.PersonId
 LEFT JOIN Persons gp ON gp.Id = st.GuardianPersonId
-WHERE e.Status = 1 AND g.IsActive = 1
+WHERE e.Status = 1 AND g.IsActive = 1 AND ay.IsCurrent = 1
 ORDER BY sp.FirstName, sp.LastName;",
                 transaction: _session.CurrentTransaction,
                 cancellationToken: cancellationToken));

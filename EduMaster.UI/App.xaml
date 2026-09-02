@@ -17,6 +17,7 @@
              xmlns:payroll="clr-namespace:EduMaster.UI.Payroll"
              xmlns:expenses="clr-namespace:EduMaster.UI.Expenses" xmlns:treasury="clr-namespace:EduMaster.UI.Treasury"
              xmlns:reports="clr-namespace:EduMaster.UI.Reports"
+             xmlns:sms="clr-namespace:EduMaster.UI.Sms"
              xmlns:common="clr-namespace:EduMaster.UI.Common"
              xmlns:commonConverters="clr-namespace:EduMaster.UI.Common.Converters">
 
@@ -208,6 +209,17 @@
             </DataTemplate>
             <DataTemplate DataType="{x:Type expenses:ExpenseCategoriesViewModel}">
                 <expenses:ExpenseCategoriesView />
+            </DataTemplate>
+
+            <!-- SMS — TextBee -->
+            <DataTemplate DataType="{x:Type sms:SmsViewModel}">
+                <sms:SmsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type sms:SmsTemplatesViewModel}">
+                <sms:SmsTemplatesView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type sms:SmsTemplateEditorViewModel}">
+                <sms:SmsTemplateEditorView/>
             </DataTemplate>
 
             <!-- Reports (F6 — الشريحة 6.1) — ✔ سطر التحقق: القسم بثلاثة -->
