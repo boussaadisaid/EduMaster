@@ -22,6 +22,7 @@
         <Border Grid.Row="1" Background="#F7F9FC" BorderBrush="#E3E8F0" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="210"/>
                     <ColumnDefinition Width="145"/>
                     <ColumnDefinition Width="145"/>
                     <ColumnDefinition Width="*"/>
@@ -30,7 +31,18 @@
                     <TextBlock Text="من تاريخ" Style="{StaticResource EduFieldLabel}"/>
                     <DatePicker SelectedDate="{Binding FromDate}" Height="38"/>
                 </StackPanel>
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="السنة المرجعية" Style="{StaticResource EduFieldLabel}"/>
+                    <ComboBox ItemsSource="{Binding AcademicYears}"
+                              SelectedItem="{Binding SelectedAcademicYear}"
+                              DisplayMemberPath="Name"
+                              Height="38"/>
+                </StackPanel>
                 <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                    <TextBlock Text="من تاريخ" Style="{StaticResource EduFieldLabel}"/>
+                    <DatePicker SelectedDate="{Binding FromDate}" Height="38"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="0,0,10,0">
                     <TextBlock Text="إلى تاريخ" Style="{StaticResource EduFieldLabel}"/>
                     <DatePicker SelectedDate="{Binding ToDate}" Height="38"/>
                 </StackPanel>

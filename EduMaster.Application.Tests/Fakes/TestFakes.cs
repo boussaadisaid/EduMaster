@@ -447,7 +447,9 @@ public sealed class FakePersonRepository : IPersonRepository
 public sealed class FakeAcademicYearRepository : IAcademicYearRepository
 {
     public Dictionary<int, Domain.AcademicYears.AcademicYear> ById { get; } = new();
+    public Domain.AcademicYears.AcademicYear? CurrentToReturn { get; set; }
     public int GetByIdCallCount { get; private set; }
+    public int GetCurrentCallCount { get; private set; }
     public Exception? ToThrow { get; set; }
 
     public Task<Domain.AcademicYears.AcademicYear?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -459,7 +461,12 @@ public sealed class FakeAcademicYearRepository : IAcademicYearRepository
 
     public Task AddAsync(Domain.AcademicYears.AcademicYear academicYear, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     public Task UpdateAsync(Domain.AcademicYears.AcademicYear academicYear, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-    public Task<Domain.AcademicYears.AcademicYear?> GetCurrentAcademicYearAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<Domain.AcademicYears.AcademicYear?> GetCurrentAcademicYearAsync(CancellationToken cancellationToken = default)
+    {
+        GetCurrentCallCount++;
+        if (ToThrow is not null) throw ToThrow;
+        return Task.FromResult(CurrentToReturn);
+    }
     public Task<IEnumerable<Domain.AcademicYears.AcademicYear>> GetAllAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
     public Task<bool> AnyWithNameAsync(string name, int excludeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     public Task<bool> AnyOverlappingAsync(DateOnly startDate, DateOnly endDate, int excludeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();

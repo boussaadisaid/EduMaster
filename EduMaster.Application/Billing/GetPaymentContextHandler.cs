@@ -10,14 +10,16 @@ public sealed class GetPaymentContextHandler
     private readonly IChargeRepository _charges;
     private readonly IPaymentRepository _payments;
     private readonly IStudentRepository _students;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly ILogger<GetPaymentContextHandler> _logger;
 
     public GetPaymentContextHandler(IChargeRepository charges, IPaymentRepository payments, IStudentRepository students,
-        ILogger<GetPaymentContextHandler> logger)
+        IAcademicYearRepository academicYears, ILogger<GetPaymentContextHandler> logger)
     {
         _charges = charges;
         _payments = payments;
         _students = students;
+        _academicYears = academicYears;
         _logger = logger;
     }
 
@@ -25,12 +27,30 @@ public sealed class GetPaymentContextHandler
     {
         try
         {
-            var openCharges = await _charges.GetOpenForStudentAsync(studentId, cancellationToken);
+            var currentAcademicYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentAcademicYear is null)
+                return OperationResult<PaymentContextItem>.Failure(
+                    "لا توجد سنة دراسية حالية محددة.", ErrorType.BusinessRule);
+
+            var openCharges = (await _charges.GetOpenForStudentAsync(studentId, cancellationToken)).ToList();
             var unallocated = await _payments.GetUnallocatedForStudentAsync(studentId, cancellationToken);
-            var student = await _students.GetByIdAsync(studentId, cancellationToken);   // الولي المسجَّل إن وُجد (اسمه عند الواجهة أصلاً)
+            var student = await _students.GetByIdAsync(studentId, cancellationToken);
+
+            var current = openCharges
+                .Where(c => c.AcademicYearId == currentAcademicYear.Id)
+                .ToList();
+            var previous = openCharges
+                .Where(c => c.AcademicYearId != currentAcademicYear.Id)
+                .ToList();
 
             return OperationResult<PaymentContextItem>.Success(
-                new PaymentContextItem(openCharges.ToList(), unallocated, student?.GuardianPersonId));
+                new PaymentContextItem(openCharges, unallocated, student?.GuardianPersonId)
+                {
+                    CurrentYearOpenCharges = current,
+                    PreviousYearsOpenCharges = previous,
+                    CurrentAcademicYearId = currentAcademicYear.Id,
+                    CurrentAcademicYearName = currentAcademicYear.Name.ToString()
+                });
         }
         catch (OperationCanceledException) { throw; }   // D-64
         catch (Exception ex)

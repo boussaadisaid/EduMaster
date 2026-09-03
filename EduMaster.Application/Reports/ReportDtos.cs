@@ -21,6 +21,8 @@ public sealed record StudentPaymentLine(
     long AllocatedCentimes,
     IReadOnlyList<StudentPaymentAllocationLine> Allocations)
 {
+    /// <summary>المبلغ المخصص من هذا الإيصال لمستحقات السنة المحددة في كشف السنة؛ صفر في الكشف الكامل.</summary>
+    public long AllocatedToSelectedAcademicYearCentimes { get; init; }
     public string KindText => Kind == PaymentKind.Receipt ? "قبض" : "صرف";
     public string ReceiptNoText => $"#{ReceiptNo:000000}";
 
@@ -35,11 +37,18 @@ public sealed record StudentStatementItem(
     IReadOnlyList<StudentPaymentLine> Payments,
     long CreditCentimes)
 {
+    public bool IsAcademicYearScoped { get; init; }
+    public int? AcademicYearId { get; init; }
+    public string? AcademicYearName { get; init; }
     /// <summary>إجمالي المقبوض — إيصالات القبض فقط</summary>
-    public long ReceiptsTotalCentimes => Payments.Where(p => p.Kind == PaymentKind.Receipt).Sum(p => p.AmountCentimes);
+    public long ReceiptsTotalCentimes => IsAcademicYearScoped
+        ? Payments.Where(p => p.Kind == PaymentKind.Receipt).Sum(p => p.AllocatedToSelectedAcademicYearCentimes)
+        : Payments.Where(p => p.Kind == PaymentKind.Receipt).Sum(p => p.AmountCentimes);
 
     /// <summary>إجمالي المصروف — إيصالات الاسترجاع</summary>
-    public long RefundsTotalCentimes => Payments.Where(p => p.Kind == PaymentKind.Refund).Sum(p => p.AmountCentimes);
+    public long RefundsTotalCentimes => IsAcademicYearScoped
+        ? 0
+        : Payments.Where(p => p.Kind == PaymentKind.Refund).Sum(p => p.AmountCentimes);
 
     /// <summary>الرصيد القائم = Σ متبقّي المستحقات الفعّالة فقط — الملغى موثق ولا يُحسب (D-108/D-109)</summary>
     public long BalanceCentimes => Charges.Where(c => c.IsActive).Sum(c => c.RemainingCentimes);

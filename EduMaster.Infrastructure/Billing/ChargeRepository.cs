@@ -40,7 +40,9 @@ public sealed class ChargeRepository : IChargeRepository
         byte Status,
         string? AdjustmentNote,
         DateTime CreatedAtUtc,
-        long AllocatedCentimes);
+        long AllocatedCentimes,
+        int? AcademicYearId,
+        string? AcademicYearName);
 
     // ⚠ D-81: بنفس ترتيب استعلام GetOpenForStudentAsync
     private sealed record OpenChargeRow(
@@ -49,7 +51,9 @@ public sealed class ChargeRepository : IChargeRepository
         string SourceDescription,
         long AmountCentimes,
         long AllocatedCentimes,
-        DateTime CreatedAtUtc);
+        DateTime CreatedAtUtc,
+        int? AcademicYearId,
+        string? AcademicYearName);
 
     // ⚠ D-81: بنفس ترتيب استعلام GetDebtorsAsync (4.3)
     private sealed record DebtorRow(
@@ -74,7 +78,8 @@ LEFT JOIN AnnualEnrollments ae ON ae.Id = c.AnnualEnrollmentId
 LEFT JOIN AcademicYears ay ON ay.Id = ae.AcademicYearId
 LEFT JOIN GroupSessionPurchases p ON p.Id = c.GroupSessionPurchaseId
 LEFT JOIN ClassGroupEnrollments cge ON cge.Id = p.ClassGroupEnrollmentId
-LEFT JOIN ClassGroups cg ON cg.Id = cge.ClassGroupId";
+LEFT JOIN ClassGroups cg ON cg.Id = cge.ClassGroupId
+LEFT JOIN AcademicYears gay ON gay.Id = cg.AcademicYearId";
 
     public async Task AddAsync(Domain.Billing.Charge charge, CancellationToken cancellationToken = default)
     {
@@ -162,7 +167,9 @@ WHERE Id = @Id;";
 SELECT c.Id, c.StudentId, c.Kind,
        {SourceDescriptionSql} AS SourceDescription,
        c.OriginalAmountCentimes, c.AmountCentimes, c.Status, c.AdjustmentNote, c.CreatedAtUtc,
-       (SELECT ISNULL(SUM(a.AmountCentimes), 0) FROM PaymentAllocations a WHERE a.ChargeId = c.Id) AS AllocatedCentimes
+       (SELECT ISNULL(SUM(a.AmountCentimes), 0) FROM PaymentAllocations a WHERE a.ChargeId = c.Id) AS AllocatedCentimes,
+       CASE WHEN c.Kind = 1 THEN ay.Id ELSE gay.Id END AS AcademicYearId,
+       CASE WHEN c.Kind = 1 THEN ay.Name ELSE gay.Name END AS AcademicYearName
 FROM Charges c
 {SourceJoins}
 WHERE c.StudentId = @StudentId
@@ -176,7 +183,8 @@ ORDER BY c.CreatedAtUtc DESC;";
         return rows.Select(row => new StudentChargeItem(
             row.Id, row.StudentId, (ChargeKind)row.Kind, row.SourceDescription,
             row.OriginalAmountCentimes, row.AmountCentimes, (ChargeStatus)row.Status,
-            row.AdjustmentNote, row.CreatedAtUtc, row.AllocatedCentimes));
+            row.AdjustmentNote, row.CreatedAtUtc, row.AllocatedCentimes,
+            row.AcademicYearId, row.AcademicYearName));
     }
 
     public async Task<long> GetAllocatedForChargeAsync(int chargeId, CancellationToken cancellationToken = default)
@@ -205,7 +213,9 @@ SELECT c.Id, c.Kind,
        {SourceDescriptionSql} AS SourceDescription,
        c.AmountCentimes,
        (SELECT ISNULL(SUM(a.AmountCentimes), 0) FROM PaymentAllocations a WHERE a.ChargeId = c.Id) AS AllocatedCentimes,
-       c.CreatedAtUtc
+       c.CreatedAtUtc,
+       CASE WHEN c.Kind = 1 THEN ay.Id ELSE gay.Id END AS AcademicYearId,
+       CASE WHEN c.Kind = 1 THEN ay.Name ELSE gay.Name END AS AcademicYearName
 FROM Charges c
 {SourceJoins}
 WHERE c.StudentId = @StudentId
@@ -220,7 +230,8 @@ ORDER BY c.CreatedAtUtc;";
 
         return rows.Select(row => new OpenChargeItem(
             row.Id, (ChargeKind)row.Kind, row.SourceDescription,
-            row.AmountCentimes, row.AllocatedCentimes, row.CreatedAtUtc));
+            row.AmountCentimes, row.AllocatedCentimes, row.CreatedAtUtc,
+            row.AcademicYearId, row.AcademicYearName));
     }
 
     public async Task<IEnumerable<DebtorItem>> GetDebtorsAsync(string? searchTerm, CancellationToken cancellationToken = default)

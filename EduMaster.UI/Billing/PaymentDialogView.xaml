@@ -41,7 +41,7 @@
                         </Border>
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding HasOpenCharges, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding HasAnyCharges, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -49,25 +49,34 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Border Padding="16,12" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,0,0,1" CornerRadius="10,10,0,0">
-                            <StackPanel>
-                                <TextBlock Text="تخصيص الدفعة" Style="{StaticResource EduSubsectionTitle}"/>
-                                <TextBlock Text="اقتراح تلقائي بالأقدم أولاً، ويمكن تعديل كل مبلغ" Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
-                            </StackPanel>
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock Text="تخصيص الدفعة" Style="{StaticResource EduSubsectionTitle}"/>
+                                    <TextBlock Text="{Binding AcademicYearText, StringFormat=السنة الحالية: {0}}" Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
+                                    <TextBlock Text="الاقتراح يبدأ بمستحقات السنة الحالية، ويمكن إظهار السنوات السابقة صراحةً." Style="{StaticResource EduCaption}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <CheckBox Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{Binding PreviousYearsButtonText}" IsChecked="{Binding ShowPreviousYears}" Visibility="{Binding HasPreviousYears, Converter={StaticResource BooleanToVisibilityConverter}}" VerticalContentAlignment="Center" Padding="8,5"/>
+                            </Grid>
                         </Border>
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding Rows}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EDF1F6" VerticalGridLinesBrush="Transparent" BorderThickness="0" RowHeight="45" ColumnHeaderHeight="38">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="المستحق" Binding="{Binding SourceText}" Width="2*" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="النوع" Binding="{Binding KindText}" Width="Auto" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingText}" Width="Auto" IsReadOnly="True"/>
-                                <DataGridTemplateColumn Header="التخصيص (دج)" Width="120">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding AllocatedText, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0,0,0,1" Padding="6,3"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <Grid Grid.Row="1">
+                            <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EDF1F6" VerticalGridLinesBrush="Transparent" BorderThickness="0" RowHeight="45" ColumnHeaderHeight="38" Visibility="{Binding HasOpenCharges, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="المستحق" Binding="{Binding SourceText}" Width="2*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="النوع" Binding="{Binding KindText}" Width="Auto" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingText}" Width="Auto" IsReadOnly="True"/>
+                                    <DataGridTemplateColumn Header="التخصيص (دج)" Width="120">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox Text="{Binding AllocatedText, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0,0,0,1" Padding="6,3"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Border Background="#EEF5FC" BorderBrush="#D5E5F4" BorderThickness="1" CornerRadius="8" Padding="12,10" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="14" Visibility="{Binding NoCurrentYearCharges, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="لا توجد مستحقات مفتوحة في السنة الحالية. توجد مستحقات سابقة يمكن إظهارها عند الحاجة." Style="{StaticResource EduCaption}" Foreground="{StaticResource AccentDarkBrush}" TextWrapping="Wrap"/>
+                            </Border>
+                        </Grid>
                         <Border Grid.Row="2" Background="{StaticResource WarningSoftBrush}" Padding="12,9" CornerRadius="0,0,10,10" Visibility="{Binding HasUnallocatedFromThis, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="{Binding UnallocatedFromThisText}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap"/>
                         </Border>

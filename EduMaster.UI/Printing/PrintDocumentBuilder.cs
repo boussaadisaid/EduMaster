@@ -175,7 +175,7 @@ public static class PrintDocumentBuilder
         AddSchoolHeader(doc, model.Header, logoFullPath);
         AddSeparator(doc);
 
-        doc.Blocks.Add(new Paragraph(new Run("كشف حساب طالب"))
+        doc.Blocks.Add(new Paragraph(new Run(statement.IsAcademicYearScoped ? $"كشف حساب طالب — {statement.AcademicYearName}" : "كشف حساب طالب"))
         {
             FontSize = 16,
             FontWeight = FontWeights.Bold,
@@ -191,10 +191,14 @@ public static class PrintDocumentBuilder
         });
 
         doc.Blocks.Add(new Paragraph(new Run(
-            $"الرصيد القائم: {MoneyInput.FormatDinars(statement.BalanceCentimes)} دج · " +
-            $"الزائدة الدائنة: {MoneyInput.FormatDinars(statement.CreditCentimes)} دج · " +
-            $"إجمالي المقبوض: {MoneyInput.FormatDinars(statement.ReceiptsTotalCentimes)} دج · " +
-            $"إجمالي المصروف: {MoneyInput.FormatDinars(statement.RefundsTotalCentimes)} دج"))
+            statement.IsAcademicYearScoped
+                ? $"الرصيد القائم للسنة: {MoneyInput.FormatDinars(statement.BalanceCentimes)} دج · " +
+                  $"المخصص للسنة من الإيصالات: {MoneyInput.FormatDinars(statement.ReceiptsTotalCentimes)} دج · " +
+                  $"الزائدة الدائنة (كل السنوات): {MoneyInput.FormatDinars(statement.CreditCentimes)} دج"
+                : $"الرصيد القائم: {MoneyInput.FormatDinars(statement.BalanceCentimes)} دج · " +
+                  $"الزائدة الدائنة: {MoneyInput.FormatDinars(statement.CreditCentimes)} دج · " +
+                  $"إجمالي المقبوض: {MoneyInput.FormatDinars(statement.ReceiptsTotalCentimes)} دج · " +
+                  $"إجمالي المصروف: {MoneyInput.FormatDinars(statement.RefundsTotalCentimes)} دج"))
         {
             FontWeight = FontWeights.SemiBold,
             Foreground = DebtRed,
@@ -234,9 +238,11 @@ public static class PrintDocumentBuilder
         else
         {
             // إيصال · التاريخ · النوع · الدافع · المبلغ · التخصيص · ملاحظة — المجموع = A4ContentWidth
-            var payments = DataTable(
-                new[] { "إيصال", "التاريخ", "النوع", "الدافع", "المبلغ (دج)", "التخصيص", "ملاحظة" },
-                new[] { 58.0, 72.0, 48.0, 120.0, 82.0, 210.0, 131.7 });
+            var payments = statement.IsAcademicYearScoped
+                ? DataTable(new[] { "إيصال", "التاريخ", "النوع", "الدافع", "قيمة الإيصال", "المخصص للسنة", "التخصيص", "ملاحظة" },
+                    new[] { 55.0, 70.0, 48.0, 105.0, 75.0, 82.0, 180.0, 130.0 })
+                : DataTable(new[] { "إيصال", "التاريخ", "النوع", "الدافع", "المبلغ (دج)", "التخصيص", "ملاحظة" },
+                    new[] { 58.0, 72.0, 48.0, 120.0, 82.0, 210.0, 131.7 });
             foreach (var payment in statement.Payments)
             {
                 var row = new TableRow();
@@ -245,6 +251,8 @@ public static class PrintDocumentBuilder
                 row.Cells.Add(MakeCell(payment.KindText));
                 row.Cells.Add(MakeCell(payment.PayerName ?? "—"));
                 row.Cells.Add(MakeCell(MoneyInput.FormatDinars(payment.AmountCentimes)));
+                if (statement.IsAcademicYearScoped)
+                    row.Cells.Add(MakeCell(MoneyInput.FormatDinars(payment.AllocatedToSelectedAcademicYearCentimes)));
                 row.Cells.Add(payment.Allocations.Count == 0
                     ? MakeCell("—")
                     : MakeCell(payment.Allocations.Select(a => $"• {a.SourceDescription}: {MoneyInput.FormatDinars(a.AmountCentimes)}").ToList()));

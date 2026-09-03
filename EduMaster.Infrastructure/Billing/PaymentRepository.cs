@@ -210,14 +210,14 @@ JOIN Persons sp ON sp.Id = s.PersonId
 LEFT JOIN Persons pp ON pp.Id = p.PaidByPersonId
 LEFT JOIN (SELECT PaymentId, SUM(AmountCentimes) AS SumAllocated FROM PaymentAllocations GROUP BY PaymentId) alloc
        ON alloc.PaymentId = p.Id
-WHERE p.PaidOn >= @From AND p.PaidOn <= @To
+WHERE p.PaidOn >= @From AND p.PaidOn < @ToExclusive
 ORDER BY p.ReceiptNo DESC;";
 
         var rows = await connection.QueryAsync<PaymentLogRow>(
             new CommandDefinition(sql, new
             {
                 From = from.ToDateTime(TimeOnly.MinValue),
-                To = to.ToDateTime(TimeOnly.MinValue)
+                ToExclusive = to.AddDays(1).ToDateTime(TimeOnly.MinValue)
             },
                 transaction: _session.CurrentTransaction,
                 cancellationToken: cancellationToken));

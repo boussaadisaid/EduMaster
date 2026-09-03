@@ -1,4 +1,5 @@
-﻿using EduMaster.Application.Common;
+﻿using EduMaster.Application.AcademicYears;
+using EduMaster.Application.Common;
 using EduMaster.Application.Printing;
 using EduMaster.Application.Reports;
 using EduMaster.Application.Settings;
@@ -26,6 +27,25 @@ public sealed class StudentStatementViewModel : BaseViewModel
     private readonly IPrintService _printService;
     private CancellationTokenSource? _searchCts;
     private CancellationTokenSource? _loadCts;
+    private bool _suppressScopeReload;
+
+    public sealed record StatementScopeOption(int? AcademicYearId, string Title);
+
+    public ObservableCollection<StatementScopeOption> ScopeOptions { get; } = new();
+
+    private StatementScopeOption? _selectedScope;
+    public StatementScopeOption? SelectedScope
+    {
+        get => _selectedScope;
+        set
+        {
+            if (SetProperty(ref _selectedScope, value) && !_suppressScopeReload && SelectedStudent is not null)
+            {
+                var cts = _loadCts = new CancellationTokenSource();
+                _ = LoadStatementAsync(SelectedStudent.Id, cts.Token);
+            }
+        }
+    }
 
     public StudentStatementViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
         ILogger<StudentStatementViewModel> logger, IPrintService printService)
@@ -122,7 +142,42 @@ public sealed class StudentStatementViewModel : BaseViewModel
     public AsyncRelayCommand PrintReceiptCommand { get; }
 
     /// <summary>قائمة أولية بلا مصطلح (البحث بمصطلح فارغ يعيد الجميع — حجم الجدول تافه D-33)</summary>
-    public async Task InitializeAsync() => await SearchAsync();
+    public async Task InitializeAsync()
+    {
+        await LoadScopesAsync();
+        await SearchAsync();
+    }
+
+    private async Task LoadScopesAsync()
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var result = await scope.ServiceProvider.GetRequiredService<GetAllAcademicYearsHandler>().ExecuteAsync();
+            if (!result.IsSuccess)
+            {
+                _notifier.ShowError(result.ErrorMessage!);
+                return;
+            }
+
+            var years = result.Value!;
+            _suppressScopeReload = true;
+            ScopeOptions.Clear();
+            ScopeOptions.Add(new StatementScopeOption(null, "كل السنوات"));
+            foreach (var year in years.OrderByDescending(y => y.StartDate))
+                ScopeOptions.Add(new StatementScopeOption(year.Id, year.IsCurrent ? $"{year.Name} (الحالية)" : year.Name));
+            SelectedScope = ScopeOptions.FirstOrDefault(s => s.AcademicYearId == years.FirstOrDefault(y => y.IsCurrent)?.Id) ?? ScopeOptions[0];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load academic year scopes for student statement");
+            _notifier.ShowError("تعذّر تحميل السنوات الدراسية — أعد المحاولة.");
+        }
+        finally
+        {
+            _suppressScopeReload = false;
+        }
+    }
 
     private async Task DebouncedSearchAsync()
     {
@@ -171,16 +226,21 @@ public sealed class StudentStatementViewModel : BaseViewModel
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var handler = scope.ServiceProvider.GetRequiredService<GetStudentStatementHandler>();
-            var result = await handler.ExecuteAsync(studentId, cancellationToken);
+            var result = SelectedScope?.AcademicYearId is int academicYearId
+                ? await handler.ExecuteForAcademicYearAsync(studentId, academicYearId, cancellationToken)
+                : await handler.ExecuteAsync(studentId, cancellationToken);
 
             if (result.IsSuccess)
             {
                 Statement = result.Value!;
-                TotalsText =
-                    $"الرصيد القائم: {MoneyInput.FormatDinars(Statement.BalanceCentimes)} دج" +
-                    $" · الزائدة الدائنة: {MoneyInput.FormatDinars(Statement.CreditCentimes)} دج" +
-                    $" · إجمالي المقبوض: {MoneyInput.FormatDinars(Statement.ReceiptsTotalCentimes)} دج" +
-                    $" · إجمالي المصروف: {MoneyInput.FormatDinars(Statement.RefundsTotalCentimes)} دج";
+                TotalsText = Statement.IsAcademicYearScoped
+                    ? $"الرصيد القائم للسنة {Statement.AcademicYearName}: {MoneyInput.FormatDinars(Statement.BalanceCentimes)} دج" +
+                      $" · المخصص للسنة من الإيصالات: {MoneyInput.FormatDinars(Statement.ReceiptsTotalCentimes)} دج" +
+                      $" · الزائدة الدائنة (كل السنوات): {MoneyInput.FormatDinars(Statement.CreditCentimes)} دج"
+                    : $"الرصيد القائم: {MoneyInput.FormatDinars(Statement.BalanceCentimes)} دج" +
+                      $" · الزائدة الدائنة: {MoneyInput.FormatDinars(Statement.CreditCentimes)} دج" +
+                      $" · إجمالي المقبوض: {MoneyInput.FormatDinars(Statement.ReceiptsTotalCentimes)} دج" +
+                      $" · إجمالي المصروف: {MoneyInput.FormatDinars(Statement.RefundsTotalCentimes)} دج";
             }
             else if (!cancellationToken.IsCancellationRequested)
             {

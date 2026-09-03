@@ -1,4 +1,5 @@
-﻿using EduMaster.Application.Billing;
+﻿using EduMaster.Application.AcademicYears;
+using EduMaster.Application.Billing;
 using EduMaster.Application.Common;
 using EduMaster.Application.Printing;
 using EduMaster.Application.Reports;
@@ -25,6 +26,7 @@ public sealed class PaymentMovementReportViewModel : BaseViewModel
     private readonly IPrintService _printService;
     private CancellationTokenSource? _loadCts;
     private PaymentMovementReportItem? _lastReport;
+    private AcademicYearListItem? _selectedAcademicYear;
 
     public PaymentMovementReportViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
         ILogger<PaymentMovementReportViewModel> logger, IPrintService printService)
@@ -39,6 +41,37 @@ public sealed class PaymentMovementReportViewModel : BaseViewModel
     }
 
     public ObservableCollection<PaymentListItem> Rows { get; } = new();
+
+    public ObservableCollection<AcademicYearListItem> AcademicYears { get; } = new();
+
+    public AcademicYearListItem? SelectedAcademicYear
+    {
+        get => _selectedAcademicYear;
+        set
+        {
+            if (!SetProperty(ref _selectedAcademicYear, value) || value is null)
+                return;
+
+            _loadCts?.Cancel();
+            SetDateRangeSilently(value);
+            _ = LoadAsync();
+        }
+    }
+
+    private void SetDateRangeSilently(AcademicYearListItem year)
+    {
+        var from = year.StartDate.ToDateTime(TimeOnly.MinValue);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var effectiveTo = today < year.EndDate ? today : year.EndDate;
+
+        if (effectiveTo < year.StartDate)
+            effectiveTo = year.EndDate;
+
+        _fromDate = from;
+        _toDate = effectiveTo.ToDateTime(TimeOnly.MinValue);
+        OnPropertyChanged(nameof(FromDate));
+        OnPropertyChanged(nameof(ToDate));
+    }
 
     private DateTime? _fromDate;
     public DateTime? FromDate
@@ -83,11 +116,46 @@ public sealed class PaymentMovementReportViewModel : BaseViewModel
 
     public async Task InitializeAsync()
     {
-        // الافتراضي: اليوم — حقلاً مباشرةً بلا إطلاق مزدوج ثم تحميل واحد (نمط شاشة الحصص)
-        _fromDate = DateTime.Today;
-        _toDate = DateTime.Today;
-        OnPropertyChanged(nameof(FromDate));
-        OnPropertyChanged(nameof(ToDate));
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var yearsHandler = scope.ServiceProvider.GetRequiredService<GetAllAcademicYearsHandler>();
+            var yearsResult = await yearsHandler.ExecuteAsync();
+
+            if (yearsResult.IsSuccess)
+            {
+                AcademicYears.Clear();
+                foreach (var year in yearsResult.Value!
+                    .OrderByDescending(y => y.StartDate))
+                {
+                    AcademicYears.Add(year);
+                }
+
+                _selectedAcademicYear = AcademicYears.FirstOrDefault(y => y.IsCurrent)
+                    ?? AcademicYears.FirstOrDefault();
+                OnPropertyChanged(nameof(SelectedAcademicYear));
+
+                if (_selectedAcademicYear is not null)
+                    SetDateRangeSilently(_selectedAcademicYear);
+            }
+            else
+            {
+                _notifier.ShowWarning(yearsResult.ErrorMessage!);
+                _fromDate = DateTime.Today;
+                _toDate = DateTime.Today;
+                OnPropertyChanged(nameof(FromDate));
+                OnPropertyChanged(nameof(ToDate));
+            }
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize academic-year filter for payment movement report");
+            _fromDate = DateTime.Today;
+            _toDate = DateTime.Today;
+            OnPropertyChanged(nameof(FromDate));
+            OnPropertyChanged(nameof(ToDate));
+        }
 
         await LoadAsync();
     }

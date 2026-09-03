@@ -32,7 +32,11 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
     private StudentListItem _student = null!;
     private int _studentId;
     private int? _guardianPersonId;
-    private IReadOnlyList<OpenChargeItem> _openCharges = new List<OpenChargeItem>();
+    private IReadOnlyList<OpenChargeItem> _currentYearOpenCharges = Array.Empty<OpenChargeItem>();
+    private IReadOnlyList<OpenChargeItem> _previousYearsOpenCharges = Array.Empty<OpenChargeItem>();
+    private IReadOnlyList<OpenChargeItem> _openCharges = Array.Empty<OpenChargeItem>();
+    private string _academicYearText = string.Empty;
+    private bool _showPreviousYears;
 
     public PaymentDialogViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
         IDialogService dialogService, IPrintService printService, ILogger<PaymentDialogViewModel> logger)
@@ -113,7 +117,62 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
 
     public bool HasOpenCharges => Rows.Count > 0;
 
-    public bool NoOpenCharges => Rows.Count == 0;
+    public bool HasAnyCharges => _currentYearOpenCharges.Count > 0 || _previousYearsOpenCharges.Count > 0;
+
+    public bool NoOpenCharges => Rows.Count == 0 && !HasPreviousYears;
+
+    public bool NoCurrentYearCharges => _currentYearOpenCharges.Count == 0;
+
+    public string AcademicYearText
+    {
+        get => _academicYearText;
+        private set => SetProperty(ref _academicYearText, value);
+    }
+
+    public bool HasPreviousYears => _previousYearsOpenCharges.Count > 0;
+
+    public bool ShowPreviousYears
+    {
+        get => _showPreviousYears;
+        set
+        {
+            if (SetProperty(ref _showPreviousYears, value))
+            {
+                RebuildVisibleCharges();
+                OnPropertyChanged(nameof(PreviousYearsButtonText));
+            }
+        }
+    }
+
+    public string PreviousYearsButtonText => _showPreviousYears
+        ? "إخفاء مستحقات السنوات السابقة"
+        : $"عرض المستحقات السابقة ({_previousYearsOpenCharges.Count})";
+
+    private void RebuildVisibleCharges()
+    {
+        _openCharges = _showPreviousYears
+            ? _currentYearOpenCharges.Concat(_previousYearsOpenCharges).ToList()
+            : _currentYearOpenCharges;
+
+        Rows.Clear();
+        foreach (var charge in _openCharges)
+        {
+            var sourceText = string.IsNullOrWhiteSpace(charge.AcademicYearName)
+                ? charge.SourceDescription
+                : $"{charge.SourceDescription} — {charge.AcademicYearName}";
+
+            Rows.Add(new PaymentAllocationRowViewModel(
+                charge.Id, charge.KindText, sourceText,
+                $"{MoneyInput.FormatDinars(charge.RemainingCentimes)} دج", RecomputeUnallocated));
+        }
+
+        OnPropertyChanged(nameof(HasOpenCharges));
+        OnPropertyChanged(nameof(HasAnyCharges));
+        OnPropertyChanged(nameof(NoOpenCharges));
+        OnPropertyChanged(nameof(NoCurrentYearCharges));
+        ApplySuggestion();
+    }
+
 
     private string _creditText = string.Empty;
     public string CreditText   // D-107: الزائدة الدائنة المتاحة من قبل
@@ -177,8 +236,14 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
         }
 
         var context = result.Value!;
-        _openCharges = context.OpenCharges;
+        _currentYearOpenCharges = context.CurrentYearOpenCharges;
+        _previousYearsOpenCharges = context.PreviousYearsOpenCharges;
+        _openCharges = _currentYearOpenCharges;
         _guardianPersonId = context.GuardianPersonId;
+        _academicYearText = context.CurrentAcademicYearName;
+        OnPropertyChanged(nameof(AcademicYearText));
+        OnPropertyChanged(nameof(HasPreviousYears));
+        OnPropertyChanged(nameof(PreviousYearsButtonText));
 
         // D-104/D-36: الولي المسجَّل هو الدافع الغالب — مؤشّر افتراضياً (اسمه من بطاقة الطالب نفسها)
         ShowGuardianOption = context.GuardianPersonId is not null && !string.IsNullOrWhiteSpace(student.GuardianFullName);
@@ -189,13 +254,7 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
             OnPropertyChanged(nameof(ShowGuardianOption));
         }
 
-        Rows.Clear();
-        foreach (var charge in context.OpenCharges)
-            Rows.Add(new PaymentAllocationRowViewModel(
-                charge.Id, charge.KindText, charge.SourceDescription,
-                $"{MoneyInput.FormatDinars(charge.RemainingCentimes)} دج", RecomputeUnallocated));
-        OnPropertyChanged(nameof(HasOpenCharges));
-        OnPropertyChanged(nameof(NoOpenCharges));
+        RebuildVisibleCharges();
 
         CreditText = context.UnallocatedCentimes > 0
             ? $"زائدة دائنة متاحة من قبل: {MoneyInput.FormatDinars(context.UnallocatedCentimes)} دج (D-107)"
@@ -215,8 +274,23 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
             return;
         }
 
-        var suggestion = PaymentAllocationSuggester.Suggest(_openCharges, amountCentimes)
-            .ToDictionary(s => s.ChargeId, s => s.AmountCentimes);
+        var suggestion = new Dictionary<int, long>();
+        var remaining = amountCentimes;
+
+        foreach (var item in PaymentAllocationSuggester.Suggest(_currentYearOpenCharges, remaining))
+        {
+            suggestion[item.ChargeId] = item.AmountCentimes;
+            remaining -= item.AmountCentimes;
+        }
+
+        if (_showPreviousYears && remaining > 0)
+        {
+            foreach (var item in PaymentAllocationSuggester.Suggest(_previousYearsOpenCharges, remaining))
+            {
+                suggestion[item.ChargeId] = item.AmountCentimes;
+                remaining -= item.AmountCentimes;
+            }
+        }
 
         foreach (var row in Rows)
             row.AllocatedText = suggestion.TryGetValue(row.ChargeId, out var suggested)

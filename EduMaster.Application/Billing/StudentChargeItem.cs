@@ -13,7 +13,9 @@ public sealed record StudentChargeItem(
     ChargeStatus Status,
     string? AdjustmentNote,
     DateTime CreatedAtUtc,
-    long AllocatedCentimes)
+    long AllocatedCentimes,
+    int? AcademicYearId = null,
+    string? AcademicYearName = null)
 {
     public string KindText => Kind == ChargeKind.RegistrationFee ? "حقوق تسجيل" : "حزمة حصص";
     public string StatusText => Status == ChargeStatus.Active ? "فعّال" : "ملغى";

@@ -9,7 +9,9 @@ public sealed record OpenChargeItem(
     string SourceDescription,
     long AmountCentimes,
     long AllocatedCentimes,
-    DateTime CreatedAtUtc)
+    DateTime CreatedAtUtc,
+    int? AcademicYearId = null,
+    string? AcademicYearName = null)
 {
     public long RemainingCentimes => AmountCentimes - AllocatedCentimes;
     public string KindText => Kind == ChargeKind.RegistrationFee ? "حقوق تسجيل" : "حزمة حصص";
@@ -19,7 +21,13 @@ public sealed record OpenChargeItem(
 public sealed record SuggestedAllocation(int ChargeId, long AmountCentimes);
 
 /// <summary>سياق ديالوغ القبض بقراءة واحدة: المفتوحة + الزائدة الدائنة (D-107) + معرّف الولي المسجَّل إن وُجد (D-104/D-36)</summary>
-public sealed record PaymentContextItem(IReadOnlyList<OpenChargeItem> OpenCharges, long UnallocatedCentimes, int? GuardianPersonId);
+public sealed record PaymentContextItem(IReadOnlyList<OpenChargeItem> OpenCharges, long UnallocatedCentimes, int? GuardianPersonId)
+{
+    public IReadOnlyList<OpenChargeItem> CurrentYearOpenCharges { get; init; } = Array.Empty<OpenChargeItem>();
+    public IReadOnlyList<OpenChargeItem> PreviousYearsOpenCharges { get; init; } = Array.Empty<OpenChargeItem>();
+    public int CurrentAcademicYearId { get; init; }
+    public string CurrentAcademicYearName { get; init; } = string.Empty;
+}
 
 /// <summary>سطر تخصيص مدخل من الديالوغ بعد التعديل (السيادة للمستخدم — D-106)</summary>
 public sealed record PaymentAllocationInput(int ChargeId, long AmountCentimes);
