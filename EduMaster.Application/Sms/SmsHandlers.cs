@@ -228,9 +228,17 @@ public sealed class SendSmsBatchHandler
                 return OperationResult<SendSmsResult>.Failure(providerResult.ErrorMessage ?? "رفضت خدمة SMS عملية الإرسال.", ErrorType.BusinessRule);
             }
 
-            foreach (var message in messages) message.MarkSubmitted(now);
+            // A successful provider response means the request was accepted, not that every
+            // recipient was pushed successfully. We only mark every local message as submitted
+            // when the provider reports a full acceptance; partial results remain pending until
+            // the provider batch sync identifies the individual outcomes.
+            if (providerResult.AcceptedCount == messages.Count && providerResult.FailedCount == 0)
+            {
+                foreach (var message in messages) message.MarkSubmitted(now);
+            }
+
             batch.SetProviderBatchId(providerResult.ProviderBatchId);
-            batch.Recalculate(messages.Count, 0, 0, now);
+            batch.Recalculate(providerResult.AcceptedCount, 0, providerResult.FailedCount, now);
 
             await _uow.BeginTransactionAsync(ct);
             foreach (var message in messages) await _repo.UpdateMessageAsync(message, ct);

@@ -26,6 +26,35 @@ public sealed class SmsHandlerTests
         Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
+
+    [Fact]
+    public async Task SendSmsBatch_PreservesPartialProviderAcceptanceInBatch()
+    {
+        var repo = new FakeSmsRepository();
+        var provider = new FakeSmsProvider
+        {
+            Result = new SmsProviderSendResult(true, "batch-partial", 1, 1, null)
+        };
+        var store = new FakeSmsSettingsStore { Settings = new SmsGatewaySettings("api", "device-1") };
+        var uow = new EduMaster.Application.Tests.Fakes.FakeUnitOfWork();
+        var handler = new SendSmsBatchHandler(repo, provider, store, new EduMaster.Application.Tests.Fakes.FakeClock(), new EduMaster.Application.Tests.Fakes.FakeCurrentUserService(), uow, NullLogger<SendSmsBatchHandler>.Instance);
+
+        var result = await handler.ExecuteAsync(new SendSmsRequest(
+            SmsMessageCategory.Administrative, null,
+            new[]
+            {
+                new SmsSendRecipient(null, null, "+213550123456", "أولى"),
+                new SmsSendRecipient(null, null, "+213550123457", "ثانية")
+            }));
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(repo.Batches);
+        Assert.Equal(1, repo.Batches[0].SubmittedCount);
+        Assert.Equal(1, repo.Batches[0].FailedCount);
+        Assert.Equal("batch-partial", repo.Batches[0].ProviderBatchId);
+        Assert.All(repo.Messages, m => Assert.Equal(SmsMessageStatus.Pending, m.Status));
+    }
+
     [Fact]
     public async Task SendSmsBatch_CreatesBatchAndMessages()
     {
@@ -51,9 +80,10 @@ public sealed class SmsHandlerTests
     {
         public string? DeviceId { get; private set; }
         public bool Sent { get; private set; }
+        public SmsProviderSendResult Result { get; set; } = new(true, "batch-1", 0, 0, null);
         public Task<IReadOnlyList<SmsProviderDevice>> GetDevicesAsync(string apiKey, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SmsProviderDevice>>(Array.Empty<SmsProviderDevice>());
         public Task<SmsProviderSendResult> SendBulkAsync(IReadOnlyList<SmsProviderMessage> messages, string deviceId, CancellationToken cancellationToken = default)
-        { DeviceId = deviceId; Sent = true; return Task.FromResult(new SmsProviderSendResult(true, "batch-1", messages.Count, 0, null)); }
+        { DeviceId = deviceId; Sent = true; return Task.FromResult(Result with { AcceptedCount = Result.AcceptedCount == 0 ? messages.Count : Result.AcceptedCount }); }
         public Task<SmsProviderBatchStatus> GetBatchAsync(string deviceId, string providerBatchId, CancellationToken cancellationToken = default)
             => Task.FromResult(new SmsProviderBatchStatus(providerBatchId, Array.Empty<SmsProviderDeliveryMessage>()));
     }

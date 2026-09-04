@@ -17,6 +17,8 @@ public interface IClassGroupEnrollmentRepository
     Task<IEnumerable<ClassGroupEnrollmentListItem>> GetForGroupAsync(int classGroupId, CancellationToken cancellationToken = default);
     /// <summary>أفواج طالب (نشطة ومنسحبة) بأسماء الفوج/المادة/السنة — الأحدث أولاً</summary>
     Task<IEnumerable<StudentGroupEnrollmentItem>> GetForStudentAsync(int studentId, CancellationToken cancellationToken = default);
+    /// <summary>أفواج الطالب لسنة محددة — للاستخدام التشغيلي في ملف الطالب دون خلط السنوات.</summary>
+    Task<IEnumerable<StudentGroupEnrollmentItem>> GetForStudentAsync(int studentId, int academicYearId, CancellationToken cancellationToken = default);
     /// <summary>التسجيلات النشطة المرتبطة بتسجيل سنوي — لكاسكيد الانسحاب السنوي (D-53)</summary>
     Task<IReadOnlyList<ClassGroupEnrollment>> GetActiveByAnnualEnrollmentIdAsync(int annualEnrollmentId, CancellationToken cancellationToken = default);
     /// <summary>أفواج النقل المطابقة (D-78): نفس سنة ومستوى التسجيل الحالي · فعّالة · غير ممتلئة · شعبة الطالب ضمن شعبها إن قُيّدت (D-59) · ليس مسجلاً فيها</summary>

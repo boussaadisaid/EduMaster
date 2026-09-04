@@ -15,16 +15,18 @@ public sealed record MarkSessionHeldRequest(int SessionId);
 public sealed class MarkSessionHeldHandler
 {
     private readonly IClassSessionRepository _sessions;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly IClassGroupRepository _groups;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<MarkSessionHeldHandler> _logger;
 
-    public MarkSessionHeldHandler(IClassSessionRepository sessions, IClassGroupRepository groups, IClock clock,
+    public MarkSessionHeldHandler(IClassSessionRepository sessions, IAcademicYearRepository academicYears, IClassGroupRepository groups, IClock clock,
         ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<MarkSessionHeldHandler> logger)
     {
         _sessions = sessions;
+        _academicYears = academicYears;
         _groups = groups;
         _clock = clock;
         _currentUser = currentUser;
@@ -38,7 +40,12 @@ public sealed class MarkSessionHeldHandler
 
         try
         {
-            var session = await _sessions.GetByIdAsync(request.SessionId, cancellationToken);
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
+            var session = await _sessions.GetByIdForAcademicYearAsync(request.SessionId, currentYear.Id, cancellationToken);
+
             if (session is null)
                 return OperationResult.Failure("الحصة غير موجودة.", ErrorType.NotFound);
 
@@ -67,4 +74,5 @@ public sealed class MarkSessionHeldHandler
             return OperationResult.Failure("حدث خطأ غير متوقع أثناء تثبيت إقامة الحصة.", ErrorType.Unexpected);
         }
     }
+
 }

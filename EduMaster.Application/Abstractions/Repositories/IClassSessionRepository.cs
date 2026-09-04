@@ -8,8 +8,12 @@ public interface IClassSessionRepository
     Task AddAsync(ClassSession session, CancellationToken cancellationToken = default);
     Task UpdateAsync(ClassSession session, CancellationToken cancellationToken = default);
     Task<ClassSession?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    /// <summary>حصة تشغيلية ضمن سنة محددة — لحماية العمليات من تمرير معرّف حصة من سنة أخرى.</summary>
+    Task<ClassSession?> GetByIdForAcademicYearAsync(int id, int academicYearId, CancellationToken cancellationToken = default);
     /// <summary>حصص فترة (من from شامل إلى toExclusive حصرياً) — مسطّحة بأسماء الفوج/المادة/المستوى/الأستاذ/القاعة + عدد النشطين</summary>
-    Task<IEnumerable<ClassSessionListItem>> GetByDateRangeAsync(DateTime from, DateTime toExclusive, int? classGroupId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ClassSessionListItem>> GetByDateRangeAsync(
+        DateTime from, DateTime toExclusive, int? classGroupId, int? academicYearId = null,
+        CancellationToken cancellationToken = default);
     /// <summary>فرادة التوقيت الودية (D-87) — الفهرس الفريد يحمي قاعدةً</summary>
     Task<bool> AnyExistsAtAsync(int classGroupId, DateTime startsAt, int? excludeId, CancellationToken cancellationToken = default);
     /// <summary>بدايات حصص فوج في فترة — لإسقاط المكرر أثناء التوليد (آمن لإعادة الضغط)</summary>

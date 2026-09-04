@@ -14,13 +14,15 @@ public sealed class GetScheduleConflictsHandler
 {
     private readonly IClassGroupScheduleRepository _schedules;
     private readonly IClassGroupRepository _classGroups;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly ILogger<GetScheduleConflictsHandler> _logger;
 
-    public GetScheduleConflictsHandler(IClassGroupScheduleRepository schedules, IClassGroupRepository classGroups,
+    public GetScheduleConflictsHandler(IClassGroupScheduleRepository schedules, IClassGroupRepository classGroups, IAcademicYearRepository academicYears,
         ILogger<GetScheduleConflictsHandler> logger)
     {
         _schedules = schedules;
         _classGroups = classGroups;
+        _academicYears = academicYears;
         _logger = logger;
     }
 
@@ -31,9 +33,15 @@ public sealed class GetScheduleConflictsHandler
 
         try
         {
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<IReadOnlyList<ScheduleConflictItem>>.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
             var group = await _classGroups.GetByIdAsync(request.ClassGroupId, cancellationToken);
             if (group is null)
                 return OperationResult<IReadOnlyList<ScheduleConflictItem>>.Failure("الفوج غير موجود.", ErrorType.NotFound);
+            if (group.AcademicYearId != currentYear.Id)
+                return OperationResult<IReadOnlyList<ScheduleConflictItem>>.Failure("لا يمكن فحص تعارضات الجدولة لفوج من سنة دراسية سابقة أو غير حالية.", ErrorType.BusinessRule);
 
             // بلا قاعة وبلا أستاذ ← لا تعارض ممكناً
             IReadOnlyList<ScheduleConflictItem> conflicts = group.RoomId is null && group.TeacherId is null

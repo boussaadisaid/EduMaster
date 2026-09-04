@@ -2,6 +2,9 @@
 using EduMaster.Application.Scheduling;
 using EduMaster.Application.Tests.Fakes;
 using EduMaster.Domain.Enums;
+using EduMaster.Domain.AcademicYears;
+using EduMaster.Domain.ClassGroups;
+using EduMaster.Domain.AcademicYears.ValueObjects;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Threading.Tasks;
@@ -22,15 +25,30 @@ public sealed class PurchaseSessionsHandlerTests
             enrolledAtUtc: Now, withdrawnAtUtc: status == EnrollmentStatus.Withdrawn ? Now : null,
             createdAtUtc: Now, createdByUserId: 1, updatedAtUtc: null, updatedByUserId: null);
 
+    private static Domain.AcademicYears.AcademicYear BuildCurrentYear() =>
+        Domain.AcademicYears.AcademicYear.Load(
+            id: 9, name: new YearName("2026-2027"),
+            startDate: new DateOnly(2026, 9, 1), endDate: new DateOnly(2027, 6, 30),
+            isCurrent: true, isActive: true, registrationFeeCentimes: 0,
+            createdAtUtc: Now, createdByUserId: 1, updatedAtUtc: null, updatedByUserId: null);
+
+    private static Domain.ClassGroups.ClassGroup BuildGroup(int academicYearId) =>
+        Domain.ClassGroups.ClassGroup.Load(
+            id: 1, academicYearId: academicYearId, levelId: 1, subjectId: 1, teacherId: null, roomId: null,
+            name: "رياضيات", capacity: null, isActive: true,
+            createdAtUtc: Now, createdByUserId: 1, updatedAtUtc: null, updatedByUserId: null);
+
     private static (PurchaseSessionsHandler handler, FakeGroupSessionPurchaseRepository purchases, FakeChargeRepository charges, FakeUnitOfWork uow) Build(
-        Domain.Enrollments.ClassGroupEnrollment? enrollment)
+        Domain.Enrollments.ClassGroupEnrollment? enrollment, int? groupAcademicYearId = 9)
     {
         var purchases = new FakeGroupSessionPurchaseRepository();
         var enrollments = new FakeClassGroupEnrollmentRepository { EntityToReturn = enrollment };
+        var classGroups = new FakeClassGroupRepository { EntityToReturn = groupAcademicYearId is null ? null : BuildGroup(groupAcademicYearId.Value) };
+        var academicYears = new FakeAcademicYearRepository { Current = BuildCurrentYear() };
         var charges = new FakeChargeRepository();
         var uow = new FakeUnitOfWork();
         var handler = new PurchaseSessionsHandler(
-            purchases, enrollments, charges, new FakeClock(), new FakeCurrentUserService(), uow,
+            purchases, enrollments, classGroups, academicYears, charges, new FakeClock(), new FakeCurrentUserService(), uow,
             new EduMaster.Application.Billing.CreditConsumptionService(new FakePaymentRepository(), charges),
             NullLogger<PurchaseSessionsHandler>.Instance);
         return (handler, purchases, charges, uow);
@@ -122,4 +140,32 @@ public sealed class PurchaseSessionsHandlerTests
         Assert.Empty(charges.Added);
         Assert.Equal(0, uow.CommittedCount);
     }
+    [Fact]
+    public async Task ActiveEnrollmentFromPreviousYear_IsRejectedBeforeTransaction()
+    {
+        var (handler, purchases, charges, uow) = Build(BuildEnrollment(EnrollmentStatus.Active), groupAcademicYearId: 8);
+
+        var result = await handler.ExecuteAsync(new PurchaseSessionsRequest(5, 4, null));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.BusinessRule, result.ErrorType);
+        Assert.Contains("سنة دراسية سابقة", result.ErrorMessage);
+        Assert.Empty(purchases.Captured);
+        Assert.Empty(charges.Added);
+        Assert.Equal(0, uow.BeganCount);
+    }
+
+    [Fact]
+    public async Task ActiveEnrollmentFromCurrentYear_IsAllowed()
+    {
+        var (handler, purchases, charges, uow) = Build(BuildEnrollment(EnrollmentStatus.Active), groupAcademicYearId: 9);
+
+        var result = await handler.ExecuteAsync(new PurchaseSessionsRequest(5, 4, null));
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(purchases.Captured);
+        Assert.Single(charges.Added);
+        Assert.Equal(1, uow.CommittedCount);
+    }
+
 }

@@ -24,7 +24,7 @@ public sealed record SuggestedAllocation(int ChargeId, long AmountCentimes);
 public sealed record PaymentContextItem(IReadOnlyList<OpenChargeItem> OpenCharges, long UnallocatedCentimes, int? GuardianPersonId)
 {
     public IReadOnlyList<OpenChargeItem> CurrentYearOpenCharges { get; init; } = Array.Empty<OpenChargeItem>();
-    public IReadOnlyList<OpenChargeItem> PreviousYearsOpenCharges { get; init; } = Array.Empty<OpenChargeItem>();
+    public IReadOnlyList<OpenChargeItem> OtherYearsOpenCharges { get; init; } = Array.Empty<OpenChargeItem>();
     public int CurrentAcademicYearId { get; init; }
     public string CurrentAcademicYearName { get; init; } = string.Empty;
 }

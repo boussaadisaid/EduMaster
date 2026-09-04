@@ -19,6 +19,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -36,7 +37,34 @@
                         </Grid>
                     </Border>
 
-                    <Border Grid.Row="1" Style="{StaticResource Card}" Padding="14" Margin="0,0,0,10">
+                    <Border Grid.Row="1" Padding="14" Margin="0,0,0,10">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RecipientSource.Kind}" Value="{x:Static local:SmsRecipientSource.AbsentStudents}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="تاريخ الحصة" Style="{StaticResource EduFieldLabel}" VerticalAlignment="Center"/>
+                            <DatePicker Grid.Column="1" SelectedDate="{Binding AbsenceDate}" Height="34"/>
+                            <Button Grid.Column="2" Content="تحميل الحصص" Command="{Binding LoadAbsenceSessionsCommand}" Style="{StaticResource SecondaryButton}" Margin="8,0,8,0" Padding="12,7"/>
+                            <ComboBox Grid.Column="3" ItemsSource="{Binding AbsenceSessions}" SelectedItem="{Binding SelectedAbsenceSession}" DisplayMemberPath="TimeDisplay" Height="34">
+                                <ComboBox.ToolTip>اختر الحصة المقامة في التاريخ المحدد</ComboBox.ToolTip>
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="2" Style="{StaticResource Card}" Padding="14" Margin="0,0,0,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="180"/>
@@ -53,7 +81,7 @@
                         </Grid>
                     </Border>
 
-                    <Grid Grid.Row="2">
+                    <Grid Grid.Row="3">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="150"/>
@@ -89,7 +117,17 @@
                                         </DataGridTemplateColumn>
                                         <DataGridTextColumn Header="الاسم" Binding="{Binding FullName}" Width="2*"/>
                                         <DataGridTextColumn Header="الولي" Binding="{Binding GuardianName, TargetNullValue='—'}" Width="*"/>
-                                        <DataGridTextColumn Header="الهاتف" Binding="{Binding PhoneNumber}" Width="150"/>
+                                        <DataGridTemplateColumn Header="الهاتف" Width="190">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding PhoneOptions}"
+                                                              SelectedItem="{Binding SelectedPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              DisplayMemberPath="DisplayText"
+                                                              Height="30"
+                                                              MinWidth="175"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                         <DataGridTextColumn Header="المبلغ" Binding="{Binding AmountText, TargetNullValue='—'}" Width="110"/>
                                         <DataGridTextColumn Header="الحصص" Binding="{Binding RemainingSessionsText, TargetNullValue='—'}" Width="80"/>
                                     </DataGrid.Columns>
@@ -109,7 +147,7 @@
                         </Border>
                     </Grid>
 
-                    <Border Grid.Row="3" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0" Padding="12,10" Margin="0,0,0,0">
+                    <Border Grid.Row="4" Background="#FAFBFD" BorderBrush="#E8EDF3" BorderThickness="0,1,0,0" Padding="12,10" Margin="0,0,0,0">
                         <DockPanel>
                             <TextBlock Text="يتم استبدال المتغيرات تلقائيًا قبل الإرسال، مثل {StudentName} و{Amount} و{SchoolName}." Style="{StaticResource EduCaption}" VerticalAlignment="Center"/>
                             <Button Content="📤 إرسال الرسائل المحددة" Command="{Binding SendSelectedCommand}" Style="{StaticResource PrimaryButton}" Padding="18,9" DockPanel.Dock="Left"/>

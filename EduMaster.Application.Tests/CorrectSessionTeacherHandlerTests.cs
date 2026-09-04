@@ -23,14 +23,17 @@ public class CorrectSessionTeacherHandlerTests
         public ClassSession? ToReturn { get; set; }
         public Exception? ToThrow { get; set; }
         public ClassSession? Updated { get; private set; }
+        public int AvailableAcademicYearId { get; set; } = 1;
 
         public Task<ClassSession?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
             => ToThrow is not null ? throw ToThrow : Task.FromResult(ToReturn);
+        public Task<ClassSession?> GetByIdForAcademicYearAsync(int id, int academicYearId, CancellationToken cancellationToken = default)
+            => ToThrow is not null ? throw ToThrow : Task.FromResult(academicYearId == AvailableAcademicYearId ? ToReturn : null);
         public Task UpdateAsync(ClassSession session, CancellationToken cancellationToken = default)
         { Updated = session; return Task.CompletedTask; }
 
         public Task AddAsync(ClassSession session, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<IEnumerable<ClassSessionListItem>> GetByDateRangeAsync(DateTime from, DateTime toExclusive, int? classGroupId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IEnumerable<ClassSessionListItem>> GetByDateRangeAsync(DateTime from, DateTime toExclusive, int? classGroupId, int? academicYearId = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> AnyExistsAtAsync(int classGroupId, DateTime startsAt, int? excludeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IReadOnlyCollection<DateTime>> GetSessionStartsAsync(int classGroupId, DateTime from, DateTime toExclusive, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<int> CancelFutureScheduledBySlotAsync(int scheduleId, DateTime localNow, DateTime utcNow, int? updatedByUserId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -68,13 +71,19 @@ public class CorrectSessionTeacherHandlerTests
         return teacher;
     }
 
+    private static Domain.AcademicYears.AcademicYear CurrentYear()
+        => Domain.AcademicYears.AcademicYear.Load(1,
+            new Domain.AcademicYears.ValueObjects.YearName("2026-2027"),
+            new DateOnly(2026, 9, 1), new DateOnly(2027, 7, 31),
+            true, true, 0, FixedUtc, 1, null, null);
+
     private static (CorrectSessionTeacherHandler handler, SessionsFake sessions, FakeUnitOfWork uow) Build(
         ClassSession? session, Teacher? teacher)
     {
         var sessions = new SessionsFake { ToReturn = session };
         var uow = new FakeUnitOfWork();
-        return (new CorrectSessionTeacherHandler(sessions, new TeachersFake { ToReturn = teacher },
-            new FakeClock(), new FakeCurrentUserService(), uow,
+        return (new CorrectSessionTeacherHandler(sessions, new FakeAcademicYearRepository { Current = CurrentYear() },
+            new TeachersFake { ToReturn = teacher }, new FakeClock(), new FakeCurrentUserService(), uow,
             NullLogger<CorrectSessionTeacherHandler>.Instance), sessions, uow);
     }
 
@@ -143,6 +152,30 @@ public class CorrectSessionTeacherHandlerTests
     }
 
     [Fact]
+    public async Task PreviousAcademicYearSession_IsRejectedWithoutTransaction()
+    {
+        var sessions = new SessionsFake { ToReturn = HeldSessionWithNullSnapshot(), AvailableAcademicYearId = 1 };
+        var uow = new FakeUnitOfWork();
+        var handler = new CorrectSessionTeacherHandler(
+            sessions,
+            new FakeAcademicYearRepository
+            {
+                Current = Domain.AcademicYears.AcademicYear.Load(2,
+                new Domain.AcademicYears.ValueObjects.YearName("2027-2028"),
+                new DateOnly(2027, 9, 1), new DateOnly(2028, 7, 31), true, true, 0, FixedUtc, 1, null, null)
+            },
+            new TeachersFake { ToReturn = SomeTeacher() }, new FakeClock(), new FakeCurrentUserService(), uow,
+            NullLogger<CorrectSessionTeacherHandler>.Instance);
+
+        var result = await handler.ExecuteAsync(new CorrectSessionTeacherRequest(10, 3));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+        Assert.Equal(0, uow.BeganCount);
+        Assert.Null(sessions.Updated);
+    }
+
+    [Fact]
     public async Task MissingTeacher_Validation_WithoutTransaction()
     {
         var (handler, _, uow) = Build(HeldSessionWithNullSnapshot(), null);
@@ -160,8 +193,8 @@ public class CorrectSessionTeacherHandlerTests
     {
         var sessions = new SessionsFake { ToThrow = new InvalidOperationException("boom") };
         var uow = new FakeUnitOfWork();
-        var handler = new CorrectSessionTeacherHandler(sessions, new TeachersFake(),
-            new FakeClock(), new FakeCurrentUserService(), uow, NullLogger<CorrectSessionTeacherHandler>.Instance);
+        var handler = new CorrectSessionTeacherHandler(sessions, new FakeAcademicYearRepository { Current = CurrentYear() },
+            new TeachersFake(), new FakeClock(), new FakeCurrentUserService(), uow, NullLogger<CorrectSessionTeacherHandler>.Instance);
 
         var result = await handler.ExecuteAsync(new CorrectSessionTeacherRequest(10, 3));
 

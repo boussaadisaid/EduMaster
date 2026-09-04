@@ -20,6 +20,41 @@ public sealed class GetGroupSessionsReportHandler
         _logger = logger;
     }
 
+    public async Task<OperationResult<IReadOnlyList<ReportGroupOption>>> GetAvailableGroupsAsync(
+        DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
+    {
+        if (from > to)
+            return OperationResult<IReadOnlyList<ReportGroupOption>>.Failure(
+                "تاريخ «من» لا يمكن أن يكون بعد «إلى».", ErrorType.Validation);
+
+        try
+        {
+            var sessions = await _sessions.GetByDateRangeAsync(
+                from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MinValue).AddDays(1),
+                classGroupId: null, academicYearId: null, cancellationToken);
+
+            var groups = sessions
+                .GroupBy(s => s.ClassGroupId)
+                .Select(g =>
+                {
+                    var first = g.First();
+                    return new ReportGroupOption(first.ClassGroupId, first.GroupName, first.SubjectName, first.LevelName);
+                })
+                .OrderBy(g => g.LevelName)
+                .ThenBy(g => g.GroupName)
+                .ToList();
+
+            return OperationResult<IReadOnlyList<ReportGroupOption>>.Success(groups);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load group-session report groups from {From} to {To}", from, to);
+            return OperationResult<IReadOnlyList<ReportGroupOption>>.Failure(
+                "حدث خطأ غير متوقع أثناء تحميل أفواج تقرير الحصص.", ErrorType.Unexpected);
+        }
+    }
+
     public async Task<OperationResult<GroupSessionsReportItem>> ExecuteAsync(
         DateOnly from, DateOnly to, int? classGroupId, CancellationToken cancellationToken = default)
     {
@@ -30,7 +65,7 @@ public sealed class GetGroupSessionsReportHandler
         {
             var sessions = await _sessions.GetByDateRangeAsync(
                 from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MinValue).AddDays(1),
-                classGroupId, cancellationToken);
+                classGroupId, academicYearId: null, cancellationToken);
 
             var groups = sessions
                 .GroupBy(s => s.ClassGroupId)

@@ -22,6 +22,7 @@ public sealed class TransferGroupEnrollmentHandler
     private readonly IClassGroupEnrollmentRepository _groupEnrollments;
     private readonly IClassGroupRepository _classGroups;
     private readonly IAnnualEnrollmentRepository _annualEnrollments;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly ISubjectPriceRepository _prices;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
@@ -29,12 +30,13 @@ public sealed class TransferGroupEnrollmentHandler
     private readonly ILogger<TransferGroupEnrollmentHandler> _logger;
 
     public TransferGroupEnrollmentHandler(IClassGroupEnrollmentRepository groupEnrollments, IClassGroupRepository classGroups,
-        IAnnualEnrollmentRepository annualEnrollments, ISubjectPriceRepository prices, IClock clock,
+        IAnnualEnrollmentRepository annualEnrollments, IAcademicYearRepository academicYears, ISubjectPriceRepository prices, IClock clock,
         ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<TransferGroupEnrollmentHandler> logger)
     {
         _groupEnrollments = groupEnrollments;
         _classGroups = classGroups;
         _annualEnrollments = annualEnrollments;
+        _academicYears = academicYears;
         _prices = prices;
         _clock = clock;
         _currentUser = currentUser;
@@ -51,11 +53,21 @@ public sealed class TransferGroupEnrollmentHandler
 
         try
         {
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<int>.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
             var current = await _groupEnrollments.GetByIdAsync(request.GroupEnrollmentId, cancellationToken);
             if (current is null)
                 return OperationResult<int>.Failure("التسجيل غير موجود.", ErrorType.NotFound);
             if (!current.IsActive)
                 return OperationResult<int>.Failure("لا يمكن نقل تسجيل منسحب.", ErrorType.BusinessRule);
+
+            var source = await _classGroups.GetByIdAsync(current.ClassGroupId, cancellationToken);
+            if (source is null)
+                return OperationResult<int>.Failure("الفوج الحالي للتسجيل غير موجود.", ErrorType.NotFound);
+            if (source.AcademicYearId != currentYear.Id)
+                return OperationResult<int>.Failure("لا يمكن نقل تسجيل من سنة دراسية سابقة أو غير حالية من شاشة التشغيل الحالية.", ErrorType.BusinessRule);
 
             if (request.TargetClassGroupId == current.ClassGroupId)
                 return OperationResult<int>.Failure("الفوج الهدف هو فوج الطالب الحالي.", ErrorType.Validation);
@@ -63,6 +75,8 @@ public sealed class TransferGroupEnrollmentHandler
             var target = await _classGroups.GetByIdAsync(request.TargetClassGroupId, cancellationToken);
             if (target is null)
                 return OperationResult<int>.Failure("الفوج الهدف غير موجود.", ErrorType.Validation);
+            if (target.AcademicYearId != currentYear.Id)
+                return OperationResult<int>.Failure("الفوج الهدف لا ينتمي إلى السنة الدراسية الحالية.", ErrorType.BusinessRule);
             if (!target.IsActive)
                 return OperationResult<int>.Failure("الفوج الهدف معطّل — لا يقبل تسجيلات.", ErrorType.BusinessRule);
 

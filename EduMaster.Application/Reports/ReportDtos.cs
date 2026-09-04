@@ -4,6 +4,9 @@ using System.Globalization;            // تنسيق الساعات (ق-2) بل�
 
 namespace EduMaster.Application.Reports;
 
+/// <summary>فوج ظهر فعلياً داخل بيانات التقرير المحددة بالفترة — يُستخدم كمصدر وحيد لفلتر الفوج التاريخي.</summary>
+public sealed record ReportGroupOption(int Id, string GroupName, string SubjectName, string LevelName);
+
 // ═══ أشكال 6.1 — مُستعادة حرفياً من مستهلكيها السليمين (معالجا 6.1 + اختباراتهم الثلاثة + VMs الشاشة) — درس D-132 ═══
 
 /// <summary>سطر تخصيص دفعة لكشف الحساب (D-128: الوصف يُركَّب في الـHandler من قائمة المستحقات — لا نص SQL مكرر)</summary>

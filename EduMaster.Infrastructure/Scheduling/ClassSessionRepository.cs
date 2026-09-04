@@ -122,7 +122,25 @@ WHERE Id = @Id;";
         return row is null ? null : MapToDomain(row);
     }
 
-    public async Task<IEnumerable<ClassSessionListItem>> GetByDateRangeAsync(DateTime from, DateTime toExclusive, int? classGroupId, CancellationToken cancellationToken = default)
+    public async Task<Domain.Scheduling.ClassSession?> GetByIdForAcademicYearAsync(int id, int academicYearId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
+        var row = await connection.QuerySingleOrDefaultAsync<ClassSessionRow>(
+            new CommandDefinition($@"{SelectColumns} cs WHERE cs.Id = @Id AND EXISTS (
+    SELECT 1 FROM ClassGroups cg
+    JOIN AcademicYears ay ON ay.Id = cg.AcademicYearId
+    WHERE cg.Id = cs.ClassGroupId AND ay.Id = @AcademicYearId);",
+                new { Id = id, AcademicYearId = academicYearId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return row is null ? null : MapToDomain(row);
+    }
+
+    public async Task<IEnumerable<ClassSessionListItem>> GetByDateRangeAsync(
+        DateTime from, DateTime toExclusive, int? classGroupId, int? academicYearId = null,
+        CancellationToken cancellationToken = default)
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
@@ -143,12 +161,12 @@ LEFT JOIN Teachers t ON t.Id = CASE WHEN cs.Status = 2 THEN cs.TeacherId ELSE cg
 LEFT JOIN Persons tp ON tp.Id = t.PersonId AND tp.IsDeleted = 0
 LEFT JOIN Rooms r ON r.Id = cg.RoomId
 WHERE cs.StartsAt >= @From AND cs.StartsAt < @ToExclusive
-  AND ay.IsCurrent = 1
+  AND (@AcademicYearId IS NULL OR ay.Id = @AcademicYearId)
   AND (@GroupId IS NULL OR cs.ClassGroupId = @GroupId)
 ORDER BY cs.StartsAt, cg.Name;";
 
         var rows = await connection.QueryAsync<SessionListRow>(
-            new CommandDefinition(sql, new { From = from, ToExclusive = toExclusive, GroupId = classGroupId },
+            new CommandDefinition(sql, new { From = from, ToExclusive = toExclusive, GroupId = classGroupId, AcademicYearId = academicYearId },
                 transaction: _session.CurrentTransaction,
                 cancellationToken: cancellationToken));
 

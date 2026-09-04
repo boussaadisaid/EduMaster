@@ -8,12 +8,16 @@ namespace EduMaster.Application.Enrollments;
 public sealed class GetTransferTargetsHandler
 {
     private readonly IClassGroupEnrollmentRepository _groupEnrollments;
+    private readonly IClassGroupRepository _classGroups;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly ILogger<GetTransferTargetsHandler> _logger;
 
-    public GetTransferTargetsHandler(IClassGroupEnrollmentRepository groupEnrollments,
-        ILogger<GetTransferTargetsHandler> logger)
+    public GetTransferTargetsHandler(IClassGroupEnrollmentRepository groupEnrollments, IClassGroupRepository classGroups,
+        IAcademicYearRepository academicYears, ILogger<GetTransferTargetsHandler> logger)
     {
         _groupEnrollments = groupEnrollments;
+        _classGroups = classGroups;
+        _academicYears = academicYears;
         _logger = logger;
     }
 
@@ -22,9 +26,19 @@ public sealed class GetTransferTargetsHandler
     {
         try
         {
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<IReadOnlyList<ClassGroupListItem>>.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
             var current = await _groupEnrollments.GetByIdAsync(groupEnrollmentId, cancellationToken);
             if (current is null)
                 return OperationResult<IReadOnlyList<ClassGroupListItem>>.Failure("التسجيل غير موجود.", ErrorType.NotFound);
+
+            var group = await _classGroups.GetByIdAsync(current.ClassGroupId, cancellationToken);
+            if (group is null)
+                return OperationResult<IReadOnlyList<ClassGroupListItem>>.Failure("فوج التسجيل غير موجود.", ErrorType.NotFound);
+            if (group.AcademicYearId != currentYear.Id)
+                return OperationResult<IReadOnlyList<ClassGroupListItem>>.Failure("لا يمكن تحميل أهداف نقل لتسجيل من سنة دراسية سابقة أو غير حالية.", ErrorType.BusinessRule);
 
             var items = (await _groupEnrollments.GetTransferTargetsAsync(groupEnrollmentId, cancellationToken)).ToList();
             return OperationResult<IReadOnlyList<ClassGroupListItem>>.Success(items);

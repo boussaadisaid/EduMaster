@@ -20,6 +20,40 @@ public sealed class GetAttendanceSummaryHandler
         _logger = logger;
     }
 
+    public async Task<OperationResult<IReadOnlyList<ReportGroupOption>>> GetAvailableGroupsAsync(
+        DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
+    {
+        if (from > to)
+            return OperationResult<IReadOnlyList<ReportGroupOption>>.Failure(
+                "تاريخ «من» لا يمكن أن يكون بعد «إلى».", ErrorType.Validation);
+
+        try
+        {
+            var marks = await _reports.GetAttendanceMarksForPeriodAsync(
+                from.ToDateTime(TimeOnly.MinValue), to.ToDateTime(TimeOnly.MinValue).AddDays(1),
+                classGroupId: null, cancellationToken);
+
+            var groups = marks
+                .GroupBy(m => m.ClassGroupId)
+                .Select(g =>
+                {
+                    var first = g.First();
+                    return new ReportGroupOption(first.ClassGroupId, first.GroupName, string.Empty, string.Empty);
+                })
+                .OrderBy(g => g.GroupName)
+                .ToList();
+
+            return OperationResult<IReadOnlyList<ReportGroupOption>>.Success(groups);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load attendance report groups from {From} to {To}", from, to);
+            return OperationResult<IReadOnlyList<ReportGroupOption>>.Failure(
+                "حدث خطأ غير متوقع أثناء تحميل أفواج تقرير الحضور.", ErrorType.Unexpected);
+        }
+    }
+
     public async Task<OperationResult<AttendanceSummaryReportItem>> ExecuteAsync(
         DateOnly from, DateOnly to, int? classGroupId, CancellationToken cancellationToken = default)
     {

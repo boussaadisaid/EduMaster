@@ -17,14 +17,15 @@ public sealed class GetSessionsHandler
     }
 
     public async Task<OperationResult<IReadOnlyList<ClassSessionListItem>>> ExecuteAsync(
-        DateTime from, DateTime to, int? classGroupId, CancellationToken cancellationToken = default)
+        DateTime from, DateTime to, int? classGroupId, int? academicYearId = null,
+        CancellationToken cancellationToken = default)
     {
         if (to.Date < from.Date)
             return OperationResult<IReadOnlyList<ClassSessionListItem>>.Failure("تاريخ النهاية قبل تاريخ البداية.", ErrorType.Validation);
 
         try
         {
-            var items = (await _sessions.GetByDateRangeAsync(from.Date, to.Date.AddDays(1), classGroupId, cancellationToken)).ToList();
+            var items = (await _sessions.GetByDateRangeAsync(from.Date, to.Date.AddDays(1), classGroupId, academicYearId, cancellationToken)).ToList();
             return OperationResult<IReadOnlyList<ClassSessionListItem>>.Success(items);
         }
         catch (OperationCanceledException)
@@ -37,7 +38,7 @@ public sealed class GetSessionsHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load sessions from {From} to {To} for class group {ClassGroupId}", from, to, classGroupId);
+            _logger.LogError(ex, "Failed to load sessions from {From} to {To} for class group {ClassGroupId} and academic year {AcademicYearId}", from, to, classGroupId, academicYearId);
             return OperationResult<IReadOnlyList<ClassSessionListItem>>.Failure(
                 "حدث خطأ غير متوقع أثناء تحميل الحصص.", ErrorType.Unexpected);
         }

@@ -33,10 +33,10 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
     private int _studentId;
     private int? _guardianPersonId;
     private IReadOnlyList<OpenChargeItem> _currentYearOpenCharges = Array.Empty<OpenChargeItem>();
-    private IReadOnlyList<OpenChargeItem> _previousYearsOpenCharges = Array.Empty<OpenChargeItem>();
+    private IReadOnlyList<OpenChargeItem> _otherYearsOpenCharges = Array.Empty<OpenChargeItem>();
     private IReadOnlyList<OpenChargeItem> _openCharges = Array.Empty<OpenChargeItem>();
     private string _academicYearText = string.Empty;
-    private bool _showPreviousYears;
+    private bool _showOtherYears;
 
     public PaymentDialogViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
         IDialogService dialogService, IPrintService printService, ILogger<PaymentDialogViewModel> logger)
@@ -117,9 +117,9 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
 
     public bool HasOpenCharges => Rows.Count > 0;
 
-    public bool HasAnyCharges => _currentYearOpenCharges.Count > 0 || _previousYearsOpenCharges.Count > 0;
+    public bool HasAnyCharges => _currentYearOpenCharges.Count > 0 || _otherYearsOpenCharges.Count > 0;
 
-    public bool NoOpenCharges => Rows.Count == 0 && !HasPreviousYears;
+    public bool NoOpenCharges => Rows.Count == 0 && !HasOtherYears;
 
     public bool NoCurrentYearCharges => _currentYearOpenCharges.Count == 0;
 
@@ -129,29 +129,29 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
         private set => SetProperty(ref _academicYearText, value);
     }
 
-    public bool HasPreviousYears => _previousYearsOpenCharges.Count > 0;
+    public bool HasOtherYears => _otherYearsOpenCharges.Count > 0;
 
-    public bool ShowPreviousYears
+    public bool ShowOtherYears
     {
-        get => _showPreviousYears;
+        get => _showOtherYears;
         set
         {
-            if (SetProperty(ref _showPreviousYears, value))
+            if (SetProperty(ref _showOtherYears, value))
             {
                 RebuildVisibleCharges();
-                OnPropertyChanged(nameof(PreviousYearsButtonText));
+                OnPropertyChanged(nameof(OtherYearsButtonText));
             }
         }
     }
 
-    public string PreviousYearsButtonText => _showPreviousYears
-        ? "إخفاء مستحقات السنوات السابقة"
-        : $"عرض المستحقات السابقة ({_previousYearsOpenCharges.Count})";
+    public string OtherYearsButtonText => _showOtherYears
+        ? "إخفاء مستحقات السنوات الأخرى"
+        : $"عرض المستحقات في سنوات أخرى ({_otherYearsOpenCharges.Count})";
 
     private void RebuildVisibleCharges()
     {
-        _openCharges = _showPreviousYears
-            ? _currentYearOpenCharges.Concat(_previousYearsOpenCharges).ToList()
+        _openCharges = _showOtherYears
+            ? _currentYearOpenCharges.Concat(_otherYearsOpenCharges).ToList()
             : _currentYearOpenCharges;
 
         Rows.Clear();
@@ -237,13 +237,13 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
 
         var context = result.Value!;
         _currentYearOpenCharges = context.CurrentYearOpenCharges;
-        _previousYearsOpenCharges = context.PreviousYearsOpenCharges;
+        _otherYearsOpenCharges = context.OtherYearsOpenCharges;
         _openCharges = _currentYearOpenCharges;
         _guardianPersonId = context.GuardianPersonId;
         _academicYearText = context.CurrentAcademicYearName;
         OnPropertyChanged(nameof(AcademicYearText));
-        OnPropertyChanged(nameof(HasPreviousYears));
-        OnPropertyChanged(nameof(PreviousYearsButtonText));
+        OnPropertyChanged(nameof(HasOtherYears));
+        OnPropertyChanged(nameof(OtherYearsButtonText));
 
         // D-104/D-36: الولي المسجَّل هو الدافع الغالب — مؤشّر افتراضياً (اسمه من بطاقة الطالب نفسها)
         ShowGuardianOption = context.GuardianPersonId is not null && !string.IsNullOrWhiteSpace(student.GuardianFullName);
@@ -283,9 +283,9 @@ public sealed class PaymentDialogViewModel : BaseViewModel, IDialogViewModel
             remaining -= item.AmountCentimes;
         }
 
-        if (_showPreviousYears && remaining > 0)
+        if (_showOtherYears && remaining > 0)
         {
-            foreach (var item in PaymentAllocationSuggester.Suggest(_previousYearsOpenCharges, remaining))
+            foreach (var item in PaymentAllocationSuggester.Suggest(_otherYearsOpenCharges, remaining))
             {
                 suggestion[item.ChargeId] = item.AmountCentimes;
                 remaining -= item.AmountCentimes;

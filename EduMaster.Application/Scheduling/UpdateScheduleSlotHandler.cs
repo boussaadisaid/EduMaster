@@ -15,16 +15,20 @@ public sealed record UpdateScheduleSlotRequest(int SlotId, int DayOfWeek, TimeOn
 public sealed class UpdateScheduleSlotHandler
 {
     private readonly IClassGroupScheduleRepository _schedules;
+    private readonly IClassGroupRepository _classGroups;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly IClassSessionRepository _sessions;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateScheduleSlotHandler> _logger;
 
-    public UpdateScheduleSlotHandler(IClassGroupScheduleRepository schedules, IClassSessionRepository sessions,
+    public UpdateScheduleSlotHandler(IClassGroupScheduleRepository schedules, IClassSessionRepository sessions, IClassGroupRepository classGroups, IAcademicYearRepository academicYears,
         IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<UpdateScheduleSlotHandler> logger)
     {
         _schedules = schedules;
+        _classGroups = classGroups;
+        _academicYears = academicYears;
         _sessions = sessions;
         _clock = clock;
         _currentUser = currentUser;
@@ -38,9 +42,18 @@ public sealed class UpdateScheduleSlotHandler
 
         try
         {
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<int>.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
             var schedule = await _schedules.GetByIdAsync(request.SlotId, cancellationToken);
             if (schedule is null)
                 return OperationResult<int>.Failure("الموعد غير موجود.", ErrorType.NotFound);
+            var group = await _classGroups.GetByIdAsync(schedule.ClassGroupId, cancellationToken);
+            if (group is null)
+                return OperationResult<int>.Failure("فوج الموعد غير موجود.", ErrorType.NotFound);
+            if (group.AcademicYearId != currentYear.Id)
+                return OperationResult<int>.Failure("لا يمكن تعديل موعد لفوج من سنة دراسية سابقة أو غير حالية.", ErrorType.BusinessRule);
 
             schedule.Update(request.DayOfWeek, request.StartTime, request.DurationMinutes, _clock.UtcNow, _currentUser.UserAccountId);
 

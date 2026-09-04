@@ -19,6 +19,7 @@ public sealed record StudentListItem(
     StudentCategory Category,
     int? GuardianPersonId,
     string? GuardianFullName,
+    string? GuardianPhone,
     string? Notes,
     bool IsActive)
 {

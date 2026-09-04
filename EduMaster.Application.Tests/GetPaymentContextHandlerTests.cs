@@ -12,7 +12,7 @@ using Xunit;
 
 namespace EduMaster.Application.Tests;
 
-/// <summary>حارس سياق القبض: السنة الحالية افتراضية، السنوات السابقة تبقى قابلة للعرض صراحةً، والزائدة الدائنة عالمية.</summary>
+/// <summary>حارس سياق القبض: السنة الحالية افتراضية، السنوات الأخرى تبقى قابلة للعرض صراحةً، والزائدة الدائنة عالمية.</summary>
 public sealed class GetPaymentContextHandlerTests
 {
     private static readonly DateTime Now = new(2026, 9, 2, 10, 0, 0, DateTimeKind.Utc);
@@ -28,7 +28,7 @@ public sealed class GetPaymentContextHandlerTests
         => new(id, ChargeKind.SessionBundle, $"حزمة 4 حصص — الفوج {id}", amount, 0, Now.AddDays(-daysAgo), yearId, yearName);
 
     [Fact]
-    public async Task SplitsCurrentAndPreviousCharges_AndKeepsCreditGlobal()
+    public async Task SplitsCurrentAndOtherCharges_AndKeepsCreditGlobal()
     {
         var currentYear = Year(2, "2026-2027", true);
         var previousYear = Year(1, "2025-2026", false);
@@ -55,11 +55,40 @@ public sealed class GetPaymentContextHandlerTests
         var context = result.Value!;
         Assert.Single(context.CurrentYearOpenCharges);
         Assert.Equal(currentYear.Id, context.CurrentYearOpenCharges[0].AcademicYearId);
-        Assert.Single(context.PreviousYearsOpenCharges);
-        Assert.Equal(previousYear.Id, context.PreviousYearsOpenCharges[0].AcademicYearId);
+        Assert.Single(context.OtherYearsOpenCharges);
+        Assert.Equal(previousYear.Id, context.OtherYearsOpenCharges[0].AcademicYearId);
         Assert.Equal(25000, context.UnallocatedCentimes);
         Assert.Equal(currentYear.Id, context.CurrentAcademicYearId);
         Assert.Equal("2026-2027", context.CurrentAcademicYearName);
+    }
+
+    [Fact]
+    public async Task FutureYearCharge_IsOtherYear_NotCurrentYear()
+    {
+        var currentYear = Year(2, "2026-2027", true);
+        var futureYear = Year(3, "2027-2028", false);
+
+        var charges = new FakeChargeRepository
+        {
+            OpenToReturn = new List<OpenChargeItem>
+            {
+                Charge(13, 60000, "2027-2028", futureYear.Id, 1)
+            }
+        };
+        var payments = new FakePaymentRepository();
+        var years = new FakeAcademicYearRepository { CurrentToReturn = currentYear };
+        var students = new FakeStudentRepository();
+
+        var handler = new GetPaymentContextHandler(
+            charges, payments, students, years,
+            NullLogger<GetPaymentContextHandler>.Instance);
+
+        var result = await handler.ExecuteAsync(2);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value!.CurrentYearOpenCharges);
+        Assert.Single(result.Value.OtherYearsOpenCharges);
+        Assert.Equal(futureYear.Id, result.Value.OtherYearsOpenCharges[0].AcademicYearId);
     }
 
     [Fact]

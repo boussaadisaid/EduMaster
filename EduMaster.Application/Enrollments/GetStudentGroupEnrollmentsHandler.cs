@@ -7,12 +7,15 @@ namespace EduMaster.Application.Enrollments;
 public sealed class GetStudentGroupEnrollmentsHandler
 {
     private readonly IClassGroupEnrollmentRepository _groupEnrollments;
+    private readonly IAcademicYearRepository _years;
     private readonly ILogger<GetStudentGroupEnrollmentsHandler> _logger;
 
     public GetStudentGroupEnrollmentsHandler(IClassGroupEnrollmentRepository groupEnrollments,
+        IAcademicYearRepository years,
         ILogger<GetStudentGroupEnrollmentsHandler> logger)
     {
         _groupEnrollments = groupEnrollments;
+        _years = years;
         _logger = logger;
     }
 
@@ -21,7 +24,12 @@ public sealed class GetStudentGroupEnrollmentsHandler
     {
         try
         {
-            var items = (await _groupEnrollments.GetForStudentAsync(studentId, cancellationToken)).ToList();
+            var currentYear = await _years.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<IReadOnlyList<StudentGroupEnrollmentItem>>.Failure(
+                    "لا توجد سنة دراسية حالية محددة.", ErrorType.BusinessRule);
+
+            var items = (await _groupEnrollments.GetForStudentAsync(studentId, currentYear.Id, cancellationToken)).ToList();
             return OperationResult<IReadOnlyList<StudentGroupEnrollmentItem>>.Success(items);
         }
         catch (OperationCanceledException)

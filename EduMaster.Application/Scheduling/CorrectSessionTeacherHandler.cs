@@ -16,16 +16,18 @@ public sealed record CorrectSessionTeacherRequest(int SessionId, int TeacherId);
 public sealed class CorrectSessionTeacherHandler
 {
     private readonly IClassSessionRepository _sessions;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly ITeacherRepository _teachers;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CorrectSessionTeacherHandler> _logger;
 
-    public CorrectSessionTeacherHandler(IClassSessionRepository sessions, ITeacherRepository teachers, IClock clock,
+    public CorrectSessionTeacherHandler(IClassSessionRepository sessions, IAcademicYearRepository academicYears, ITeacherRepository teachers, IClock clock,
         ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<CorrectSessionTeacherHandler> logger)
     {
         _sessions = sessions;
+        _academicYears = academicYears;
         _teachers = teachers;
         _clock = clock;
         _currentUser = currentUser;
@@ -39,7 +41,12 @@ public sealed class CorrectSessionTeacherHandler
 
         try
         {
-            var session = await _sessions.GetByIdAsync(request.SessionId, cancellationToken);
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
+            var session = await _sessions.GetByIdForAcademicYearAsync(request.SessionId, currentYear.Id, cancellationToken);
+
             if (session is null)
                 return OperationResult.Failure("الحصة غير موجودة.", ErrorType.NotFound);
 
@@ -69,4 +76,5 @@ public sealed class CorrectSessionTeacherHandler
             return OperationResult.Failure("حدث خطأ غير متوقع أثناء تصحيح لقطة الأستاذ.", ErrorType.Unexpected);
         }
     }
+
 }

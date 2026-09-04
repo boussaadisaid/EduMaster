@@ -114,6 +114,23 @@ public sealed class GetAttendanceSummaryHandlerTests
     }
 
     [Fact]
+    public async Task AvailableGroups_UsesGroupsPresentInPeriod_AndRemovesDuplicates()
+    {
+        var (handler, reports) = Build(new List<AttendanceMarkRaw>
+        {
+            Mark(1, "أمين", AttendanceStatus.Present, 10, "فيزياء أ"),
+            Mark(2, "سارا", AttendanceStatus.Absent, 10, "فيزياء أ"),
+            Mark(3, "نور", AttendanceStatus.Present, 20, "رياضيات ب"),
+        });
+
+        var result = await handler.GetAvailableGroupsAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 31));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(reports.Called);
+        Assert.Equal(new[] { 10, 20 }, result.Value!.Select(g => g.Id).OrderBy(id => id).ToArray());
+    }
+
+    [Fact]
     public async Task EmptyPeriod_EmptyRows_DashPercent()
     {
         var (handler, _) = Build();

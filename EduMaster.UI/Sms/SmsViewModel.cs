@@ -1,4 +1,5 @@
 ﻿using EduMaster.Application.Billing;
+using EduMaster.Application.AcademicYears;
 using EduMaster.Application.Reports;
 using EduMaster.Application.Settings;
 using EduMaster.Application.Scheduling;
@@ -97,7 +98,9 @@ public sealed class SmsViewModel : BaseViewModel
     private DateTime _absenceDate = DateTime.Today;
     public DateTime AbsenceDate { get => _absenceDate; set => SetProperty(ref _absenceDate, value); }
     private ClassSessionListItem? _selectedAbsenceSession;
-    public ClassSessionListItem? SelectedAbsenceSession { get => _selectedAbsenceSession; set => SetProperty(ref _selectedAbsenceSession, value); }
+    public ClassSessionListItem? SelectedAbsenceSession { get => _selectedAbsenceSession; set { if (SetProperty(ref _selectedAbsenceSession, value)) SendSelectedCommand.RaiseCanExecuteChanged(); } }
+
+    private int? _currentAcademicYearId;
 
     private bool _isLoading;
     public bool IsLoading { get => _isLoading; private set => SetProperty(ref _isLoading, value); }
@@ -222,8 +225,12 @@ public sealed class SmsViewModel : BaseViewModel
         Recipients.Clear();
         if (RecipientSource.Kind == SmsRecipientSource.AbsentStudents)
         {
-            await LoadAbsenceSessionsAsync();
-            if (SelectedAbsenceSession is null) { _notifier.ShowWarning("اختر الحصة أولاً."); return; }
+            if (SelectedAbsenceSession is null)
+            {
+                _notifier.ShowWarning("اختر الحصة أولاً، ثم اضغط تحميل المستلمين.");
+                return;
+            }
+
             await LoadAbsentRecipientsAsync(SelectedAbsenceSession.Id);
         }
         else if (RecipientSource.Kind == SmsRecipientSource.Debtors)
@@ -269,11 +276,35 @@ public sealed class SmsViewModel : BaseViewModel
     private async Task LoadAbsenceSessionsAsync()
     {
         await using var scope = _scopeFactory.CreateAsyncScope();
-        var result = await scope.ServiceProvider.GetRequiredService<GetSessionsHandler>().ExecuteAsync(AbsenceDate.Date, AbsenceDate.Date, null);
+
+        var years = await scope.ServiceProvider.GetRequiredService<GetAllAcademicYearsHandler>().ExecuteAsync();
+        if (!years.IsSuccess)
+        {
+            _notifier.ShowWarning(years.ErrorMessage!);
+            return;
+        }
+
+        _currentAcademicYearId = years.Value!.FirstOrDefault(x => x.IsCurrent)?.Id;
+        if (_currentAcademicYearId is null)
+        {
+            AbsenceSessions.Clear();
+            SelectedAbsenceSession = null;
+            _notifier.ShowWarning("لا توجد سنة دراسية حالية محددة.");
+            return;
+        }
+
+        var result = await scope.ServiceProvider
+            .GetRequiredService<GetSessionsHandler>()
+            .ExecuteAsync(AbsenceDate.Date, AbsenceDate.Date, null, _currentAcademicYearId);
+
         if (!result.IsSuccess) { _notifier.ShowWarning(result.ErrorMessage!); return; }
+
         AbsenceSessions.Clear();
-        foreach (var session in result.Value!.Where(x => x.Status == SessionStatus.Held).OrderBy(x => x.StartsAt)) AbsenceSessions.Add(session);
-        if (SelectedAbsenceSession is null || !AbsenceSessions.Contains(SelectedAbsenceSession)) SelectedAbsenceSession = AbsenceSessions.FirstOrDefault();
+        foreach (var session in result.Value!.Where(x => x.Status == SessionStatus.Held).OrderBy(x => x.StartsAt))
+            AbsenceSessions.Add(session);
+
+        if (SelectedAbsenceSession is null || !AbsenceSessions.Any(x => x.Id == SelectedAbsenceSession.Id))
+            SelectedAbsenceSession = null;
     }
 
     private async Task LoadAbsentRecipientsAsync(int sessionId)
@@ -286,16 +317,55 @@ public sealed class SmsViewModel : BaseViewModel
 
         var studentsResult = await scope.ServiceProvider.GetRequiredService<SearchStudentsHandler>().ExecuteAsync(null);
         if (!studentsResult.IsSuccess) { _notifier.ShowWarning(studentsResult.ErrorMessage!); return; }
+
         var byId = studentsResult.Value!.ToDictionary(x => x.Id);
+        var persons = scope.ServiceProvider.GetRequiredService<EduMaster.Application.Abstractions.Repositories.IPersonRepository>();
+
         foreach (var mark in absent)
         {
-            if (!byId.TryGetValue(mark.StudentId, out var student)) continue;
-            var phone = NormalizeForSms(student.Phone);
-            if (phone is null) continue;
-            Recipients.Add(new SmsRecipientDraft(student.PersonId, student.Id, student.FullName, student.GuardianFullName, phone,
-                null, null, SelectedAbsenceSession?.SubjectName, SelectedAbsenceSession?.StartsAt.ToString("dd/MM/yyyy")));
+            if (!byId.TryGetValue(mark.StudentId, out var student))
+                continue;
+
+            var studentPerson = student.PersonId > 0
+                ? await persons.GetByIdAsync(student.PersonId)
+                : null;
+
+            var guardianPerson = student.GuardianPersonId is int guardianId
+                ? await persons.GetByIdAsync(guardianId)
+                : null;
+
+            var phoneOptions = new List<SmsPhoneOption>();
+
+            AddPhoneOption(phoneOptions, "الطالب", studentPerson?.Phone?.Value);
+            AddPhoneOption(phoneOptions, "الطالب", studentPerson?.Phone2?.Value);
+            AddPhoneOption(phoneOptions, "الولي", guardianPerson?.Phone?.Value);
+            AddPhoneOption(phoneOptions, "الولي", guardianPerson?.Phone2?.Value);
+
+            if (phoneOptions.Count == 0)
+                continue;
+
+            Recipients.Add(new SmsRecipientDraft(
+                student.PersonId,
+                student.Id,
+                student.FullName,
+                student.GuardianFullName,
+                phoneOptions,
+                null,
+                null,
+                SelectedAbsenceSession?.SubjectName,
+                SelectedAbsenceSession?.StartsAt.ToString("dd/MM/yyyy")));
         }
         OnPropertyChanged(nameof(RecipientCount)); OnPropertyChanged(nameof(SelectedRecipientCount)); SendSelectedCommand.RaiseCanExecuteChanged();
+    }
+
+    private static void AddPhoneOption(ICollection<SmsPhoneOption> options, string label, string? phone)
+    {
+        var normalized = NormalizeForSms(phone);
+        if (normalized is null)
+            return;
+
+        if (!options.Any(x => x.Number == normalized))
+            options.Add(new SmsPhoneOption(label, normalized));
     }
 
     private async Task SendSelectedAsync()

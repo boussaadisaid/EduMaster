@@ -13,16 +13,18 @@ public sealed class CreateScheduleSlotHandler
 {
     private readonly IClassGroupScheduleRepository _schedules;
     private readonly IClassGroupRepository _classGroups;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CreateScheduleSlotHandler> _logger;
 
-    public CreateScheduleSlotHandler(IClassGroupScheduleRepository schedules, IClassGroupRepository classGroups,
+    public CreateScheduleSlotHandler(IClassGroupScheduleRepository schedules, IClassGroupRepository classGroups, IAcademicYearRepository academicYears,
         IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<CreateScheduleSlotHandler> logger)
     {
         _schedules = schedules;
         _classGroups = classGroups;
+        _academicYears = academicYears;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
@@ -35,11 +37,17 @@ public sealed class CreateScheduleSlotHandler
 
         try
         {
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<int>.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
             var group = await _classGroups.GetByIdAsync(request.ClassGroupId, cancellationToken);
             if (group is null)
                 return OperationResult<int>.Failure("الفوج غير موجود.", ErrorType.NotFound);
             if (!group.IsActive)
                 return OperationResult<int>.Failure("الفوج معطّل — لا يقبل مواعيد.", ErrorType.BusinessRule);
+            if (group.AcademicYearId != currentYear.Id)
+                return OperationResult<int>.Failure("لا يمكن إضافة موعد لفوج من سنة دراسية سابقة أو غير حالية.", ErrorType.BusinessRule);
 
             var schedule = Domain.Scheduling.ClassGroupSchedule.Create(
                 request.ClassGroupId, request.DayOfWeek, request.StartTime, request.DurationMinutes,

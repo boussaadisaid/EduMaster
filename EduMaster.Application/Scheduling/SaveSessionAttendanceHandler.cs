@@ -17,18 +17,20 @@ public sealed class SaveSessionAttendanceHandler
 {
     private readonly ISessionAttendanceRepository _attendance;
     private readonly IClassSessionRepository _sessions;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly IClassGroupEnrollmentRepository _groupEnrollments;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<SaveSessionAttendanceHandler> _logger;
 
-    public SaveSessionAttendanceHandler(ISessionAttendanceRepository attendance, IClassSessionRepository sessions,
+    public SaveSessionAttendanceHandler(ISessionAttendanceRepository attendance, IClassSessionRepository sessions, IAcademicYearRepository academicYears,
         IClassGroupEnrollmentRepository groupEnrollments, IClock clock, ICurrentUserService currentUser,
         IUnitOfWork unitOfWork, ILogger<SaveSessionAttendanceHandler> logger)
     {
         _attendance = attendance;
         _sessions = sessions;
+        _academicYears = academicYears;
         _groupEnrollments = groupEnrollments;
         _clock = clock;
         _currentUser = currentUser;
@@ -42,7 +44,11 @@ public sealed class SaveSessionAttendanceHandler
 
         try
         {
-            var session = await _sessions.GetByIdAsync(request.ClassSessionId, cancellationToken);
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<int>.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
+            var session = await _sessions.GetByIdForAcademicYearAsync(request.ClassSessionId, currentYear.Id, cancellationToken);
             if (session is null)
                 return OperationResult<int>.Failure("الحصة غير موجودة.", ErrorType.NotFound);
 

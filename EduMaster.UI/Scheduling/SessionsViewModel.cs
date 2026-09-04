@@ -18,6 +18,7 @@ public sealed class SessionsViewModel : BaseViewModel
     private readonly IUserNotifier _notifier;
     private readonly IDialogService _dialogs;
     private CancellationTokenSource? _loadCts;
+    private int? _currentAcademicYearId;
 
     public SessionsViewModel(IServiceScopeFactory scopeFactory, IServiceProvider services,
         IUserNotifier notifier, IDialogService dialogs)
@@ -119,29 +120,39 @@ public sealed class SessionsViewModel : BaseViewModel
         OnPropertyChanged(nameof(FromDate));
         OnPropertyChanged(nameof(ToDate));
 
+        if (!await LoadCurrentAcademicYearAsync())
+            return;
+
         await LoadGroupFiltersAsync();
         await LoadAsync();
+    }
+
+    private async Task<bool> LoadCurrentAcademicYearAsync()
+    {
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<GetAllAcademicYearsHandler>();
+        var result = await handler.ExecuteAsync();
+        if (!result.IsSuccess)
+        {
+            _notifier.ShowError(result.ErrorMessage!);
+            return false;
+        }
+
+        _currentAcademicYearId = result.Value!.FirstOrDefault(y => y.IsCurrent)?.Id;
+        if (_currentAcademicYearId is null)
+        {
+            _notifier.ShowWarning("لا توجد سنة دراسية حالية مضبوطة.");
+            return false;
+        }
+
+        return true;
     }
 
     private async Task LoadGroupFiltersAsync()
     {
         await using var scope = _scopeFactory.CreateAsyncScope();
-        var years = await scope.ServiceProvider.GetRequiredService<GetAllAcademicYearsHandler>().ExecuteAsync();
-        if (!years.IsSuccess)
-        {
-            _notifier.ShowError(years.ErrorMessage!);
-            return;
-        }
-
-        var currentYearId = years.Value!.FirstOrDefault(y => y.IsCurrent)?.Id;
-        if (currentYearId is null)
-        {
-            _notifier.ShowWarning("لا توجد سنة دراسية حالية محددة.");
-            return;
-        }
-
         var handler = scope.ServiceProvider.GetRequiredService<GetClassGroupsHandler>();
-        var result = await handler.ExecuteAsync(currentYearId, null);
+        var result = await handler.ExecuteAsync(_currentAcademicYearId, null);
         if (!result.IsSuccess)
         {
             _notifier.ShowError(result.ErrorMessage!);
@@ -166,7 +177,7 @@ public sealed class SessionsViewModel : BaseViewModel
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var handler = scope.ServiceProvider.GetRequiredService<GetSessionsHandler>();
-            var result = await handler.ExecuteAsync(FromDate.Value, ToDate.Value, SelectedGroupFilter?.Id, cancellationToken);
+            var result = await handler.ExecuteAsync(FromDate.Value, ToDate.Value, SelectedGroupFilter?.Id, _currentAcademicYearId, cancellationToken);
 
             if (result.IsSuccess)
             {

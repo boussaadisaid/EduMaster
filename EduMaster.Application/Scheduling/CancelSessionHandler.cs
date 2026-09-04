@@ -12,15 +12,17 @@ public sealed record CancelSessionRequest(int SessionId);
 public sealed class CancelSessionHandler
 {
     private readonly IClassSessionRepository _sessions;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CancelSessionHandler> _logger;
 
-    public CancelSessionHandler(IClassSessionRepository sessions, IClock clock,
+    public CancelSessionHandler(IClassSessionRepository sessions, IAcademicYearRepository academicYears, IClock clock,
         ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<CancelSessionHandler> logger)
     {
         _sessions = sessions;
+        _academicYears = academicYears;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
@@ -33,7 +35,12 @@ public sealed class CancelSessionHandler
 
         try
         {
-            var session = await _sessions.GetByIdAsync(request.SessionId, cancellationToken);
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
+            var session = await _sessions.GetByIdForAcademicYearAsync(request.SessionId, currentYear.Id, cancellationToken);
+
             if (session is null)
                 return OperationResult.Failure("الحصة غير موجودة.", ErrorType.NotFound);
 
@@ -57,4 +64,5 @@ public sealed class CancelSessionHandler
             return OperationResult.Failure("حدث خطأ غير متوقع أثناء إلغاء الحصة.", ErrorType.Unexpected);
         }
     }
+
 }

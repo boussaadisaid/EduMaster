@@ -39,7 +39,7 @@ public sealed class GetPaymentContextHandler
             var current = openCharges
                 .Where(c => c.AcademicYearId == currentAcademicYear.Id)
                 .ToList();
-            var previous = openCharges
+            var otherYears = openCharges
                 .Where(c => c.AcademicYearId != currentAcademicYear.Id)
                 .ToList();
 
@@ -47,7 +47,7 @@ public sealed class GetPaymentContextHandler
                 new PaymentContextItem(openCharges, unallocated, student?.GuardianPersonId)
                 {
                     CurrentYearOpenCharges = current,
-                    PreviousYearsOpenCharges = previous,
+                    OtherYearsOpenCharges = otherYears,
                     CurrentAcademicYearId = currentAcademicYear.Id,
                     CurrentAcademicYearName = currentAcademicYear.Name.ToString()
                 });

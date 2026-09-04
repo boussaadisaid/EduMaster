@@ -119,7 +119,7 @@ WHERE Id = @Id AND IsDeleted = 0;";
 SELECT s.Id, s.PersonId, s.Category, s.Notes, s.GuardianPersonId,
        p.FirstName, p.FatherName, p.LastName, p.BirthDate, p.Gender,
        p.Phone, p.Phone2, p.Email, p.Address, p.PhotoPath, p.IsActive,
-       g.FirstName AS GuardianFirstName, g.LastName AS GuardianLastName
+       g.FirstName AS GuardianFirstName, g.LastName AS GuardianLastName, g.Phone AS GuardianPhone
 FROM Students s
 JOIN Persons p ON p.Id = s.PersonId AND p.IsDeleted = 0
 LEFT JOIN Persons g ON g.Id = s.GuardianPersonId AND g.IsDeleted = 0
@@ -155,6 +155,7 @@ ORDER BY p.FirstName, p.LastName;";
             (StudentCategory)row.Category,
             row.GuardianPersonId,
             row.GuardianFirstName is null ? null : $"{row.GuardianFirstName} {row.GuardianLastName}",
+            row.GuardianPhone,
             row.Notes,
             row.IsActive));
     }
@@ -209,7 +210,8 @@ WHERE Id = @Id AND IsDeleted = 0;";
         string? PhotoPath,
         bool IsActive,
         string? GuardianFirstName,
-        string? GuardianLastName);
+        string? GuardianLastName,
+        string? GuardianPhone);
 
     private static Student MapToDomain(StudentRow row) =>
         Student.Load(

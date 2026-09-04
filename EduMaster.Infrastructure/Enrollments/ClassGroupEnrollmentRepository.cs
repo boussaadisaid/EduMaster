@@ -2,6 +2,7 @@
 using EduMaster.Application.Abstractions.Repositories;
 using EduMaster.Application.ClassGroups;
 using EduMaster.Application.Enrollments;
+using EduMaster.Domain.AcademicYears;
 using EduMaster.Domain.Enums;
 using EduMaster.Infrastructure.Persistence;
 
@@ -241,6 +242,33 @@ ORDER BY cge.Status, p.FirstName, p.LastName;";
     {
         var connection = await _session.GetOpenConnectionAsync(cancellationToken);
 
+        const string sql = @"
+SELECT cge.Id, cge.ClassGroupId, cg.Name AS ClassGroupName, sb.Name AS SubjectName, ay.Name AS AcademicYearName,
+       cge.Status, cge.AgreedUnitPriceCentimes, cge.EnrolledAtUtc,
+       (SELECT ISNULL(SUM(p.SessionsCount), 0) FROM GroupSessionPurchases p WHERE p.ClassGroupEnrollmentId = cge.Id) AS PurchasedSessions,
+       (SELECT COUNT(*) FROM SessionAttendance sa WHERE sa.ClassGroupEnrollmentId = cge.Id AND sa.Status IN (1, 2)) AS ConsumedSessions
+FROM ClassGroupEnrollments cge
+JOIN ClassGroups cg ON cg.Id = cge.ClassGroupId
+JOIN Subjects sb ON sb.Id = cg.SubjectId
+JOIN AcademicYears ay ON ay.Id = cg.AcademicYearId
+WHERE cge.StudentId = @StudentId
+ORDER BY ay.StartDate DESC, cge.EnrolledAtUtc DESC;";
+
+        var rows = await connection.QueryAsync<StudentGroupRow>(
+            new CommandDefinition(sql, new { StudentId = studentId },
+                transaction: _session.CurrentTransaction,
+                cancellationToken: cancellationToken));
+
+        return rows.Select(row => new StudentGroupEnrollmentItem(
+            row.Id, row.ClassGroupId, row.ClassGroupName, row.SubjectName, row.AcademicYearName,
+            (EnrollmentStatus)row.Status, row.AgreedUnitPriceCentimes, row.EnrolledAtUtc,
+            row.PurchasedSessions, row.ConsumedSessions));
+    }
+
+    public async Task<IEnumerable<StudentGroupEnrollmentItem>> GetForStudentAsync(int studentId, int academicYearId, CancellationToken cancellationToken = default)
+    {
+        var connection = await _session.GetOpenConnectionAsync(cancellationToken);
+
         // «أفواجه» مسطّحة (D-40) — الأحدث أولاً · عمودا الرصيد في الذيل (D-81)
         // D-93: المخصوم = عدد علامات الحاضر والغائب — المبرر (3) لا يخصم · تاريخ المنسحب يبقى محسوباً (D-102)
         const string sql = @"
@@ -253,10 +281,11 @@ JOIN ClassGroups cg ON cg.Id = cge.ClassGroupId
 JOIN Subjects sb ON sb.Id = cg.SubjectId
 JOIN AcademicYears ay ON ay.Id = cg.AcademicYearId
 WHERE cge.StudentId = @StudentId
+  AND cg.AcademicYearId = @AcademicYearId
 ORDER BY cge.EnrolledAtUtc DESC;";
 
         var rows = await connection.QueryAsync<StudentGroupRow>(
-            new CommandDefinition(sql, new { StudentId = studentId },
+            new CommandDefinition(sql, new { StudentId = studentId, AcademicYearId = academicYearId },
                 transaction: _session.CurrentTransaction,
                 cancellationToken: cancellationToken));
 
@@ -335,6 +364,7 @@ ORDER BY sb.Name, cg.Name;";
         var sql = EligibleGroupSelect + @"
 JOIN AnnualEnrollments ae ON ae.StudentId = @StudentId AND ae.Status = 1
                           AND ae.AcademicYearId = cg.AcademicYearId AND ae.LevelId = cg.LevelId
+JOIN AcademicYears currentAy ON currentAy.Id = cg.AcademicYearId AND currentAy.IsCurrent = 1
 WHERE cg.IsActive = 1
   AND (NOT EXISTS (SELECT 1 FROM ClassGroupStreams cgs WHERE cgs.ClassGroupId = cg.Id)
        OR (ae.StreamId IS NOT NULL AND EXISTS (SELECT 1 FROM ClassGroupStreams cgs2 WHERE cgs2.ClassGroupId = cg.Id AND cgs2.StreamId = ae.StreamId)))

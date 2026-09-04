@@ -60,8 +60,19 @@ public sealed class TextBeeSmsProvider : ISmsProvider
         var data = doc.RootElement.GetProperty("data");
         var batchId = data.TryGetProperty("smsBatchId", out var batch) ? batch.GetString() : null;
         var success = data.TryGetProperty("success", out var accepted) ? accepted.GetBoolean() : true;
-        var acceptedCount = data.TryGetProperty("recipientCount", out var count) ? count.GetInt32() : messages.Count;
-        var failedCount = data.TryGetProperty("failureCount", out var failures) ? failures.GetInt32() : 0;
+
+        // TextBee uses recipientCount for queued batches, but returns successCount
+        // for batches dispatched immediately. Prefer the actual pushed count when present.
+        var acceptedCount = data.TryGetProperty("successCount", out var successCount)
+            ? successCount.GetInt32()
+            : data.TryGetProperty("recipientCount", out var recipientCount)
+                ? recipientCount.GetInt32()
+                : messages.Count;
+
+        var failedCount = data.TryGetProperty("failureCount", out var failures)
+            ? failures.GetInt32()
+            : Math.Max(0, messages.Count - acceptedCount);
+
         return new SmsProviderSendResult(success, batchId, acceptedCount, failedCount, null);
     }
 

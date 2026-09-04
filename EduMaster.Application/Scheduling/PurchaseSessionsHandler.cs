@@ -14,6 +14,8 @@ public sealed class PurchaseSessionsHandler
 {
     private readonly IGroupSessionPurchaseRepository _purchases;
     private readonly IClassGroupEnrollmentRepository _groupEnrollments;
+    private readonly IClassGroupRepository _classGroups;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly IChargeRepository _charges;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
@@ -22,12 +24,15 @@ public sealed class PurchaseSessionsHandler
     private readonly ILogger<PurchaseSessionsHandler> _logger;
 
     public PurchaseSessionsHandler(IGroupSessionPurchaseRepository purchases, IClassGroupEnrollmentRepository groupEnrollments,
+        IClassGroupRepository classGroups, IAcademicYearRepository academicYears,
         IChargeRepository charges,
         IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork,
         CreditConsumptionService creditConsumption, ILogger<PurchaseSessionsHandler> logger)
     {
         _purchases = purchases;
         _groupEnrollments = groupEnrollments;
+        _classGroups = classGroups;
+        _academicYears = academicYears;
         _charges = charges;
         _clock = clock;
         _currentUser = currentUser;
@@ -52,6 +57,19 @@ public sealed class PurchaseSessionsHandler
             // D-99: شراء على نشط فقط — المنسحب يُعاد إلحاقه أولاً (صف جديد D-53)
             if (!enrollment.IsActive)
                 return OperationResult<int>.Failure("لا يمكن شراء حصص لتسجيل منسحب — أعد إلحاقه بالفوج أولاً.", ErrorType.BusinessRule);
+
+            // حارس السنة الحالية: شراء الحصص عملية تشغيلية للسنة الحالية فقط.
+            // التحقق يتم خلف الواجهة وقبل فتح المعاملة، حتى لا يمكن تجاوز UI.
+            var currentAcademicYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentAcademicYear is null)
+                return OperationResult<int>.Failure("لا توجد سنة دراسية حالية مضبوطة في النظام.", ErrorType.Unexpected);
+
+            var group = await _classGroups.GetByIdAsync(enrollment.ClassGroupId, cancellationToken);
+            if (group is null)
+                return OperationResult<int>.Failure("الفوج المرتبط بالتسجيل غير موجود.", ErrorType.Unexpected);
+
+            if (group.AcademicYearId != currentAcademicYear.Id)
+                return OperationResult<int>.Failure("لا يمكن شراء حصص لتسجيل تابع لسنة دراسية سابقة. أعد الإلحاق بالفوج ضمن السنة الحالية أولاً.", ErrorType.BusinessRule);
 
             var utcNow = _clock.UtcNow;
             var userId = _currentUser.UserAccountId;

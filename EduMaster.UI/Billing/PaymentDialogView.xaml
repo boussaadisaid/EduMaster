@@ -53,9 +53,9 @@
                                 <StackPanel>
                                     <TextBlock Text="تخصيص الدفعة" Style="{StaticResource EduSubsectionTitle}"/>
                                     <TextBlock Text="{Binding AcademicYearText, StringFormat=السنة الحالية: {0}}" Style="{StaticResource EduCaption}" Margin="0,2,0,0"/>
-                                    <TextBlock Text="الاقتراح يبدأ بمستحقات السنة الحالية، ويمكن إظهار السنوات السابقة صراحةً." Style="{StaticResource EduCaption}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    <TextBlock Text="الاقتراح يبدأ بمستحقات السنة الحالية، ويمكن إظهار مستحقات السنوات الأخرى صراحةً." Style="{StaticResource EduCaption}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
-                                <CheckBox Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{Binding PreviousYearsButtonText}" IsChecked="{Binding ShowPreviousYears}" Visibility="{Binding HasPreviousYears, Converter={StaticResource BooleanToVisibilityConverter}}" VerticalContentAlignment="Center" Padding="8,5"/>
+                                <CheckBox Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{Binding OtherYearsButtonText}" IsChecked="{Binding ShowOtherYears}" Visibility="{Binding HasOtherYears, Converter={StaticResource BooleanToVisibilityConverter}}" VerticalContentAlignment="Center" Padding="8,5"/>
                             </Grid>
                         </Border>
                         <Grid Grid.Row="1">
@@ -74,7 +74,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
                             <Border Background="#EEF5FC" BorderBrush="#D5E5F4" BorderThickness="1" CornerRadius="8" Padding="12,10" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="14" Visibility="{Binding NoCurrentYearCharges, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <TextBlock Text="لا توجد مستحقات مفتوحة في السنة الحالية. توجد مستحقات سابقة يمكن إظهارها عند الحاجة." Style="{StaticResource EduCaption}" Foreground="{StaticResource AccentDarkBrush}" TextWrapping="Wrap"/>
+                                <TextBlock Text="لا توجد مستحقات مفتوحة في السنة الحالية. توجد مستحقات في سنوات أخرى يمكن إظهارها عند الحاجة." Style="{StaticResource EduCaption}" Foreground="{StaticResource AccentDarkBrush}" TextWrapping="Wrap"/>
                             </Border>
                         </Grid>
                         <Border Grid.Row="2" Background="{StaticResource WarningSoftBrush}" Padding="12,9" CornerRadius="0,0,10,10" Visibility="{Binding HasUnallocatedFromThis, Converter={StaticResource BooleanToVisibilityConverter}}">

@@ -13,16 +13,18 @@ public sealed class CreateAdHocSessionHandler
 {
     private readonly IClassSessionRepository _sessions;
     private readonly IClassGroupRepository _classGroups;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CreateAdHocSessionHandler> _logger;
 
-    public CreateAdHocSessionHandler(IClassSessionRepository sessions, IClassGroupRepository classGroups,
+    public CreateAdHocSessionHandler(IClassSessionRepository sessions, IClassGroupRepository classGroups, IAcademicYearRepository academicYears,
         IClock clock, ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<CreateAdHocSessionHandler> logger)
     {
         _sessions = sessions;
         _classGroups = classGroups;
+        _academicYears = academicYears;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
@@ -35,11 +37,17 @@ public sealed class CreateAdHocSessionHandler
 
         try
         {
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<int>.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
             var group = await _classGroups.GetByIdAsync(request.ClassGroupId, cancellationToken);
             if (group is null)
                 return OperationResult<int>.Failure("الفوج غير موجود.", ErrorType.NotFound);
             if (!group.IsActive)
                 return OperationResult<int>.Failure("الفوج معطّل — لا يقبل حصصاً.", ErrorType.BusinessRule);
+            if (group.AcademicYearId != currentYear.Id)
+                return OperationResult<int>.Failure("لا يمكن إنشاء حصة تشغيلية لفوج من سنة دراسية سابقة أو غير حالية.", ErrorType.BusinessRule);
 
             // فرادة التوقيت الودية قبل الاصطدام بالفهرس الفريد (D-22/D-87)
             if (await _sessions.AnyExistsAtAsync(request.ClassGroupId, request.StartsAt, null, cancellationToken))

@@ -1,5 +1,4 @@
-﻿using EduMaster.Application.ClassGroups;
-using EduMaster.Application.Common;
+﻿using EduMaster.Application.Common;
 using EduMaster.Application.Printing;
 using EduMaster.Application.Reports;
 using EduMaster.Application.Settings;
@@ -36,7 +35,7 @@ public sealed class GroupSessionsReportViewModel : BaseViewModel
         _logger = logger;
         _printService = printService;
 
-        RefreshCommand = new AsyncRelayCommand(() => LoadAsync());
+        RefreshCommand = new AsyncRelayCommand(() => LoadPeriodAsync());
         PrintCommand = new AsyncRelayCommand(PrintAsync, () => _lastReport is not null);
     }
 
@@ -50,7 +49,7 @@ public sealed class GroupSessionsReportViewModel : BaseViewModel
         set
         {
             if (SetProperty(ref _fromDate, value))
-                Reload();
+                ReloadPeriod();
         }
     }
 
@@ -61,7 +60,7 @@ public sealed class GroupSessionsReportViewModel : BaseViewModel
         set
         {
             if (SetProperty(ref _toDate, value))
-                Reload();
+                ReloadPeriod();
         }
     }
 
@@ -103,38 +102,75 @@ public sealed class GroupSessionsReportViewModel : BaseViewModel
         OnPropertyChanged(nameof(FromDate));
         OnPropertyChanged(nameof(ToDate));
 
-        await LoadGroupsAsync();
-        await LoadAsync();
+        await LoadPeriodAsync();
     }
 
-    private async Task LoadGroupsAsync()
+    private async Task LoadGroupsAsync(CancellationToken cancellationToken = default)
     {
-        try
+        if (FromDate is null || ToDate is null)
+            return;
+
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<GetGroupSessionsReportHandler>();
+        var result = await handler.GetAvailableGroupsAsync(
+            DateOnly.FromDateTime(FromDate.Value), DateOnly.FromDateTime(ToDate.Value), cancellationToken);
+
+        if (!result.IsSuccess)
         {
-            await using var scope = _scopeFactory.CreateAsyncScope();
-            var result = await scope.ServiceProvider.GetRequiredService<GetClassGroupsHandler>().ExecuteAsync(null, null);
-            if (!result.IsSuccess)
-                return;   // فلتر إضافي — فشله لا يمنع التقرير
+            if (!cancellationToken.IsCancellationRequested)
+                _notifier.ShowError(result.ErrorMessage!);
+            return;
+        }
 
-            GroupOptions.Clear();
-            GroupOptions.Add(new GroupOption(null, "كل الأفواج"));
-            foreach (var group in result.Value!.Where(g => g.IsActive).OrderBy(g => g.LevelName).ThenBy(g => g.Name))
-                GroupOptions.Add(new GroupOption(group.Id, $"{group.Name} — {group.SubjectName} ({group.LevelName})"));
+        var previousId = SelectedGroup?.Id;
+        GroupOptions.Clear();
+        GroupOptions.Add(new GroupOption(null, "كل الأفواج"));
+        foreach (var group in result.Value!)
+        {
+            GroupOptions.Add(new GroupOption(group.Id, $"{group.GroupName} — {group.SubjectName} ({group.LevelName})"));
+        }
 
-            _selectedGroup = GroupOptions[0];
+        var next = previousId is null
+            ? GroupOptions[0]
+            : GroupOptions.FirstOrDefault(g => g.Id == previousId) ?? GroupOptions[0];
+
+        if (!Equals(_selectedGroup, next))
+        {
+            _selectedGroup = next;
             OnPropertyChanged(nameof(SelectedGroup));
         }
-        catch (Exception ex)   // D-69 — فلتر إضافي: يُسجَّل ويُتجاوز
-        {
-            _logger.LogWarning(ex, "Failed to load group filter options for group sessions report");
-        }
+    }
+
+    private void ReloadPeriod()
+    {
+        _loadCts?.Cancel();
+        var cts = _loadCts = new CancellationTokenSource();
+        _ = LoadPeriodAsync(cts.Token);
     }
 
     private void Reload()
     {
-        _loadCts?.Cancel();   // D-64: تبديل الفلاتر فوري — يلغي التحميل السابق
+        _loadCts?.Cancel();
         var cts = _loadCts = new CancellationTokenSource();
         _ = LoadAsync(cts.Token);
+    }
+
+    private async Task LoadPeriodAsync(CancellationToken cancellationToken = default)
+    {
+        if (FromDate is null || ToDate is null)
+            return;
+
+        try
+        {
+            await LoadGroupsAsync(cancellationToken);
+            await LoadAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to refresh group sessions report period");
+            _notifier.ShowError("تعذّر تحديث فلاتر التقرير — أعد المحاولة.");
+        }
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken = default)

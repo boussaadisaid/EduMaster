@@ -24,7 +24,7 @@ public sealed class GetGroupSessionsReportHandlerTests
         public Exception? ToThrow { get; set; }
         public bool Called { get; private set; }
 
-        public Task<IEnumerable<ClassSessionListItem>> GetByDateRangeAsync(DateTime from, DateTime toExclusive, int? classGroupId, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<ClassSessionListItem>> GetByDateRangeAsync(DateTime from, DateTime toExclusive, int? classGroupId, int? academicYearId = null, CancellationToken cancellationToken = default)
         {
             Called = true;
             if (ToThrow is not null) throw ToThrow;
@@ -34,6 +34,7 @@ public sealed class GetGroupSessionsReportHandlerTests
         public Task AddAsync(ClassSession session, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task UpdateAsync(ClassSession session, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<ClassSession?> GetByIdAsync(int id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<ClassSession?> GetByIdForAcademicYearAsync(int id, int academicYearId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> AnyExistsAtAsync(int classGroupId, DateTime startsAt, int? excludeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IReadOnlyCollection<DateTime>> GetSessionStartsAsync(int classGroupId, DateTime from, DateTime toExclusive, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<int> CancelFutureScheduledBySlotAsync(int scheduleId, DateTime localNow, DateTime utcNow, int? updatedByUserId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -100,6 +101,23 @@ public sealed class GetGroupSessionsReportHandlerTests
         Assert.Equal(1, report.CancelledTotal);
         Assert.Equal(180, report.HeldMinutesTotal);
         Assert.Equal("3", report.HeldHoursTotalText);
+    }
+
+    [Fact]
+    public async Task AvailableGroups_UsesGroupsPresentInPeriod_AndRemovesDuplicates()
+    {
+        var (handler, sessions) = Build(new List<ClassSessionListItem>
+        {
+            Session(1, 10, "فيزياء أ", "1 ثانوي", SessionStatus.Held, 60),
+            Session(2, 10, "فيزياء أ", "1 ثانوي", SessionStatus.Scheduled, 60),
+            Session(3, 20, "فيزياء ب", "2 ثانوي", SessionStatus.Held, 45),
+        });
+
+        var result = await handler.GetAvailableGroupsAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 31));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(sessions.Called);
+        Assert.Equal(new[] { 10, 20 }, result.Value!.Select(g => g.Id).ToArray());
     }
 
     [Fact]

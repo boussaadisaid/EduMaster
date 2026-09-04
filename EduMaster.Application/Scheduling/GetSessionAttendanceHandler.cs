@@ -12,14 +12,16 @@ namespace EduMaster.Application.Scheduling;
 public sealed class GetSessionAttendanceHandler
 {
     private readonly IClassSessionRepository _sessions;
+    private readonly IAcademicYearRepository _academicYears;
     private readonly IClassGroupEnrollmentRepository _groupEnrollments;
     private readonly ISessionAttendanceRepository _attendance;
     private readonly ILogger<GetSessionAttendanceHandler> _logger;
 
-    public GetSessionAttendanceHandler(IClassSessionRepository sessions, IClassGroupEnrollmentRepository groupEnrollments,
+    public GetSessionAttendanceHandler(IClassSessionRepository sessions, IAcademicYearRepository academicYears, IClassGroupEnrollmentRepository groupEnrollments,
         ISessionAttendanceRepository attendance, ILogger<GetSessionAttendanceHandler> logger)
     {
         _sessions = sessions;
+        _academicYears = academicYears;
         _groupEnrollments = groupEnrollments;
         _attendance = attendance;
         _logger = logger;
@@ -29,7 +31,11 @@ public sealed class GetSessionAttendanceHandler
     {
         try
         {
-            var session = await _sessions.GetByIdAsync(classSessionId, cancellationToken);
+            var currentYear = await _academicYears.GetCurrentAcademicYearAsync(cancellationToken);
+            if (currentYear is null)
+                return OperationResult<IReadOnlyList<AttendanceRosterItem>>.Failure("لا توجد سنة دراسية حالية مضبوطة.", ErrorType.BusinessRule);
+
+            var session = await _sessions.GetByIdForAcademicYearAsync(classSessionId, currentYear.Id, cancellationToken);
             if (session is null)
                 return OperationResult<IReadOnlyList<AttendanceRosterItem>>.Failure("الحصة غير موجودة.", ErrorType.NotFound);
 
