@@ -503,7 +503,7 @@ public sealed class StudentsViewModel : BaseViewModel
         if (enrollment is null || student is null) return;
 
         var dialog = _services.GetRequiredService<TransferGroupEnrollmentViewModel>();
-        await dialog.InitializeAsync(enrollment.Id, student.FullName, enrollment.ClassGroupName);
+        await dialog.InitializeAsync(enrollment.Id, student.FullName, enrollment.ClassGroupName, enrollment.AgreedUnitPriceCentimes);
 
         if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
             await LoadStudentGroupsAsync();

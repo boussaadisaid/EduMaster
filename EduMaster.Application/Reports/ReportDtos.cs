@@ -168,12 +168,16 @@ public sealed record GroupSessionsReportItem(DateOnly From, DateOnly To, IReadOn
 
 // ═══ 6.4 — ق-5: تنبيه نفاد أرصدة الحصص ═══
 
-/// <summary>رصيد تسجيل نشط خام — تعبيرا المشتريات/المخصوم مأخوذان حرفاً من قراءة «أفواجه» القائمة (D-81: لا تعبير مكرر بصيغة أخرى)</summary>
+/// <summary>رصيد تسجيل نشط خام — عناصره تُجمع في الـHandler بنفس صيغة «أفواجه»: مشتريات + نقل داخل − نقل خارج − مخصوم.</summary>
 public sealed record EnrollmentBalanceRaw(
     int EnrollmentId, int StudentId, string StudentName,
     int ClassGroupId, string GroupName, string SubjectName,
     int PurchasedSessions, int ConsumedSessions,
-    string? GuardianName, string? GuardianPhone, string? StudentPhone);
+    string? GuardianName, string? GuardianPhone, string? StudentPhone)
+{
+    public int TransferredInSessions { get; init; }
+    public int TransferredOutSessions { get; init; }
+}
 
 /// <summary>سطر تنبيه نفاد رصيد (ق-5): الرصيد = مشترى − مخصوم والسالب مسموح مرئي (D-92) · جهة التذكير: هاتف الولي ثم هاتف الطالب (D-36)</summary>
 public sealed record LowSessionBalanceItem(

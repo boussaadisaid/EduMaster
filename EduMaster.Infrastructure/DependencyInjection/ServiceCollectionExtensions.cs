@@ -69,6 +69,8 @@ namespace EduMaster.Infrastructure.DependencyInjection
             services.AddScoped<IClassGroupScheduleRepository, ClassGroupScheduleRepository>();
             services.AddScoped<IClassSessionRepository, ClassSessionRepository>();
             services.AddScoped<IGroupSessionPurchaseRepository, GroupSessionPurchaseRepository>();
+            services.AddScoped<ISessionBalanceRepository, SessionBalanceRepository>();
+            services.AddScoped<IGroupSessionTransferRepository, GroupSessionTransferRepository>();
             services.AddScoped<ISessionAttendanceRepository, SessionAttendanceRepository>();
 
             // Billing (F4 — الشريحتان 4.1/4.2)   //  سطر التحقق

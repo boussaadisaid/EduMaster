@@ -24,6 +24,9 @@ public sealed class TransferGroupEnrollmentViewModel : BaseViewModel, IDialogVie
     private int _currentEnrollmentId;
     private string _studentName = string.Empty;
     private string _currentGroupName = string.Empty;
+    private long _currentAgreedPriceCentimes;
+    private long? _targetPriceCentimes;
+    private CancellationTokenSource? _priceCts;
 
     public TransferGroupEnrollmentViewModel(IServiceScopeFactory scopeFactory, IUserNotifier notifier,
         ILogger<TransferGroupEnrollmentViewModel> logger)
@@ -32,7 +35,7 @@ public sealed class TransferGroupEnrollmentViewModel : BaseViewModel, IDialogVie
         _notifier = notifier;
         _logger = logger;
 
-        SaveCommand = new AsyncRelayCommand(SaveAsync, () => SelectedTarget is not null && !IsSaving);
+        SaveCommand = new AsyncRelayCommand(SaveAsync, () => SelectedTarget is not null && PricesMatch && !IsSaving);
         CancelCommand = new AsyncRelayCommand(() =>
         {
             CloseRequested?.Invoke(this, false);
@@ -46,6 +49,32 @@ public sealed class TransferGroupEnrollmentViewModel : BaseViewModel, IDialogVie
 
     public string StudentName => _studentName;
     public string CurrentGroupName => _currentGroupName;
+    public string CurrentPriceText => MoneyInput.FormatDinars(_currentAgreedPriceCentimes);
+
+    public long? TargetPriceCentimes
+    {
+        get => _targetPriceCentimes;
+        private set
+        {
+            if (SetProperty(ref _targetPriceCentimes, value))
+            {
+                OnPropertyChanged(nameof(HasComparablePrice));
+                OnPropertyChanged(nameof(PricesMatch));
+                OnPropertyChanged(nameof(PriceStatusText));
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool HasComparablePrice => TargetPriceCentimes.HasValue;
+    public bool PricesMatch => HasComparablePrice && TargetPriceCentimes!.Value == _currentAgreedPriceCentimes;
+    public string PriceStatusText => SelectedTarget is null
+        ? "اختر فوجاً هدفاً لعرض مقارنة السعر."
+        : !HasComparablePrice
+            ? "لا يوجد سعر محدد للفوج الهدف — لا يمكن إتمام النقل."
+            : PricesMatch
+            ? "سعر الحصة متطابق — سينتقل الرصيد المتبقي تلقائياً."
+            : $"سعر الحصة مختلف: الحالي {CurrentPriceText} دج مقابل {MoneyInput.FormatDinars(TargetPriceCentimes!.Value)} دج للهدف — لا يمكن نقل الرصيد.";
 
     // ---------- الأهداف المطابقة ----------
     public ObservableCollection<ClassGroupListItem> Targets { get; } = new();
@@ -65,20 +94,6 @@ public sealed class TransferGroupEnrollmentViewModel : BaseViewModel, IDialogVie
     public bool TargetsEmpty => Targets.Count == 0;
 
     // ---------- السعر على الهدف (D-77) ----------
-    private string _suggestedPriceText = string.Empty;
-    public string SuggestedPriceText
-    {
-        get => _suggestedPriceText;
-        private set => SetProperty(ref _suggestedPriceText, value);
-    }
-
-    private string _agreedPriceText = string.Empty;
-    public string AgreedPriceText
-    {
-        get => _agreedPriceText;
-        set => SetProperty(ref _agreedPriceText, value);
-    }
-
     private string _discountNote = string.Empty;
     public string DiscountNote
     {
@@ -106,13 +121,20 @@ public sealed class TransferGroupEnrollmentViewModel : BaseViewModel, IDialogVie
     public AsyncRelayCommand SaveCommand { get; }
     public AsyncRelayCommand CancelCommand { get; }
 
-    public async Task InitializeAsync(int groupEnrollmentId, string studentName, string currentGroupName)
+    public async Task InitializeAsync(int groupEnrollmentId, string studentName, string currentGroupName, long currentAgreedPriceCentimes)
     {
+        _priceCts?.Cancel();
+        _priceCts?.Dispose();
+        _priceCts = null;
         _currentEnrollmentId = groupEnrollmentId;
         _studentName = studentName;
         _currentGroupName = currentGroupName;
+        _currentAgreedPriceCentimes = currentAgreedPriceCentimes;
+        TargetPriceCentimes = null;
         OnPropertyChanged(nameof(StudentName));
         OnPropertyChanged(nameof(CurrentGroupName));
+        OnPropertyChanged(nameof(CurrentPriceText));
+        OnPropertyChanged(nameof(PriceStatusText));
 
         await using var scope = _scopeFactory.CreateAsyncScope();
         var handler = scope.ServiceProvider.GetRequiredService<GetTransferTargetsHandler>();
@@ -133,17 +155,22 @@ public sealed class TransferGroupEnrollmentViewModel : BaseViewModel, IDialogVie
 
     private async Task LoadSuggestedPriceAsync()
     {
-        SuggestedPriceText = string.Empty;
-        AgreedPriceText = string.Empty;
+        TargetPriceCentimes = null;
 
         var target = SelectedTarget;
         if (target is null) return;
+
+        _priceCts?.Cancel();
+        _priceCts?.Dispose();
+        var cts = _priceCts = new CancellationTokenSource();
 
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var handler = scope.ServiceProvider.GetRequiredService<GetSubjectPriceHandler>();
-            var result = await handler.ExecuteAsync(target.AcademicYearId, target.LevelId, target.SubjectId);
+            var result = await handler.ExecuteAsync(target.AcademicYearId, target.LevelId, target.SubjectId, cts.Token);
+
+            if (cts.IsCancellationRequested || !ReferenceEquals(cts, _priceCts)) return;
 
             if (!result.IsSuccess)
             {
@@ -151,20 +178,20 @@ public sealed class TransferGroupEnrollmentViewModel : BaseViewModel, IDialogVie
                 return;
             }
 
+            TargetPriceCentimes = result.Value;
             if (result.Value is null)
             {
-                SuggestedPriceText = "لا سعر في جدول الأسعار للفوج الهدف — الإدخال اليدوي إلزامي.";
             }
             else
             {
-                SuggestedPriceText = $"سعر جدول الهدف: {MoneyInput.FormatDinars(result.Value.Value)} دج — اترك الحقل فارغاً ليُؤخذ كما هو، أو 0 = مجاني";
-                AgreedPriceText = MoneyInput.FormatDinars(result.Value.Value);
             }
         }
-        catch (Exception ex)   // D-69: قناة fire-and-forget محصّنة
+        catch (OperationCanceledException) when (cts.IsCancellationRequested) { }
+        catch (Exception ex)
         {
+            if (cts.IsCancellationRequested || !ReferenceEquals(cts, _priceCts)) return;
             _logger.LogError(ex, "Failed to load transfer price suggestion for class group {ClassGroupId}", target.Id);
-            _notifier.ShowError("تعذّر جلب سعر الفوج الهدف — أدخله يدوياً.");
+            _notifier.ShowError("تعذّر جلب سعر الفوج الهدف.");
         }
     }
 
@@ -174,24 +201,13 @@ public sealed class TransferGroupEnrollmentViewModel : BaseViewModel, IDialogVie
 
         if (SelectedTarget is null) return;
 
-        long? agreedCentimes = null;
-        if (!string.IsNullOrWhiteSpace(AgreedPriceText))
-        {
-            if (!MoneyInput.TryParseDinars(AgreedPriceText, out var parsed))
-            {
-                ErrorMessage = "أدخل سعراً صحيحاً بالدينار — والفارغ = سعر جدول الهدف كما هو.";
-                return;
-            }
-            agreedCentimes = parsed;
-        }
-
         IsSaving = true;
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var handler = scope.ServiceProvider.GetRequiredService<TransferGroupEnrollmentHandler>();
             var result = await handler.ExecuteAsync(new TransferGroupEnrollmentRequest(
-                _currentEnrollmentId, SelectedTarget.Id, agreedCentimes,
+                _currentEnrollmentId, SelectedTarget.Id,
                 string.IsNullOrWhiteSpace(DiscountNote) ? null : DiscountNote));
 
             if (result.IsSuccess)

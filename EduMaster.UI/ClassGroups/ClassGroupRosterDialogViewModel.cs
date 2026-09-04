@@ -474,7 +474,7 @@ public sealed class ClassGroupRosterDialogViewModel : BaseViewModel, IDialogView
         if (enrollment is null) return;
 
         var dialog = _services.GetRequiredService<TransferGroupEnrollmentViewModel>();
-        await dialog.InitializeAsync(enrollment.Id, enrollment.FullName, _group.Name);   // D-84: تهيئة بالمعرّف — مشتركة بين المحورين
+        await dialog.InitializeAsync(enrollment.Id, enrollment.FullName, _group.Name, enrollment.AgreedUnitPriceCentimes);   // D-84: تهيئة بالمعرّف — مشتركة بين المحورين
 
         if (await _dialogs.ShowDialogAsync(dialog, dialog.Title))
         {

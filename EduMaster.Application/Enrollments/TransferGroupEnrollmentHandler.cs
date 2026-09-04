@@ -14,7 +14,6 @@ namespace EduMaster.Application.Enrollments;
 public sealed record TransferGroupEnrollmentRequest(
     int GroupEnrollmentId,
     int TargetClassGroupId,
-    long? AgreedUnitPriceCentimes,   // null = خذ سعر جدول الهدف كما هو
     string? DiscountNote);
 
 public sealed class TransferGroupEnrollmentHandler
@@ -24,13 +23,16 @@ public sealed class TransferGroupEnrollmentHandler
     private readonly IAnnualEnrollmentRepository _annualEnrollments;
     private readonly IAcademicYearRepository _academicYears;
     private readonly ISubjectPriceRepository _prices;
+    private readonly ISessionBalanceRepository _sessionBalances;
+    private readonly IGroupSessionTransferRepository _sessionTransfers;
     private readonly IClock _clock;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferGroupEnrollmentHandler> _logger;
 
     public TransferGroupEnrollmentHandler(IClassGroupEnrollmentRepository groupEnrollments, IClassGroupRepository classGroups,
-        IAnnualEnrollmentRepository annualEnrollments, IAcademicYearRepository academicYears, ISubjectPriceRepository prices, IClock clock,
+        IAnnualEnrollmentRepository annualEnrollments, IAcademicYearRepository academicYears, ISubjectPriceRepository prices,
+        ISessionBalanceRepository sessionBalances, IGroupSessionTransferRepository sessionTransfers, IClock clock,
         ICurrentUserService currentUser, IUnitOfWork unitOfWork, ILogger<TransferGroupEnrollmentHandler> logger)
     {
         _groupEnrollments = groupEnrollments;
@@ -38,6 +40,8 @@ public sealed class TransferGroupEnrollmentHandler
         _annualEnrollments = annualEnrollments;
         _academicYears = academicYears;
         _prices = prices;
+        _sessionBalances = sessionBalances;
+        _sessionTransfers = sessionTransfers;
         _clock = clock;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
@@ -47,9 +51,6 @@ public sealed class TransferGroupEnrollmentHandler
     public async Task<OperationResult<int>> ExecuteAsync(TransferGroupEnrollmentRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-
-        if (request.AgreedUnitPriceCentimes < 0)
-            return OperationResult<int>.Failure("السعر لا يمكن أن يكون سالباً.", ErrorType.Validation);
 
         try
         {
@@ -107,26 +108,43 @@ public sealed class TransferGroupEnrollmentHandler
                 return OperationResult<int>.Failure($"الفوج الهدف ممتلئ (سعته {target.Capacity.Value}).", ErrorType.BusinessRule);
 
             // D-77 على سنابشوت الهدف
-            var snapshotCentimes = await _prices.TryGetPriceAsync(target.AcademicYearId, target.LevelId, target.SubjectId, cancellationToken);
-            if (snapshotCentimes is null && request.AgreedUnitPriceCentimes is null)
-                return OperationResult<int>.Failure("لا سعر في جدول الأسعار للفوج الهدف — أدخل السعر يدوياً.", ErrorType.Validation);
+            var targetPrice = await _prices.TryGetPriceAsync(target.AcademicYearId, target.LevelId, target.SubjectId, cancellationToken);
+            if (targetPrice is null)
+                return OperationResult<int>.Failure("لا يوجد سعر محدد للفوج الهدف في جدول الأسعار؛ لا يمكن التحقق من تطابق السعر.", ErrorType.Validation);
 
-            var agreedCentimes = request.AgreedUnitPriceCentimes ?? snapshotCentimes!.Value;
-            if (agreedCentimes < 0)
-                return OperationResult<int>.Failure("السعر لا يمكن أن يكون سالباً.", ErrorType.Validation);
+            if (targetPrice.Value != current.AgreedUnitPriceCentimes)
+                return OperationResult<int>.Failure(
+                    $"لا يمكن نقل رصيد الحصص لأن سعر الحصة مختلف. السعر الحالي: {current.AgreedUnitPriceCentimes} سنتيم، وسعر الفوج الهدف: {targetPrice.Value} سنتيم.",
+                    ErrorType.BusinessRule);
 
             var now = _clock.UtcNow;
             var userId = _currentUser.UserAccountId;
 
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            var balance = await _sessionBalances.GetAsync(current.Id, cancellationToken);
+            if (balance is null)
+                throw new InvalidOperationException($"Session balance could not be read for group enrollment {current.Id}.");
+
+            var transferableSessions = Math.Max(0, balance.Balance);
+
             current.Withdraw(now, userId);
             var transferred = Domain.Enrollments.ClassGroupEnrollment.Create(
                 target.Id, current.StudentId, current.AnnualEnrollmentId,
-                snapshotCentimes ?? agreedCentimes, agreedCentimes, request.DiscountNote,
+                targetPrice.Value, targetPrice.Value, request.DiscountNote,
                 now, userId);
 
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
             await _groupEnrollments.UpdateAsync(current, cancellationToken);
             await _groupEnrollments.AddAsync(transferred, cancellationToken);
+
+            if (transferableSessions > 0)
+            {
+                var transfer = Domain.Scheduling.GroupSessionTransfer.Create(
+                    current.Id, transferred.Id, transferableSessions,
+                    "نقل رصيد الحصص مع نقل الطالب", now, userId);
+                await _sessionTransfers.AddAsync(transfer, cancellationToken);
+            }
+
             await _unitOfWork.CommitAsync(cancellationToken);
 
             return OperationResult<int>.Success(transferred.Id);

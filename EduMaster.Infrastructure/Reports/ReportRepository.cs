@@ -30,7 +30,7 @@ public sealed class ReportRepository : IReportRepository
 
     private sealed record EnrollmentBalanceRow(int EnrollmentId, int StudentId, string StudentName,
         int ClassGroupId, string GroupName, string SubjectName,
-        int PurchasedSessions, int ConsumedSessions,
+        int PurchasedSessions, int TransferredInSessions, int TransferredOutSessions, int ConsumedSessions,
         string? GuardianName, string? GuardianPhone, string? StudentPhone);
 
     public async Task<StudentPaymentsRead> GetPaymentsWithAllocationsForStudentAsync(int studentId, CancellationToken cancellationToken = default)
@@ -152,6 +152,8 @@ SELECT e.Id AS EnrollmentId, e.StudentId,
        CONCAT_WS(N' ', sp.FirstName, sp.LastName, sp.FatherName) AS StudentName,
        e.ClassGroupId, g.Name AS GroupName, sb.Name AS SubjectName,
        (SELECT ISNULL(SUM(p.SessionsCount), 0) FROM GroupSessionPurchases p WHERE p.ClassGroupEnrollmentId = e.Id) AS PurchasedSessions,
+       (SELECT ISNULL(SUM(t.SessionsCount), 0) FROM GroupSessionTransfers t WHERE t.ToClassGroupEnrollmentId = e.Id) AS TransferredInSessions,
+       (SELECT ISNULL(SUM(t.SessionsCount), 0) FROM GroupSessionTransfers t WHERE t.FromClassGroupEnrollmentId = e.Id) AS TransferredOutSessions,
        (SELECT COUNT(*) FROM SessionAttendance sa WHERE sa.ClassGroupEnrollmentId = e.Id AND sa.Status IN (1, 2)) AS ConsumedSessions,
        CONCAT_WS(N' ', gp.FirstName, gp.LastName, gp.FatherName) AS GuardianName,
        gp.Phone AS GuardianPhone,
@@ -172,6 +174,10 @@ ORDER BY sp.FirstName, sp.LastName;",
             r.EnrollmentId, r.StudentId, r.StudentName,
             r.ClassGroupId, r.GroupName, r.SubjectName,
             r.PurchasedSessions, r.ConsumedSessions,
-            r.GuardianName, r.GuardianPhone, r.StudentPhone)).ToList();
+            r.GuardianName, r.GuardianPhone, r.StudentPhone)
+        {
+            TransferredInSessions = r.TransferredInSessions,
+            TransferredOutSessions = r.TransferredOutSessions
+        }).ToList();
     }
 }

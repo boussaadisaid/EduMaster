@@ -6,11 +6,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+	  <ApplicationIcon>EduMaster.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="appsettings.json" />
     <None Remove="Assets\school-login.jpg" />
+    <None Remove="EduMaster.ico" />
     <None Remove="Fonts\Cairo-Bold.ttf" />
     <None Remove="Fonts\Cairo-Regular.ttf" />
     <None Remove="Fonts\Cairo-SemiBold.ttf" />
@@ -42,6 +44,9 @@
 
   <ItemGroup>
     <Resource Include="Assets\Images\school-login.jpg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="EduMaster.ico">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Fonts\Cairo-Bold.ttf" />

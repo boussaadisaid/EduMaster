@@ -34,6 +34,20 @@ public sealed class StudentGroupEnrollmentItemTests
     }
 
     [Fact]
+    public void Balance_IncludesTransfersInAndOut()
+    {
+        var item = new StudentGroupEnrollmentItem(1, 10, "فوج", "مادة", "2025-2026",
+            EnrollmentStatus.Active, 35000, new DateTime(2026, 8, 20),
+            PurchasedSessions: 3, ConsumedSessions: 2)
+        {
+            TransferredInSessions = 7,
+            TransferredOutSessions = 5
+        };
+
+        Assert.Equal(3, item.Balance);
+    }
+
+    [Fact]
     public void StatusText_Arabic()
     {
         Assert.Equal("نشط", Build(0, 0, EnrollmentStatus.Active).StatusText);

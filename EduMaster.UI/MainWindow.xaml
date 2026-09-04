@@ -1,4 +1,12 @@
-﻿<Controls:MetroWindow x:Class="EduMaster.UI.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls" Title="EduMaster" Width="1280" Height="780" MinWidth="1100" MinHeight="680" WindowState="Maximized" WindowStartupLocation="CenterScreen" FlowDirection="RightToLeft" FontFamily="{StaticResource EduFontRegular}">
+﻿<Controls:MetroWindow x:Class="EduMaster.UI.MainWindow"
+                      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+                      xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+                      Title="EduMaster" Width="1280" Height="780" MinWidth="1100" MinHeight="680" WindowState="Maximized" 
+                      WindowStartupLocation="CenterScreen"
+                      FlowDirection="RightToLeft" 
+                      FontFamily="{StaticResource EduFontRegular}"
+                      Icon="/EduMaster.UI;component/EduMaster.ico">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="256"/>

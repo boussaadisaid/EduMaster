@@ -55,6 +55,8 @@ public sealed class ClassGroupEnrollmentRepository : IClassGroupEnrollmentReposi
         long AgreedUnitPriceCentimes,
         DateTime EnrolledAtUtc,
         int PurchasedSessions,
+        int TransferredInSessions,
+        int TransferredOutSessions,
         int ConsumedSessions);
 
     // صف الفوج المسطّح الموحّد (أهداف النقل + المؤهَّلة) — ⚠ D-81: الترتيب = ترتيب أعمدة الـSELECT حرفياً
@@ -246,6 +248,8 @@ ORDER BY cge.Status, p.FirstName, p.LastName;";
 SELECT cge.Id, cge.ClassGroupId, cg.Name AS ClassGroupName, sb.Name AS SubjectName, ay.Name AS AcademicYearName,
        cge.Status, cge.AgreedUnitPriceCentimes, cge.EnrolledAtUtc,
        (SELECT ISNULL(SUM(p.SessionsCount), 0) FROM GroupSessionPurchases p WHERE p.ClassGroupEnrollmentId = cge.Id) AS PurchasedSessions,
+       (SELECT ISNULL(SUM(t.SessionsCount), 0) FROM GroupSessionTransfers t WHERE t.ToClassGroupEnrollmentId = cge.Id) AS TransferredInSessions,
+       (SELECT ISNULL(SUM(t.SessionsCount), 0) FROM GroupSessionTransfers t WHERE t.FromClassGroupEnrollmentId = cge.Id) AS TransferredOutSessions,
        (SELECT COUNT(*) FROM SessionAttendance sa WHERE sa.ClassGroupEnrollmentId = cge.Id AND sa.Status IN (1, 2)) AS ConsumedSessions
 FROM ClassGroupEnrollments cge
 JOIN ClassGroups cg ON cg.Id = cge.ClassGroupId
@@ -262,7 +266,11 @@ ORDER BY ay.StartDate DESC, cge.EnrolledAtUtc DESC;";
         return rows.Select(row => new StudentGroupEnrollmentItem(
             row.Id, row.ClassGroupId, row.ClassGroupName, row.SubjectName, row.AcademicYearName,
             (EnrollmentStatus)row.Status, row.AgreedUnitPriceCentimes, row.EnrolledAtUtc,
-            row.PurchasedSessions, row.ConsumedSessions));
+            row.PurchasedSessions, row.ConsumedSessions)
+        {
+            TransferredInSessions = row.TransferredInSessions,
+            TransferredOutSessions = row.TransferredOutSessions
+        });
     }
 
     public async Task<IEnumerable<StudentGroupEnrollmentItem>> GetForStudentAsync(int studentId, int academicYearId, CancellationToken cancellationToken = default)
@@ -275,6 +283,8 @@ ORDER BY ay.StartDate DESC, cge.EnrolledAtUtc DESC;";
 SELECT cge.Id, cge.ClassGroupId, cg.Name AS ClassGroupName, sb.Name AS SubjectName, ay.Name AS AcademicYearName,
        cge.Status, cge.AgreedUnitPriceCentimes, cge.EnrolledAtUtc,
        (SELECT ISNULL(SUM(p.SessionsCount), 0) FROM GroupSessionPurchases p WHERE p.ClassGroupEnrollmentId = cge.Id) AS PurchasedSessions,
+       (SELECT ISNULL(SUM(t.SessionsCount), 0) FROM GroupSessionTransfers t WHERE t.ToClassGroupEnrollmentId = cge.Id) AS TransferredInSessions,
+       (SELECT ISNULL(SUM(t.SessionsCount), 0) FROM GroupSessionTransfers t WHERE t.FromClassGroupEnrollmentId = cge.Id) AS TransferredOutSessions,
        (SELECT COUNT(*) FROM SessionAttendance sa WHERE sa.ClassGroupEnrollmentId = cge.Id AND sa.Status IN (1, 2)) AS ConsumedSessions
 FROM ClassGroupEnrollments cge
 JOIN ClassGroups cg ON cg.Id = cge.ClassGroupId
@@ -292,7 +302,11 @@ ORDER BY cge.EnrolledAtUtc DESC;";
         return rows.Select(row => new StudentGroupEnrollmentItem(
             row.Id, row.ClassGroupId, row.ClassGroupName, row.SubjectName, row.AcademicYearName,
             (EnrollmentStatus)row.Status, row.AgreedUnitPriceCentimes, row.EnrolledAtUtc,
-            row.PurchasedSessions, row.ConsumedSessions));
+            row.PurchasedSessions, row.ConsumedSessions)
+        {
+            TransferredInSessions = row.TransferredInSessions,
+            TransferredOutSessions = row.TransferredOutSessions
+        });
     }
 
     public async Task<IReadOnlyList<Domain.Enrollments.ClassGroupEnrollment>> GetActiveByAnnualEnrollmentIdAsync(

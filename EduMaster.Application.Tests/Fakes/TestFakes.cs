@@ -200,14 +200,25 @@ public sealed class FakePaymentRepository : IPaymentRepository
 public sealed class FakeClassGroupEnrollmentRepository : IClassGroupEnrollmentRepository
 {
     public Domain.Enrollments.ClassGroupEnrollment? EntityToReturn { get; set; }
+    public int SessionBalanceToReturn { get; set; }
+    public List<Domain.Enrollments.ClassGroupEnrollment> Added { get; } = new();
+    public List<Domain.Enrollments.ClassGroupEnrollment> Updated { get; } = new();
 
     public Task<Domain.Enrollments.ClassGroupEnrollment?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         => Task.FromResult(EntityToReturn);
 
+
     public Task AddAsync(Domain.Enrollments.ClassGroupEnrollment enrollment, CancellationToken cancellationToken = default)
-        => throw new NotImplementedException();
+    {
+        enrollment.SetId(100);
+        Added.Add(enrollment);
+        return Task.CompletedTask;
+    }
     public Task UpdateAsync(Domain.Enrollments.ClassGroupEnrollment enrollment, CancellationToken cancellationToken = default)
-        => throw new NotImplementedException();
+    {
+        Updated.Add(enrollment);
+        return Task.CompletedTask;
+    }
     public Task<bool> AnyActiveForStudentInGroupAsync(int classGroupId, int studentId, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
     public Task<int> CountActiveInGroupAsync(int classGroupId, CancellationToken cancellationToken = default)
@@ -356,9 +367,11 @@ public sealed class FakeTeacherRepository : ITeacherRepository
 public sealed class FakeClassGroupRepository : IClassGroupRepository
 {
     public Domain.ClassGroups.ClassGroup? EntityToReturn { get; set; }
+    public Dictionary<int, Domain.ClassGroups.ClassGroup> ById { get; } = new();
+    public IReadOnlyList<int> StreamIdsToReturn { get; set; } = Array.Empty<int>();
 
     public Task<Domain.ClassGroups.ClassGroup?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-        => Task.FromResult(EntityToReturn);
+        => Task.FromResult(ById.TryGetValue(id, out var group) ? group : EntityToReturn);
 
     public Task AddAsync(Domain.ClassGroups.ClassGroup classGroup, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
@@ -369,7 +382,7 @@ public sealed class FakeClassGroupRepository : IClassGroupRepository
     public Task<IEnumerable<ClassGroupListItem>> SearchAsync(int? academicYearId, string? normalizedTerm, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
     public Task<IReadOnlyList<int>> GetStreamIdsAsync(int classGroupId, CancellationToken cancellationToken = default)
-        => throw new NotImplementedException();
+        => Task.FromResult(StreamIdsToReturn);
     public Task ReplaceStreamsAsync(int classGroupId, int levelId, IReadOnlyList<int> streamIds, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
     public Task<bool> HasOperationalDataAsync(int id, CancellationToken cancellationToken = default)

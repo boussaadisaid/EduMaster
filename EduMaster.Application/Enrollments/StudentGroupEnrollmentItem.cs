@@ -4,7 +4,7 @@ namespace EduMaster.Application.Enrollments;
 
 /// <summary>
 /// قسم «أفواجه» في لوحة الطالب (D-75) — نموذج قراءة مسطّح (D-40)
-/// · F3: مشترى/مخصوم من جدولَي المشتريات والحضور (المخصوم 0 حتى 3.3 — عموده جاهز) والرصيد محسوب (D-91/D-98)
+/// · F3: مشتريات + نقل داخل/خارج + مخصوم من الحضور والرصيد محسوب منها
 /// </summary>
 public sealed record StudentGroupEnrollmentItem(
     int Id,
@@ -20,8 +20,11 @@ public sealed record StudentGroupEnrollmentItem(
 {
     public string StatusText => Status == EnrollmentStatus.Active ? "نشط" : "منسحب";
 
-    /// <summary>الرصيد = مشترى − مخصوم — السالب مسموح ويُلوَّن أحمر في الواجهة (D-92)</summary>
-    public int Balance => PurchasedSessions - ConsumedSessions;
+    /// <summary>الرصيد = مشتريات + نقل داخل − نقل خارج − مخصوم — السالب مسموح ويُلوَّن أحمر في الواجهة.</summary>
+    public int TransferredInSessions { get; init; }
+    public int TransferredOutSessions { get; init; }
+
+    public int Balance => PurchasedSessions + TransferredInSessions - TransferredOutSessions - ConsumedSessions;
 
     /// <summary>علامة تجاوز الرصيد (D-92) — تلوين الواجهة</summary>
     public bool IsNegativeBalance => Balance < 0;

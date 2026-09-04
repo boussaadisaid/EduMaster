@@ -37,7 +37,7 @@ public sealed class GetLowSessionBalancesHandler
                 .Select(r => new LowSessionBalanceItem(
                     r.EnrollmentId, r.StudentId, r.StudentName,
                     r.ClassGroupId, r.GroupName, r.SubjectName,
-                    r.PurchasedSessions - r.ConsumedSessions,
+                    r.PurchasedSessions + r.TransferredInSessions - r.TransferredOutSessions - r.ConsumedSessions,
                     string.IsNullOrWhiteSpace(r.GuardianName) ? null : r.GuardianName,
                     string.IsNullOrWhiteSpace(r.GuardianPhone) ? null : r.GuardianPhone,
                     string.IsNullOrWhiteSpace(r.StudentPhone) ? null : r.StudentPhone))
